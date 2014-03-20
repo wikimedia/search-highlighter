@@ -4,9 +4,12 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.lucene.index.AtomicReader;
+import org.apache.lucene.index.AtomicReaderContext;
 import org.apache.lucene.index.DocsAndPositionsEnum;
 import org.apache.lucene.index.Fields;
 import org.apache.lucene.index.IndexReader;
+import org.apache.lucene.index.ReaderUtil;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.index.Terms;
 import org.apache.lucene.index.TermsEnum;
@@ -39,25 +42,34 @@ public class DocsAndPositionsHitEnum implements HitEnum {
             // No term vectors on field so no hits
             return EmptyHitEnum.INSTANCE;
         }
-        return fromTermVectors(reader, fieldName, vector, acceptable);
+        return fromTerms(vector, acceptable, reader, fieldName, -1);
     }
 
-    public static HitEnum fromTermVectors(IndexReader reader, String fieldName, Terms vector,
+    public static HitEnum fromPostings(IndexReader reader, int docId, String fieldName,
             CompiledAutomaton acceptable) throws IOException {
-        int numDocs = reader.numDocs();
-        TermsEnum terms = acceptable.getTermsEnum(vector);
+        List<AtomicReaderContext> leaves = reader.getContext().leaves();
+        int leaf = ReaderUtil.subIndex(docId, leaves);
+        AtomicReader atomicReader = leaves.get(leaf).reader();
+        return fromTerms(atomicReader.terms(fieldName), acceptable, reader, fieldName, docId);
+    }
+
+    private static HitEnum fromTerms(Terms terms, CompiledAutomaton acceptable, IndexReader reader,
+            String fieldName, int docId) throws IOException {
+        TermsEnum termsEnum = acceptable.getTermsEnum(terms);
         BytesRef term;
+        int numDocs = reader.numDocs();
         List<WeightedHitEnum> enums = new ArrayList<WeightedHitEnum>();
-        while ((term = terms.next()) != null) {
+        while ((term = termsEnum.next()) != null) {
             // Ape Lucene's DefaultSimilarity's weight like Lucene's
             // FieldTermStack does.
             int df = reader.docFreq(new Term(fieldName, term));
             float weight = (float) (Math.log(numDocs / (double) (df + 1)) + 1.0);
-            DocsAndPositionsEnum dp = terms.docsAndPositions(null, null);
+            DocsAndPositionsEnum dp = termsEnum.docsAndPositions(null, null);
             if (dp == null) {
                 continue;
             }
-            if (dp.nextDoc() == DocIdSetIterator.NO_MORE_DOCS) {
+            int advanceResult = docId >= 0 ? dp.advance(docId) : dp.nextDoc();
+            if (advanceResult == DocIdSetIterator.NO_MORE_DOCS) {
                 continue;
             }
             enums.add(new ConstantWeightHitEnumWrapper(new DocsAndPositionsHitEnum(dp), weight));
