@@ -1,0 +1,25 @@
+package expiremental.highlighter.hit.weight;
+
+import java.util.HashMap;
+import java.util.Map;
+
+import org.junit.Test;
+import static org.junit.Assert.*;
+
+import expiremental.highlighter.hit.TermWeigher;
+
+public class ExactMatchTermWeigherTest {
+    @Test
+    public void exactMatch() {
+        Map<String, Float> matches = new HashMap<String, Float>();
+        matches.put("one", 1f);
+        matches.put("two", 2f);
+        matches.put("three", 3f);
+        TermWeigher<String> weigher = new ExactMatchTermWeigher<String>(matches, .5f);
+        assertEquals(1f, weigher.weigh("one"), .001f);
+        assertEquals(3f, weigher.weigh("three"), .001f);
+        assertEquals(2f, weigher.weigh("two"), .001f);
+        assertEquals(1, weigher.weigh("one"), .001f);
+        assertEquals(.5f, weigher.weigh("notfound"), .001f);
+    }
+}
