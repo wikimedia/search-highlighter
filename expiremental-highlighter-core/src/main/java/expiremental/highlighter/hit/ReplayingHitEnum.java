@@ -14,8 +14,8 @@ public class ReplayingHitEnum implements HitEnum {
     private final Queue<Hit> hits = new ArrayDeque<Hit>();
     private Hit current;
 
-    public void record(int position, int startOffset, int endOffset) {
-        hits.add(new Hit(position, startOffset, endOffset));
+    public void record(int position, int startOffset, int endOffset, float weight) {
+        hits.add(new Hit(position, startOffset, endOffset, weight));
     }
 
     /**
@@ -46,15 +46,22 @@ public class ReplayingHitEnum implements HitEnum {
         return current.endOffset;
     }
 
+    @Override
+    public float weight() {
+        return current.weight;
+    }
+
     private static class Hit {
         final int position;
         final int startOffset;
         final int endOffset;
+        final float weight;
 
-        public Hit(int position, int startOffset, int endOffset) {
+        public Hit(int position, int startOffset, int endOffset, float weight) {
             this.position = position;
             this.startOffset = startOffset;
             this.endOffset = endOffset;
+            this.weight = weight;
         }
     }
 }

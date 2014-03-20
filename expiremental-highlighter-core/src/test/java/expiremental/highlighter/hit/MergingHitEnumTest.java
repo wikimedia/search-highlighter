@@ -20,22 +20,21 @@ import com.carrotsearch.randomizedtesting.RandomizedRunner;
 import com.carrotsearch.randomizedtesting.RandomizedTest;
 
 import expiremental.highlighter.HitEnum;
-import expiremental.highlighter.WeightedHitEnum;
 
 @RunWith(RandomizedRunner.class)
 public class MergingHitEnumTest extends RandomizedTest {
     @Test
     public void ofEmptyCollection() {
-        Collection<WeightedHitEnum> enums = Collections.emptyList();
+        Collection<HitEnum> enums = Collections.emptyList();
         assertFalse(new MergingHitEnum(enums, HitEnum.LessThans.POSITION).next());
     }
 
     @Test
     public void ofCollectionOfEmpty() {
-        Collection<WeightedHitEnum> enums = Arrays.asList(
-                (WeightedHitEnum) new ConstantWeightHitEnumWrapper(EmptyHitEnum.INSTANCE, 1),
-                new ConstantWeightHitEnumWrapper(EmptyHitEnum.INSTANCE, 1),
-                new ConstantWeightHitEnumWrapper(EmptyHitEnum.INSTANCE, 1));
+        Collection<? extends HitEnum> enums = Arrays.asList(
+                EmptyHitEnum.INSTANCE,
+                EmptyHitEnum.INSTANCE,
+                EmptyHitEnum.INSTANCE);
         assertFalse(new MergingHitEnum(enums, HitEnum.LessThans.POSITION).next());
     }
 
@@ -49,11 +48,10 @@ public class MergingHitEnumTest extends RandomizedTest {
         Collections.sort(expectedPositions);
         ReplayingHitEnum e = new ReplayingHitEnum();
         for (Integer position : expectedPositions) {
-            e.record(position, 0, 0);
+            e.record(position, 0, 0, 0);
         }
 
-        MergingHitEnum merged = new MergingHitEnum(
-                Arrays.asList((WeightedHitEnum) new ConstantWeightHitEnumWrapper(e, 1)),
+        MergingHitEnum merged = new MergingHitEnum(Collections.singletonList(e),
                 HitEnum.LessThans.POSITION);
         for (int position : expectedPositions) {
             assertThat(merged, advances());
@@ -65,7 +63,7 @@ public class MergingHitEnumTest extends RandomizedTest {
     @Test
     public void many() {
         List<Integer> allExpectedPositions = new ArrayList<Integer>();
-        List<WeightedHitEnum> enums = new ArrayList<WeightedHitEnum>();
+        List<HitEnum> enums = new ArrayList<HitEnum>();
         int maxEnumCount = between(10, 500);
         
         for (int enumCount = 0; enumCount < maxEnumCount; enumCount++) {
@@ -77,9 +75,9 @@ public class MergingHitEnumTest extends RandomizedTest {
             allExpectedPositions.addAll(expectedPositions);
             Collections.sort(expectedPositions);
             ReplayingHitEnum e = new ReplayingHitEnum();
-            enums.add(new ConstantWeightHitEnumWrapper(e, 1));
+            enums.add(e);
             for (Integer position : expectedPositions) {
-                e.record(position, 0, 0);
+                e.record(position, 0, 0, 0);
             }
         }
         

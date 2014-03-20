@@ -32,4 +32,9 @@ public abstract class AbstractHitEnumWrapper implements HitEnum {
     public int endOffset() {
         return wrapped.endOffset();
     }
+
+    @Override
+    public float weight() {
+        return wrapped.weight();
+    }
 }

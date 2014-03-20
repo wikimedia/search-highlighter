@@ -16,7 +16,8 @@ import expiremental.highlighter.SourceExtracter;
 import expiremental.highlighter.source.StringSourceExtracter;
 
 /**
- * Base tests for HitEnums. Expects them to segments works based on whitespace.
+ * Base tests for HitEnums that actually process a source string. Expects them to
+ * segments works based on whitespace.
  */
 @RunWith(RandomizedRunner.class)
 public abstract class AbstractHitEnumTestBase {

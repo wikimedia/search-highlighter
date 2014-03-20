@@ -19,6 +19,7 @@ import expiremental.highlighter.Segmenter;
 import expiremental.highlighter.Snippet;
 import expiremental.highlighter.SourceExtracter;
 import expiremental.highlighter.hit.BreakIteratorHitEnum;
+import expiremental.highlighter.hit.weight.ConstantHitWeigher;
 import expiremental.highlighter.source.StringSourceExtracter;
 
 @RunWith(RandomizedRunner.class)
@@ -63,6 +64,6 @@ public class BasicSnippetChooserTest {
         extracter = new StringSourceExtracter(source);
         BreakIterator itr = BreakIterator.getWordInstance(Locale.ENGLISH);
         itr.setText(source);
-        hitEnum = new BreakIteratorHitEnum(itr);
+        hitEnum = new BreakIteratorHitEnum(itr, new ConstantHitWeigher());
     }
 }

@@ -30,4 +30,9 @@ public final class EmptyHitEnum implements HitEnum {
     public int endOffset() {
         return 0;
     }
+
+    @Override
+    public float weight() {
+        return 0;
+    }
 }

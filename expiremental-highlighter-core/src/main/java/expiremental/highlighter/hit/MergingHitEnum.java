@@ -2,25 +2,19 @@ package expiremental.highlighter.hit;
 
 import java.util.Collection;
 
+import expiremental.highlighter.HitEnum;
 import expiremental.highlighter.LessThan;
-import expiremental.highlighter.WeightedHitEnum;
 import expiremental.highlighter.extern.PriorityQueue;
 
 /**
- * Merges multiple WeightedHitEnums.  They must all be sorted by the provided comparator.
+ * Merges multiple HitEnums.  They must all be sorted by the provided comparator or the results will be wrong.
  */
-public class MergingHitEnum implements WeightedHitEnum {
-    private final PriorityQueue<WeightedHitEnum> queue;   // Introduces Lucene dependency in the core.  Might should just copy that one locally.
-    private WeightedHitEnum top;
+public class MergingHitEnum implements HitEnum {
+    private final PriorityQueue<HitEnum> queue;
+    private HitEnum top;
     
-    /**
-     * Build me.
-     * @param enums enums to merge
-     * @param comparator comparators that compares all the WeightedHitEnum
-     */
-    @SuppressWarnings({ "rawtypes", "unchecked" })
-    public MergingHitEnum(Collection<WeightedHitEnum> enums, LessThan comparator) {
-        queue = new HitEnumPriorityQueue(enums, (LessThan<WeightedHitEnum>) comparator);
+    public MergingHitEnum(Collection<? extends HitEnum> enums, LessThan<HitEnum> comparator) {
+        queue = new HitEnumPriorityQueue(enums, comparator);
     }
     
     @Override
@@ -59,15 +53,15 @@ public class MergingHitEnum implements WeightedHitEnum {
         return top.weight();
     }
     
-    private static class HitEnumPriorityQueue extends PriorityQueue<WeightedHitEnum> {
-        private final LessThan<WeightedHitEnum> lessThan;
+    private static class HitEnumPriorityQueue extends PriorityQueue<HitEnum> {
+        private final LessThan<HitEnum> lessThan;
         
-        private HitEnumPriorityQueue(Collection<WeightedHitEnum> hitEnums, LessThan<WeightedHitEnum> lessThan) {
+        private HitEnumPriorityQueue(Collection<? extends HitEnum> hitEnums, LessThan<HitEnum> lessThan) {
             super(hitEnums.size());
             this.lessThan = lessThan;
             
             // Now that we've set that comparator we can add everything to the queue.
-            for (WeightedHitEnum e: hitEnums) {
+            for (HitEnum e: hitEnums) {
                 if (e.next()) {
                     this.add(e);
                 }
@@ -75,7 +69,7 @@ public class MergingHitEnum implements WeightedHitEnum {
         }
 
         @Override
-        protected boolean lessThan(WeightedHitEnum a, WeightedHitEnum b) {
+        protected boolean lessThan(HitEnum a, HitEnum b) {
             return lessThan.lessThan(a, b);
         }
     }

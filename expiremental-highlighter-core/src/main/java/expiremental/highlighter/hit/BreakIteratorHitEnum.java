@@ -9,12 +9,15 @@ import expiremental.highlighter.HitEnum;
  */
 public final class BreakIteratorHitEnum implements HitEnum {
 	private final BreakIterator itr;
+	private final HitWeigher weigher;
 	private int position = -1;
 	private int startOffset;
 	private int endOffset;
+	private float weight;
 
-	public BreakIteratorHitEnum(BreakIterator itr) {
+	public BreakIteratorHitEnum(BreakIterator itr, HitWeigher weigher) {
 		this.itr = itr;
+		this.weigher = weigher;
 		startOffset = itr.first();
 	}
 
@@ -27,7 +30,12 @@ public final class BreakIteratorHitEnum implements HitEnum {
 	        endOffset = itr.next();
 	    }
 		position++;
-		return endOffset != BreakIterator.DONE;
+		if (endOffset == BreakIterator.DONE) {
+		    return false;
+		} else {
+		    weight = weigher.weight(position, startOffset, endOffset);
+		    return true;
+		}
 	}
 
 	@Override
@@ -43,5 +51,10 @@ public final class BreakIteratorHitEnum implements HitEnum {
 	@Override
 	public int endOffset() {
 		return endOffset;
+	}
+	
+	@Override
+	public float weight() {
+	    return weight;
 	}
 }

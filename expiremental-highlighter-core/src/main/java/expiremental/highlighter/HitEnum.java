@@ -27,6 +27,11 @@ public interface HitEnum extends Segment {
      * The end offset of the current term within the text.
      */
     int endOffset();
+
+    /**
+     * Weight of the hit.  Only positive numbers are valid.
+     */
+    float weight();
     
     public static enum LessThans implements LessThan<HitEnum> {
         /**
