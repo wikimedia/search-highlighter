@@ -9,12 +9,14 @@ import expiremental.highlighter.Segment;
 import expiremental.highlighter.Segmenter;
 import expiremental.highlighter.Snippet;
 import expiremental.highlighter.Snippet.Hit;
+import expiremental.highlighter.SnippetChooser;
 
 /**
  * Starts the first snippet on the first hit, the second on the next hit after
  * the first snippet ends, etc.  HitEnum must be in startOffset and endOffset for this to work properly.
  */
-public class BasicSnippetChooser {
+public class BasicSnippetChooser implements SnippetChooser {
+    @Override
     public List<Snippet> choose(Segmenter segmenter, HitEnum e, int max) {
         if (!e.next()) {
             return Collections.emptyList();

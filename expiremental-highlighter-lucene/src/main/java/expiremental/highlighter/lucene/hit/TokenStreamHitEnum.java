@@ -50,6 +50,7 @@ public class TokenStreamHitEnum implements HitEnum {
             if (!tokenStream.incrementToken()) {
                 return false;
             }
+            termRef.fillBytesRef();
             position += positionIncr.getPositionIncrement();
             weight = weigher.weigh(term);
             return true;
