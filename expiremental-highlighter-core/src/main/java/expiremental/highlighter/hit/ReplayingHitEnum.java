@@ -25,6 +25,13 @@ public class ReplayingHitEnum implements HitEnum {
         return hits.size();
     }
 
+    /**
+     * Clear all records.
+     */
+    public void clear() {
+        hits.clear();
+    }
+
     @Override
     public boolean next() {
         current = hits.poll();

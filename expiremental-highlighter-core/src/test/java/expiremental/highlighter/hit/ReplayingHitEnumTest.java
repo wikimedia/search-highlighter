@@ -71,4 +71,16 @@ public class ReplayingHitEnumTest {
         assertThat(e, allOf(atPosition(10), atStartOffset(4), atEndOffset(20), atWeight(0)));
         assertThat(e, isEmpty());
     }
+
+    @Test
+    public void clearable() {
+        ReplayingHitEnum e = new ReplayingHitEnum();
+        e.record(0, 0, 2, 0);
+        e.record(0, 0, 2, 0);
+        e.record(0, 0, 2, 0);
+        assertThat(e, advances());
+        assertThat(e, allOf(atPosition(0), atStartOffset(0), atEndOffset(2), atWeight(0)));
+        e.clear();
+        assertThat(e, isEmpty());
+    }
 }

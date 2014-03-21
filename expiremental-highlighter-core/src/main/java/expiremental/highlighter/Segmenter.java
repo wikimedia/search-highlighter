@@ -1,20 +1,15 @@
 package expiremental.highlighter;
 
-import java.util.List;
-
-import expiremental.highlighter.Snippet.Hit;
-
 public interface Segmenter {
     /**
-     * Find the end offset given a hit offset. Might want to scan forwards and
-     * find a sentence break, for example.
+     * Find the start and end offset given a the start of the first and end of
+     * the last hit.
      */
-    Snippet buildSnippet(int firstHitStartOffset, int lastHitEndOffset, List<Hit> hits);
+    Segment pickBounds(int minStartOffset, int maxStartOffset, int minEndOffset, int maxEndOffset);
 
     /**
-     * Would a segment who's first hit starts at firstHitStartOffset and last
-     * hit ends of lastHitEndOffset be acceptable? It might not be, for
-     * instance, if it were too long.
+     * Would a segment between maxStartOffset and minEndOffset be acceptable? It
+     * might not be, for instance, if it were too long.
      */
-    boolean acceptable(int firstHitStartOffset, int lastHitEndOffset);
+    boolean acceptable(int maxStartOffset, int minEndOffset);
 }

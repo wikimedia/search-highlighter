@@ -22,7 +22,7 @@ public class CharScanningSegmenterTest {
         Segmenter segmenter = new CharScanningSegmenter(source, 200, 20);
         SourceExtracter<String> extracter = new StringSourceExtracter(source);
         assertTrue(segmenter.acceptable(0, 0));
-        assertThat(segmenter.buildSnippet(0, 0, null), extracted(extracter, equalTo("")));
+        assertThat(segmenter.pickBounds(0, 0, 0, Integer.MAX_VALUE), extracted(extracter, equalTo("")));
     }
 
     @Test
@@ -30,8 +30,8 @@ public class CharScanningSegmenterTest {
         String source = "a";
         Segmenter segmenter = new CharScanningSegmenter(source, 200, 20);
         SourceExtracter<String> extracter = new StringSourceExtracter(source);
-        assertTrue(segmenter.acceptable(0, 0));
-        assertThat(segmenter.buildSnippet(0, 0, null), extracted(extracter, equalTo("a")));
+        assertTrue(segmenter.acceptable(0, 1));
+        assertThat(segmenter.pickBounds(0, 0, 1, Integer.MAX_VALUE), extracted(extracter, equalTo("a")));
     }
 
     @Test
@@ -42,10 +42,10 @@ public class CharScanningSegmenterTest {
         SourceExtracter<String> extracter = new StringSourceExtracter(source);
         for (int i = 0; i < end; i++) {
             assertTrue(segmenter.acceptable(0, i));
-            assertThat(segmenter.buildSnippet(0, i, null), extracted(extracter, equalTo("short")));
+            assertThat(segmenter.pickBounds(0,  0, i, Integer.MAX_VALUE), extracted(extracter, equalTo("short")));
 
             assertTrue(segmenter.acceptable(i, end));
-            assertThat(segmenter.buildSnippet(i, end, null), extracted(extracter, equalTo("short")));
+            assertThat(segmenter.pickBounds(0, i, end, Integer.MAX_VALUE), extracted(extracter, equalTo("short")));
         }
     }
 
@@ -56,19 +56,49 @@ public class CharScanningSegmenterTest {
         SourceExtracter<String> extracter = new StringSourceExtracter(source);
 
         // Near the beginning
-        assertThat(segmenter.buildSnippet(0, 8, null),
+        assertThat(segmenter.pickBounds(0, 0, 8, Integer.MAX_VALUE),
+                extracted(extracter, equalTo("The quick brown")));
+
+        // Near the beginning
+        assertThat(segmenter.pickBounds(0, 0, 20, Integer.MAX_VALUE),
                 extracted(extracter, equalTo("The quick brown fox jumped")));
 
         // Near the end
-        assertThat(segmenter.buildSnippet(35, 43, null),
-                extracted(extracter, equalTo("jumped over the lazy dog.")));
+        assertThat(segmenter.pickBounds(0, 35, 43, Integer.MAX_VALUE),
+                extracted(extracter, equalTo("over the lazy dog.")));
 
         // In the middle
-        assertThat(segmenter.buildSnippet(20, 25, null),
-                extracted(extracter, equalTo("quick brown fox jumped over the lazy")));
+        assertThat(segmenter.pickBounds(0, 20, 25, Integer.MAX_VALUE),
+                extracted(extracter, equalTo("brown fox jumped over the")));
 
         // This one is actually longer then is acceptable but it shouldn't break then
-        assertThat(segmenter.buildSnippet(0, 21, null),
+        assertThat(segmenter.pickBounds(0, 0, 21, Integer.MAX_VALUE),
                 extracted(extracter, equalTo("The quick brown fox jumped")));
+    }
+
+    @Test
+    public void basicWordBreaksWithClamps() {
+        String source = "The quick brown fox jumped over the lazy dog.";
+        Segmenter segmenter = new CharScanningSegmenter(source, 20, 10);
+        SourceExtracter<String> extracter = new StringSourceExtracter(source);
+
+        // Near the beginning
+        assertThat(segmenter.pickBounds(4, 4, 8, Integer.MAX_VALUE),
+                extracted(extracter, equalTo("quick brown fox")));
+
+        // Near the end
+        assertThat(segmenter.pickBounds(31, 35, 43, Integer.MAX_VALUE),
+                extracted(extracter, equalTo("the lazy dog.")));
+        
+        // In the middle
+        assertThat(segmenter.pickBounds(0, 20, 25, 31),
+                extracted(extracter, equalTo("brown fox jumped over")));
+
+        // This one is actually longer then is acceptable but it shouldn't break then
+        assertThat(segmenter.pickBounds(0, 0, 21, 30),
+                extracted(extracter, equalTo("The quick brown fox jumped")));
+
+        assertThat(segmenter.pickBounds(0, 0, 21, 21),
+                extracted(extracter, equalTo("The quick brown fox j")));
     }
 }

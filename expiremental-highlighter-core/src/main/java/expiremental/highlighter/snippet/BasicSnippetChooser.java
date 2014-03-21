@@ -5,6 +5,7 @@ import java.util.Collections;
 import java.util.List;
 
 import expiremental.highlighter.HitEnum;
+import expiremental.highlighter.Segment;
 import expiremental.highlighter.Segmenter;
 import expiremental.highlighter.Snippet;
 import expiremental.highlighter.Snippet.Hit;
@@ -19,8 +20,8 @@ public class BasicSnippetChooser {
             return Collections.emptyList();
         }
         List<Snippet> results = new ArrayList<Snippet>(max);
+        int lastSnippetEnd = 0;
         while (results.size() < max) {
-            List<Hit> hits = new ArrayList<Hit>(); // TODO populate and test the hits array
             int startOffset = e.startOffset();
             int lastEndOffset = e.endOffset();
             if (!segmenter.acceptable(startOffset, lastEndOffset)) {
@@ -30,17 +31,22 @@ public class BasicSnippetChooser {
                 }
                 continue;
             }
+            List<Hit> hits = new ArrayList<Hit>();
+            hits.add(new Hit(e.startOffset(), e.endOffset()));
             while (true) {
-                if (!e.next()) {
-                    results.add(segmenter.buildSnippet(startOffset, lastEndOffset, hits));
-                    return results;
-                }
+                boolean done = !e.next();
                 int thisEndOffset = e.endOffset();
-                if (!segmenter.acceptable(startOffset, thisEndOffset)) {
-                    results.add(segmenter.buildSnippet(startOffset, lastEndOffset, hits));
+                if (done || !segmenter.acceptable(startOffset, thisEndOffset)) {
+                    Segment bounds = segmenter.pickBounds(lastSnippetEnd, startOffset, lastEndOffset, Integer.MAX_VALUE);
+                    results.add(new Snippet(bounds.startOffset(), bounds.endOffset(), hits));
+                    if (done) {
+                        return results;
+                    }
+                    lastSnippetEnd = bounds.endOffset();
                     // e is now positioned on the hit that should start the next snippet
                     break;
                 }
+                hits.add(new Hit(e.startOffset(), e.endOffset()));
                 lastEndOffset = thisEndOffset;
             }
         }

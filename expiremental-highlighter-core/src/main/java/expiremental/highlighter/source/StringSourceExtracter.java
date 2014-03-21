@@ -11,6 +11,8 @@ public final class StringSourceExtracter implements SourceExtracter<String> {
 
     @Override
     public String extract(int startOffset, int endOffset) {
+        assert startOffset >= 0;
+        assert endOffset <= source.length();
         return source.substring(startOffset, endOffset);
     }
 }

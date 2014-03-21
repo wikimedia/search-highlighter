@@ -1,11 +1,10 @@
 package expiremental.highlighter.snippet;
 
 import java.util.Arrays;
-import java.util.List;
 
+import expiremental.highlighter.Segment;
 import expiremental.highlighter.Segmenter;
-import expiremental.highlighter.Snippet;
-import expiremental.highlighter.Snippet.Hit;
+import expiremental.highlighter.SimpleSegment;
 
 /**
  * Scans a char sequence looking for "boundary characters" to find that start
@@ -40,52 +39,74 @@ public class CharScanningSegmenter implements Segmenter {
     }
 
     @Override
-    public Snippet buildSnippet(int startOffset, int endOffset, List<Hit> hits) {
-        int size = endOffset - startOffset;
-        int margin = Math.max(0, maxSnippetSize - size);
-        startOffset = findStartOffset(Math.max(0, startOffset - margin));
-        endOffset = findEndOffset(Math.min(source.length() - 1, endOffset + margin));
-        return new Snippet(startOffset, endOffset, hits);
-    }
+    public Segment pickBounds(int minStartOffset, int maxStartOffset, int minEndOffset,
+            int maxEndOffset) {
+        // Expand the minimum length segment (from maxStart to minEnd) to
+        // maxSnippetSize
+        int requestedSize = minEndOffset - maxStartOffset;
+        int margin = Math.max(0, maxSnippetSize - requestedSize) / 2;
+        int expandedStartOffset = maxStartOffset - margin;
+        int expandedEndOffset = minEndOffset + margin;
+        int startOffset = -1;
+        int endOffset = -1;
 
-    private int findStartOffset(int startOffset) {
-        // We stop at 1 because if we get to 0 then we'll just split there.
-        int minOffset = Math.max(1, startOffset - maxScan);
-        int scanPos;
-        for (scanPos = startOffset; scanPos >= minOffset; scanPos--) {
-            if (Arrays.binarySearch(boundaryCharacters, source.charAt(scanPos)) >= 0) {
-                return scanPos + 1;  // Got to go one forward to exclude the boundary char we just found.
+        // For each of start and end:
+        // If the expanded segment fits inside the clamp (minStart for start,
+        // maxEnd for end) then walk towards the clamp looking for a boundary
+        if (expandedStartOffset > minStartOffset) {
+            startOffset = findBreakBefore(expandedStartOffset, minStartOffset) + 1;
+        }
+        if (expandedEndOffset < maxEndOffset) {
+            endOffset = findBreakAfter(expandedEndOffset, maxEndOffset);
+        }
+
+        // If that didn't find a boundary or we didn't try:
+        // Either declare the boundary to be the beginning or end of the string or scan backwards from the max to a boundary.
+        if (startOffset < 0) {
+            if (minStartOffset <= 0) {
+                startOffset = 0;
+            } else {
+                startOffset = findBreakAfter(minStartOffset, maxStartOffset) + 1;
+                if (startOffset < 0) {
+                    // No breaks either way!
+                    startOffset = maxStartOffset;
+                }
             }
         }
-        // Found didn't found a boundary before the first character but the
-        // start of the text counts.
-        if (scanPos == 0) {
-            return 0;
+        if (endOffset < 0) {
+            if (maxEndOffset >= source.length()) {
+                endOffset = source.length();
+            } else {
+                endOffset = findBreakBefore(maxEndOffset, minEndOffset);
+                if (endOffset < 0) {
+                    // No breaks either way!
+                    endOffset = minEndOffset;
+                }
+            }
         }
-        // Didn't find a boundary at all so just declare that the hit start was
-        // the boundary
-        return startOffset;
+        return new SimpleSegment(startOffset, endOffset);
     }
 
-    private int findEndOffset(int endOffset) {
-        int length = source.length();
-        // We stop at length - 2 because if we get to the length - 1 we'll just
-        // split there.
-        int maxOffset = Math.min(length - 2, endOffset + maxScan);
+    private int findBreakBefore(int start, int min) {
+        min = Math.max(0, Math.max(min, start - maxScan));
         int scanPos;
-        for (scanPos = endOffset; scanPos <= maxOffset; scanPos++) {
+        for (scanPos = start; scanPos >= min; scanPos--) {
             if (Arrays.binarySearch(boundaryCharacters, source.charAt(scanPos)) >= 0) {
                 return scanPos;
             }
         }
-        // Found didn't found a boundary before the first character but the
-        // start of the text counts.
-        if (scanPos == length - 1) {
-            return length;
+        return -100;
+    }
+
+    private int findBreakAfter(int start, int max) {
+        max = Math.min(source.length(), Math.min(start + maxScan, max));
+        int scanPos;
+        for (scanPos = start; scanPos <= max; scanPos++) {
+            if (Arrays.binarySearch(boundaryCharacters, source.charAt(scanPos)) >= 0) {
+                return scanPos;
+            }
         }
-        // Didn't find a boundary at all so just declare that the hit end was
-        // the boundary
-        return endOffset;
+        return -100;
     }
 
     @Override
