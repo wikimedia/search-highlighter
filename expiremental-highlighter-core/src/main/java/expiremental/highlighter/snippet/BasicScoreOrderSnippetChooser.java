@@ -1,6 +1,7 @@
 package expiremental.highlighter.snippet;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import expiremental.highlighter.Segment;
@@ -53,6 +54,7 @@ public class BasicScoreOrderSnippetChooser extends AbstractBasicSnippetChooser<B
             Segment bounds = state.segmenter.pickBounds(0, proto.startOffset, proto.endOffset, Integer.MAX_VALUE);
             results.add(new Snippet(bounds.startOffset(), bounds.endOffset(), proto.hits));
         }
+        Collections.reverse(results);
         return results;
     }
     @Override

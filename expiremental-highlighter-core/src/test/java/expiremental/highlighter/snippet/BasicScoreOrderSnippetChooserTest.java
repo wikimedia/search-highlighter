@@ -37,7 +37,7 @@ public class BasicScoreOrderSnippetChooserTest extends AbstractBasicSnippetChoos
         assertThat(
                 snippets,
                 contains(extracted(extracter, "over the lazy dog."),
-                        extracted(extracter, "The quick brown fox")));
+                        extracted(extracter, "quick brown fox jumped")));
         assertThat(snippets.get(0).hits(), contains(extracted(extracter, "lazy")));
         assertThat(snippets.get(1).hits(), contains(extracted(extracter, "brown")));
         // "lazy" isn't included because it is in the margin.
