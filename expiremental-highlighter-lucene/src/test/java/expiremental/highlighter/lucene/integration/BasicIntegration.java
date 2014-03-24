@@ -24,7 +24,7 @@ import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.MMapDirectory;
 import org.apache.lucene.util.Version;
 
-import com.carrotsearch.ant.tasks.junit4.dependencies.com.google.common.base.Charsets;
+import com.google.common.base.Charsets;
 import com.google.common.io.Files;
 import com.google.common.io.Resources;
 
@@ -46,8 +46,8 @@ public class BasicIntegration {
     public static void main(String[] args) throws IOException {
         File tmpDir = Files.createTempDir();
         Directory dir = new MMapDirectory(tmpDir);
-        IndexWriterConfig writerConfig = new IndexWriterConfig(Version.LUCENE_47,
-                new EnglishAnalyzer(Version.LUCENE_47, null));
+        IndexWriterConfig writerConfig = new IndexWriterConfig(Version.LUCENE_46,
+                new EnglishAnalyzer(Version.LUCENE_46, null));
         writerConfig.setOpenMode(OpenMode.CREATE);
         IndexWriter writer = new IndexWriter(dir, writerConfig);
 
@@ -118,7 +118,7 @@ public class BasicIntegration {
     
     private static HitEnum plainHighlighterHitEnum(BasicQueryWeigher queryWeigher, String data) throws IOException {
         // Yeah, doesn't close anything....
-        Analyzer analyzer = new EnglishAnalyzer(Version.LUCENE_47, null);
+        Analyzer analyzer = new EnglishAnalyzer(Version.LUCENE_46, null);
         TokenStream t = analyzer.tokenStream("text", data);
         HitEnum e = new TokenStreamHitEnum(t, queryWeigher.termWeigher());
         return new WeightFilteredHitEnumWrapper(e, 0);

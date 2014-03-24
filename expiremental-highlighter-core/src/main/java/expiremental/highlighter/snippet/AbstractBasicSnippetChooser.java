@@ -36,12 +36,13 @@ public abstract class AbstractBasicSnippetChooser<S> implements SnippetChooser {
             hits.add(new Hit(e.startOffset(), e.endOffset(), e.weight()));
             while (true) {
                 boolean done = !e.next();
-                int thisEndOffset = e.endOffset();
-                if (done || !segmenter.acceptable(startOffset, thisEndOffset)) {
+                if (done) {
                     snippet(state, startOffset, lastEndOffset, hits);
-                    if (done) {
-                        return results(state);
-                    }
+                    return results(state);                    
+                }
+                int thisEndOffset = e.endOffset();
+                if (!segmenter.acceptable(startOffset, thisEndOffset)) {
+                    snippet(state, startOffset, lastEndOffset, hits);
                     // e is now positioned on the hit that should start the next snippet
                     break;
                 }

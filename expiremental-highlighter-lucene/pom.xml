@@ -12,10 +12,6 @@
 
   <name>Lucene backed implementations of interfaces for expiremental highlighter</name>
 
-  <properties>
-    <lucene.version>4.7.0</lucene.version>
-  </properties>
-
   <dependencies>
     <dependency>
       <groupId>nik9000</groupId>

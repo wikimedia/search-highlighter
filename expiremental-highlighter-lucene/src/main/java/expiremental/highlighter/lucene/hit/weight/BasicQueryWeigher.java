@@ -45,6 +45,8 @@ public class BasicQueryWeigher {
                 }
             }
         });
+        // TODO acceptable should be built lazily.
+        // TODO acceptable should grab the queries that can become automatons and merge them rather then blow them out.
         acceptable = new CompiledAutomaton(BasicAutomata.makeStringUnion(exactMatches.keySet()));
     }
 
