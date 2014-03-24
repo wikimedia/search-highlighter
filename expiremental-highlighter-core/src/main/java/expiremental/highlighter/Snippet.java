@@ -28,18 +28,26 @@ public class Snippet implements Segment {
     public static class Hit implements Segment {
         private final int startOffset;
         private final int endOffset;
+        private final float weight;
 
-        public Hit(int startOffset, int endOffset) {
+        public Hit(int startOffset, int endOffset, float weight) {
             this.startOffset = startOffset;
             this.endOffset = endOffset;
+            this.weight = weight;
         }
 
+        @Override
         public int startOffset() {
             return startOffset;
         }
 
+        @Override
         public int endOffset() {
             return endOffset;
+        }
+        
+        public float weight() {
+            return weight;
         }
     }
 }

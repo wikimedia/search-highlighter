@@ -23,7 +23,6 @@ import org.apache.lucene.search.TermQuery;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.MMapDirectory;
 import org.apache.lucene.util.Version;
-import org.junit.Test;
 
 import com.carrotsearch.ant.tasks.junit4.dependencies.com.google.common.base.Charsets;
 import com.google.common.io.Files;
@@ -39,7 +38,7 @@ import expiremental.highlighter.hit.WeightFilteredHitEnumWrapper;
 import expiremental.highlighter.lucene.hit.DocsAndPositionsHitEnum;
 import expiremental.highlighter.lucene.hit.TokenStreamHitEnum;
 import expiremental.highlighter.lucene.hit.weight.BasicQueryWeigher;
-import expiremental.highlighter.snippet.BasicSnippetChooser;
+import expiremental.highlighter.snippet.BasicSourceOrderSnippetChooser;
 import expiremental.highlighter.snippet.CharScanningSegmenter;
 import expiremental.highlighter.source.StringSourceExtracter;
 
@@ -100,7 +99,7 @@ public class BasicIntegration {
 //        HitEnum e = plainHighlighterHitEnum(queryWeigher, data);
 //        HitEnum e = fastVectorHighlighterHitEnum(queryWeigher, reader);
         Segmenter segmenter = new CharScanningSegmenter(data, 150, 20);
-        SnippetChooser chooser = new BasicSnippetChooser();
+        SnippetChooser chooser = new BasicSourceOrderSnippetChooser();
         SourceExtracter<String> extracter = new StringSourceExtracter(data);
         Snippet snippet = chooser.choose(segmenter, e, 1).get(0);
         SnippetFormatter formatter = new SnippetFormatter(extracter, "*", "*");
