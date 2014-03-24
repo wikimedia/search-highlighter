@@ -1,0 +1,3 @@
+BreakIterator based segmenter.  It'll look like the PostingsHighligher.
+Interface for weighing all hits in a snippet together.  Probably only useful for BasicScoreOrderSnippetChooser but that'll be similar to PostingsHighlighter too.
+Combining matches.
