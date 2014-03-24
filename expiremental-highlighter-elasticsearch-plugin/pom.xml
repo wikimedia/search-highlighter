@@ -19,6 +19,13 @@
       <version>${project.parent.version}</version>
     </dependency>
     <dependency>
+      <!-- This must come before expiremental-highlighter-lucene or it won't work. -->
+      <groupId>org.apache.lucene</groupId>
+      <artifactId>lucene-test-framework</artifactId>
+      <version>${lucene.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
       <groupId>nik9000</groupId>
       <artifactId>expiremental-highlighter-lucene</artifactId>
       <version>${project.parent.version}</version>
