@@ -33,7 +33,7 @@ public class QueryFlattener {
         flatten(query, 1f, reader, callback);
     }
 
-    private void flatten(Query query, float pathBoost, IndexReader reader, Callback callback) {
+    protected void flatten(Query query, float pathBoost, IndexReader reader, Callback callback) {
         if (query instanceof TermQuery) {
             callback.flattened((TermQuery) query, pathBoost);
         } else if (query instanceof PhraseQuery) {

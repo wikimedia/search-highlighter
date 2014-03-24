@@ -13,7 +13,8 @@ import expiremental.highlighter.hit.TermWeigher;
 import expiremental.highlighter.lucene.WrappedExceptionFromLucene;
 
 /**
- * Enumerate hits by pumping a TokenStream.  Similar to how the "plain" highlighter works in Lucene.
+ * Enumerate hits by pumping a TokenStream.  Similar to how the "plain" highlighter works in Lucene.  Note that this will enumerate all hits, even those
+ * that have 0 weight.  It really should be wrapped with a {@link WeightFilteredHitEnumWrapper} to filter out hits with 0 weight.
  */
 public class TokenStreamHitEnum implements HitEnum {
     private final TokenStream tokenStream;
