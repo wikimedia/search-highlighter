@@ -1,16 +1,64 @@
 package expiremental.highlighter.snippet;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import expiremental.highlighter.Segment;
 import expiremental.highlighter.Segmenter;
+import expiremental.highlighter.SimpleSegment;
 
 /**
  * Combines the results of multiple Segmenters in order. Adds hard stops between
  * each segmenter's segments. This segmenter isn't thread safe by a long shot.
  */
-public class MultiSegmenter implements Segmenter {
+public final class MultiSegmenter implements Segmenter {
+    /**
+     * Make a builder for the segmenter with an offsetGap of 1.
+     */
+    public static Builder builder() {
+        return new Builder(1);
+    }
+
+    /**
+     * Make a builder for the segmenter.
+     * 
+     * @param offsetGap gap between segmenters
+     */
+    public static Builder builder(int offsetGap) {
+        return new Builder(offsetGap);
+    }
+
+    /**
+     * Builder for {@linkplain MultiSegmenter}s.
+     */
+    public static class Builder {
+        private final List<ConstituentSegmenter> segmenters = new ArrayList<ConstituentSegmenter>();
+        private final int offsetGap;
+        private Builder(int offsetGap) {
+            this.offsetGap = offsetGap;
+        }
+        /**
+         * Add a segmenter.
+         * @param segmenter the segmenter to delegate to
+         * @param length the length of the source underlying the segmenter
+         * @return this for chaining
+         */
+        public Builder add(Segmenter segmenter, int length) {
+            segmenters.add(new ConstituentSegmenter(segmenter, length));
+            return this;
+        }
+        public MultiSegmenter build() {
+            return new MultiSegmenter(segmenters, offsetGap);
+        }
+    }
+
+    /**
+     * Gap between segmenters.
+     */
+    private final int offsetGap;
+
     private final List<ConstituentSegmenter> segmenters;
+    
     /**
      * The index of the last segmenter we used. We try to reuse it rather then
      * hunt it down again because it is likely to be reused frequently. At least
@@ -33,10 +81,14 @@ public class MultiSegmenter implements Segmenter {
      */
     private int inSegmenterStartOffset;
 
-    public MultiSegmenter(List<ConstituentSegmenter> segmenters) {
+    private MultiSegmenter(List<ConstituentSegmenter> segmenters, int offsetGap) {
         this.segmenters = segmenters;
+        this.offsetGap = offsetGap;
     }
-
+    
+    /**
+     * Segmenters to which the MultiSegmenter delegates.
+     */
     public static class ConstituentSegmenter {
         private final Segmenter segmenter;
         private final int length;
@@ -53,11 +105,14 @@ public class MultiSegmenter implements Segmenter {
         if (!updateSegmenter(maxStartOffset)) {
             throw new IllegalArgumentException("Start offset outside the bounds of all segmenters.");
         }
+        maxStartOffset = Math.max(0, maxStartOffset - lastStartOffset);
         minStartOffset = Math.max(0, minStartOffset - lastStartOffset);
         minEndOffset = Math.min(segmenter.length, minEndOffset - lastStartOffset);
         maxEndOffset = Math.min(segmenter.length, maxEndOffset - lastStartOffset);
-        return segmenter.segmenter.pickBounds(minStartOffset, maxStartOffset, minEndOffset,
+        Segment picked = segmenter.segmenter.pickBounds(minStartOffset, maxStartOffset, minEndOffset,
                 maxEndOffset);
+        // Now we have to transform the coordinants of the segmenter back into the merged coordinants
+        return new SimpleSegment(picked.startOffset() + lastStartOffset, picked.endOffset() + lastStartOffset);
     }
 
     @Override
@@ -66,7 +121,8 @@ public class MultiSegmenter implements Segmenter {
             return false;
         }
         minEndOffset -= lastStartOffset;
-        if (minEndOffset > segmenter.length) {
+        // inSegmenterStartOffset is only going to be 0 if we ask for a hit _between_ segments.
+        if (minEndOffset > segmenter.length || inSegmenterStartOffset < 0) {
             return false;
         }
         return segmenter.segmenter.acceptable(maxStartOffset, minEndOffset);
@@ -89,8 +145,8 @@ public class MultiSegmenter implements Segmenter {
             return findSegmenterBackwards();
         }
         if (inSegmenterStartOffset >= segmenter.length) {
-            inSegmenterStartOffset -= segmenter.length;
-            lastStartOffset += segmenter.length;
+            inSegmenterStartOffset -= segmenter.length + offsetGap;
+            lastStartOffset += segmenter.length + offsetGap;
             return findSegmenterForwards();
         }
         // We're already on the segmenter we need.
@@ -113,8 +169,8 @@ public class MultiSegmenter implements Segmenter {
                 segmenter = candidate;
                 return true;
             }
-            inSegmenterStartOffset -= candidate.length;
-            lastStartOffset += candidate.length;
+            inSegmenterStartOffset -= candidate.length + offsetGap;
+            lastStartOffset += candidate.length + offsetGap;
         }
         return false;
     }
@@ -131,8 +187,8 @@ public class MultiSegmenter implements Segmenter {
         assert inSegmenterStartOffset < 0;
         for (segmenterIndex -= 1; segmenterIndex >= 0; segmenterIndex--) {
             ConstituentSegmenter candidate = segmenters.get(segmenterIndex);
-            inSegmenterStartOffset += candidate.length;
-            lastStartOffset -= candidate.length;
+            inSegmenterStartOffset += candidate.length + offsetGap;
+            lastStartOffset -= candidate.length + offsetGap;
             if (inSegmenterStartOffset >= 0) {
                 segmenter = candidate;
                 return true;

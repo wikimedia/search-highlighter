@@ -1,6 +1,9 @@
 package expiremental.highlighter.source;
 
+import java.util.ArrayList;
 import java.util.List;
+
+import expiremental.highlighter.SourceExtracter;
 
 /**
  * Extracter that can extract from multiple extracters but never more then one
@@ -11,8 +14,43 @@ import java.util.List;
  * </ul>
  */
 public class NonMergingMultiSourceExtracter<T> extends AbstractMultiSourceExtracter<T> {
-    public NonMergingMultiSourceExtracter(List<ConstituentExtracter<T>> extracters) {
-        super(extracters);
+    /**
+     * Make a builder for the segmenter with an offsetGap of 1.
+     */
+    public static <T> Builder<T> builder() {
+        return new Builder<T>(1);
+    }
+
+    /**
+     * Make a builder for the segmenter.
+     * 
+     * @param offsetGap the gap between the extracters
+     */
+    public static <T> Builder<T> builder(int offsetGap) {
+        return new Builder<T>(offsetGap);
+    }
+
+    /**
+     * Builder for {@linkplain StringMergingMultiSourceExtracter}s.
+     */
+    public static class Builder<T> implements AbstractMultiSourceExtracter.Builder<T, Builder<T>>{
+        private final List<ConstituentExtracter<T>> extracters = new ArrayList<ConstituentExtracter<T>>();
+        private final int offsetGap;
+
+        private Builder(int offsetGap) {
+            this.offsetGap = offsetGap;
+        }
+        public Builder<T> add(SourceExtracter<T> extracter, int length) {
+            extracters.add(new ConstituentExtracter<T>(extracter, length));
+            return this;
+        }
+        public NonMergingMultiSourceExtracter<T> build() {
+            return new NonMergingMultiSourceExtracter<T>(extracters, offsetGap);
+        }
+    }
+
+    private NonMergingMultiSourceExtracter(List<ConstituentExtracter<T>> extracters, int offsetGap) {
+        super(extracters, offsetGap);
     }
 
     @Override

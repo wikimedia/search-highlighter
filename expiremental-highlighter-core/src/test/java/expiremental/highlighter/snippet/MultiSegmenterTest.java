@@ -1,51 +1,51 @@
 package expiremental.highlighter.snippet;
 
 import static expiremental.highlighter.Matchers.extracted;
-import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import com.carrotsearch.randomizedtesting.RandomizedRunner;
-import com.google.common.collect.ImmutableList;
+import com.carrotsearch.randomizedtesting.RandomizedTest;
+import com.google.common.base.Strings;
 
 import expiremental.highlighter.Segmenter;
 import expiremental.highlighter.SourceExtracter;
-import expiremental.highlighter.snippet.MultiSegmenter.ConstituentSegmenter;
+import expiremental.highlighter.source.StringMergingMultiSourceExtracter;
 import expiremental.highlighter.source.StringSourceExtracter;
 
 @RunWith(RandomizedRunner.class)
-public class MultiSegmenterTest {
+public class MultiSegmenterTest extends RandomizedTest {
+    private int offsetGap;
+    private Segmenter segmenter;
+    private SourceExtracter<String> extracter;
+    
+    @Test
+    public void empty() {
+        setup();
+        assertFalse(segmenter.acceptable(0, 1));
+    }
+
     @Test
     public void singleEmptyString() {
-        String source = "";
-        Segmenter segmenter = new MultiSegmenter(ImmutableList.of(new ConstituentSegmenter(
-                new CharScanningSegmenter(source, 200, 20), source.length())));
+        setup("");
+        assertFalse(segmenter.acceptable(0, 1));
+        // Check again now that we don't have to pick a new segmenter
         assertFalse(segmenter.acceptable(0, 1));
     }
 
     @Test
     public void multipleEmptyString() {
-        String source = "";
-        Segmenter segmenter = new MultiSegmenter(ImmutableList.of(
-                new ConstituentSegmenter(new CharScanningSegmenter(source, 200, 20), source
-                        .length()),
-                new ConstituentSegmenter(new CharScanningSegmenter(source, 200, 20), source
-                        .length()), new ConstituentSegmenter(new CharScanningSegmenter(source, 200,
-                        20), source.length()), new ConstituentSegmenter(new CharScanningSegmenter(
-                        source, 200, 20), source.length())));
+        setup("", "", "", "");
+        assertFalse(segmenter.acceptable(0, 1));
+        // Check again now that we don't have to pick a new segmenter
         assertFalse(segmenter.acceptable(0, 1));
     }
 
     @Test
     public void singleStringSingleChar() {
-        String source = "a";
-        Segmenter segmenter = new MultiSegmenter(ImmutableList.of(new ConstituentSegmenter(
-                new CharScanningSegmenter(source, 200, 20), source.length())));
-        SourceExtracter<String> extracter = new StringSourceExtracter(source);
+        setup("a");
         assertTrue(segmenter.acceptable(0, 1));
         assertThat(segmenter.pickBounds(0, 0, 1, Integer.MAX_VALUE),
                 extracted(extracter, equalTo("a")));
@@ -54,28 +54,17 @@ public class MultiSegmenterTest {
 
     @Test
     public void startWithSomeEmptyThenSingleChar() {
-        String source = "a";
-        Segmenter segmenter = new MultiSegmenter(ImmutableList.of(new ConstituentSegmenter(
-                new CharScanningSegmenter(source, 200, 20), 0), new ConstituentSegmenter(
-                new CharScanningSegmenter(source, 200, 20), 0), new ConstituentSegmenter(
-                new CharScanningSegmenter(source, 200, 20), 0), new ConstituentSegmenter(
-                new CharScanningSegmenter(source, 200, 20), source.length())));
-        SourceExtracter<String> extracter = new StringSourceExtracter(source);
-        assertTrue(segmenter.acceptable(0, 1));
-        assertThat(segmenter.pickBounds(0, 0, 1, Integer.MAX_VALUE),
+        setup("", "", "", "a");
+        assertTrue(segmenter.acceptable(offsetGap * 3, offsetGap * 3 + 1));
+        assertThat(segmenter.pickBounds(0, offsetGap * 3, offsetGap * 3 + 1, Integer.MAX_VALUE),
                 extracted(extracter, equalTo("a")));
-        assertFalse(segmenter.acceptable(0, 2));
+        assertFalse(segmenter.acceptable(0, 1));
+        assertFalse(segmenter.acceptable(offsetGap * 3, offsetGap * 3 + 3));
     }
 
     @Test
     public void startWithSingleCharThenSomeEmpty() {
-        String source = "a";
-        Segmenter segmenter = new MultiSegmenter(ImmutableList.of(new ConstituentSegmenter(
-                new CharScanningSegmenter(source, 200, 20), source.length()),
-                new ConstituentSegmenter(new CharScanningSegmenter(source, 200, 20), 0),
-                new ConstituentSegmenter(new CharScanningSegmenter(source, 200, 20), 0),
-                new ConstituentSegmenter(new CharScanningSegmenter(source, 200, 20), 0)));
-        SourceExtracter<String> extracter = new StringSourceExtracter(source);
+        setup("a", "", "", "", "");
         assertTrue(segmenter.acceptable(0, 1));
         assertThat(segmenter.pickBounds(0, 0, 1, Integer.MAX_VALUE),
                 extracted(extracter, equalTo("a")));
@@ -84,29 +73,18 @@ public class MultiSegmenterTest {
 
     @Test
     public void startWithSingleCharThenSomeOthers() {
-        String source = "a";
-        String source2 = "The quick brown for jumped over the lazy dog.";
-        Segmenter segmenter = new MultiSegmenter(ImmutableList.of(
-                new ConstituentSegmenter(new CharScanningSegmenter(source, 200, 20), source
-                        .length()),
-                new ConstituentSegmenter(new CharScanningSegmenter(source, 200, 20), 0),
-                new ConstituentSegmenter(new CharScanningSegmenter(source, 200, 20), 0),
-                new ConstituentSegmenter(new CharScanningSegmenter(source, 200, 20), 0),
-                new ConstituentSegmenter(new CharScanningSegmenter(source2, 200, 20), source2
-                        .length())));
-
+        setup("a", "", "", "", "The quick brown fox jumped over the lazy dog.");
         // Grab some matches from the first string
-        SourceExtracter<String> extracter = new StringSourceExtracter(source);
         assertTrue(segmenter.acceptable(0, 1));
         assertThat(segmenter.pickBounds(0, 0, 1, Integer.MAX_VALUE),
                 extracted(extracter, equalTo("a")));
         assertFalse(segmenter.acceptable(0, 2));
 
         // Now jump to the second
-        SourceExtracter<String> extracter2 = new StringSourceExtracter(source2);
-        assertTrue(segmenter.acceptable(1, 7));
-        assertThat(segmenter.pickBounds(0, 7, 35, Integer.MAX_VALUE),
-                extracted(extracter2, equalTo("The quick brown for jumped over the lazy dog.")));
+        assertTrue(segmenter.acceptable(offsetGap * 4 + 5, offsetGap * 4 + 36));
+        assertThat(
+                segmenter.pickBounds(0, offsetGap * 4 + 5, offsetGap * 4 + 36, Integer.MAX_VALUE),
+                extracted(extracter, equalTo("The quick brown fox jumped over the lazy dog.")));
 
         // Now jump back to the first
         assertTrue(segmenter.acceptable(0, 1));
@@ -114,4 +92,35 @@ public class MultiSegmenterTest {
                 extracted(extracter, equalTo("a")));
     }
 
+    @Test
+    public void twoSentences() {
+        setup("a very simple test", "with two fields to test");
+        // Grab some matches from the first string
+        assertTrue(segmenter.acceptable(14, 18));
+        assertThat(segmenter.pickBounds(0, 14, 1, Integer.MAX_VALUE),
+                extracted(extracter, equalTo("a very simple test")));
+        assertFalse(segmenter.acceptable(16, 25));
+
+        // Now jump to the second
+        assertTrue(segmenter.acceptable(offsetGap + 34, offsetGap + 38));
+        assertThat(segmenter.pickBounds(0, offsetGap + 34, offsetGap + 38, Integer.MAX_VALUE),
+                extracted(extracter, equalTo("with two fields to test")));
+    }
+
+    /**
+     * Build a builder with a random offsetGap, a
+     * StringMergingMultiSourceExtracter with the gap and record the gap.
+     */
+    private void setup(String... sources) {
+        offsetGap = rarely() ? between(0, 100) : 1;
+        MultiSegmenter.Builder builder = MultiSegmenter.builder(offsetGap);
+        StringMergingMultiSourceExtracter.Builder extracterBuilder = StringMergingMultiSourceExtracter
+                .builder(Strings.repeat(" ", offsetGap));
+        for (String source : sources) {
+            builder.add(new CharScanningSegmenter(source, 200, 20), source.length());
+            extracterBuilder.add(new StringSourceExtracter(source), source.length());
+        }
+        segmenter = builder.build();
+        extracter = extracterBuilder.build();
+    }
 }

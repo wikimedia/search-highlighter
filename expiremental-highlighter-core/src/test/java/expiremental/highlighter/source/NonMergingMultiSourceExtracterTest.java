@@ -1,18 +1,13 @@
 package expiremental.highlighter.source;
 
-import static org.junit.Assert.fail;
-
-import java.util.List;
-
 import org.junit.Test;
 
-import expiremental.highlighter.SourceExtracter;
-import expiremental.highlighter.source.AbstractMultiSourceExtracter.ConstituentExtracter;
+import expiremental.highlighter.source.AbstractMultiSourceExtracter.Builder;
 
 public class NonMergingMultiSourceExtracterTest extends AbstractMultiSourceExtracterTestBase {
     @Override
-    protected SourceExtracter<String> build(List<ConstituentExtracter<String>> extracters) {
-        return new NonMergingMultiSourceExtracter<String>(extracters);
+    protected Builder<String, ? extends Builder<String, ?>> builder(int offsetGap) {
+        return NonMergingMultiSourceExtracter.builder(offsetGap);
     }
 
     @Test

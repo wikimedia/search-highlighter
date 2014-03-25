@@ -1,11 +1,26 @@
 package expiremental.highlighter.hit;
 
-import org.junit.Test;
-import static org.hamcrest.Matchers.*;
-import static expiremental.highlighter.Matchers.*;
-import static org.junit.Assert.*;
+import static expiremental.highlighter.Matchers.advances;
+import static expiremental.highlighter.Matchers.atEndOffset;
+import static expiremental.highlighter.Matchers.atPosition;
+import static expiremental.highlighter.Matchers.atStartOffset;
+import static expiremental.highlighter.Matchers.atWeight;
+import static expiremental.highlighter.Matchers.isEmpty;
+import static org.hamcrest.Matchers.allOf;
 
-public class ReplayingHitEnumTest {
+import java.util.ArrayList;
+import java.util.List;
+
+import org.junit.Test;
+import org.junit.runner.RunWith;
+
+import com.carrotsearch.randomizedtesting.RandomizedRunner;
+import com.carrotsearch.randomizedtesting.RandomizedTest;
+
+import expiremental.highlighter.HitEnum;
+
+@RunWith(RandomizedRunner.class)
+public class ReplayingHitEnumTest extends RandomizedTest {
     @Test
     public void empty() {
         ReplayingHitEnum e = new ReplayingHitEnum();
@@ -82,5 +97,27 @@ public class ReplayingHitEnumTest {
         assertThat(e, allOf(atPosition(0), atStartOffset(0), atEndOffset(2), atWeight(0)));
         e.clear();
         assertThat(e, isEmpty());
+    }
+    
+    @Test
+    public void recordWholeIterator() {
+        List<HitEnum> allEnums = new ArrayList<HitEnum>();
+        for (int i = 0; i < 100; i++) {
+            ReplayingHitEnum input = new ReplayingHitEnum();
+            for (int j = 0; j < 100; j++) {
+                input.record(j, j - 10, j, i * 100 + j);
+            }
+            allEnums.add(input);
+        }
+        ReplayingHitEnum e = new ReplayingHitEnum();
+        e.record(allEnums.iterator(), 1, 1);
+        assertEquals(e.waiting(), 10000);
+        for (int i = 0; i < 10000; i++) {
+            assertEquals(e.waiting(), 10000 - i);
+            assertThat(e, advances());
+            assertThat(e, allOf(atPosition(i), atStartOffset(i - 10), atEndOffset(i), atWeight(i)));
+        }
+        assertThat(e, isEmpty());
+        assertEquals(e.waiting(), 0);
     }
 }
