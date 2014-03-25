@@ -101,4 +101,15 @@ public abstract class AbstractBasicSnippetChooserTestBase {
                         extracted(extracter, "dog")));
         // Jumped is not in the list because it is in the margin...
     }
+    
+    @Test
+    @SuppressWarnings("unchecked")
+    public void twoHits() {
+        setup("lets test a very long sentence that'll split into two matches because test");
+        List<Snippet> snippets = chooser.choose(segmenter, hitEnum, 2);
+        assertThat(snippets, contains(extracted(extracter, "lets test a very long"),
+                extracted(extracter, "two matches because test")));
+        assertThat(snippets.get(0).hits(), contains(extracted(extracter, "test")));
+        assertThat(snippets.get(1).hits(), contains(extracted(extracter, "test")));
+    }
 }

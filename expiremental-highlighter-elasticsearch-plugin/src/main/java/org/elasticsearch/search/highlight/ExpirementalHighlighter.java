@@ -2,13 +2,17 @@ package org.elasticsearch.search.highlight;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.index.FieldInfo;
+import org.elasticsearch.common.base.Function;
+import org.elasticsearch.common.collect.Iterators;
 import org.elasticsearch.common.text.StringText;
 import org.elasticsearch.common.text.Text;
+import org.elasticsearch.index.mapper.core.StringFieldMapper;
 import org.elasticsearch.search.fetch.FetchPhaseExecutionException;
 import org.elasticsearch.search.highlight.SearchContextHighlight.FieldOptions;
 
@@ -19,6 +23,7 @@ import expiremental.highlighter.SnippetChooser;
 import expiremental.highlighter.SnippetFormatter;
 import expiremental.highlighter.SourceExtracter;
 import expiremental.highlighter.elasticsearch.ElasticsearchQueryFlattener;
+import expiremental.highlighter.hit.ConcatHitEnum;
 import expiremental.highlighter.hit.WeightFilteredHitEnumWrapper;
 import expiremental.highlighter.lucene.hit.DocsAndPositionsHitEnum;
 import expiremental.highlighter.lucene.hit.TokenStreamHitEnum;
@@ -27,8 +32,6 @@ import expiremental.highlighter.snippet.BasicScoreOrderSnippetChooser;
 import expiremental.highlighter.snippet.BasicSourceOrderSnippetChooser;
 import expiremental.highlighter.snippet.CharScanningSegmenter;
 import expiremental.highlighter.snippet.MultiSegmenter;
-import expiremental.highlighter.snippet.MultiSegmenter.ConstituentSegmenter;
-import expiremental.highlighter.source.AbstractMultiSourceExtracter.ConstituentExtracter;
 import expiremental.highlighter.source.NonMergingMultiSourceExtracter;
 import expiremental.highlighter.source.StringSourceExtracter;
 
@@ -76,9 +79,9 @@ public class ExpirementalHighlighter implements Highlighter {
          */
         private List<String> source;
         /**
-         * Any TokenStreams required for highlighting.
+         * If there is a TokenStream still open during the highlighting.
          */
-        private List<TokenStream> tokenStreams;
+        private TokenStream tokenStream;
 
         private HighlightExecutionContext(HighlighterContext context, CacheEntry cacheEntry) {
             this.context = context;
@@ -91,13 +94,11 @@ public class ExpirementalHighlighter implements Highlighter {
         }
 
         private void cleanup() throws IOException {
-            if (tokenStreams != null) {
-                for (TokenStream tokenStream : tokenStreams) {
-                    try {
-                        tokenStream.end();
-                    } finally {
-                        tokenStream.close();
-                    }
+            if (tokenStream != null) {
+                try {
+                    tokenStream.end();
+                } finally {
+                    tokenStream.close();
                 }
             }
         }
@@ -124,13 +125,12 @@ public class ExpirementalHighlighter implements Highlighter {
             case 1:
                 return new StringSourceExtracter(fieldValues.get(0));
             default:
-                List<ConstituentExtracter<String>> consituents = new ArrayList<ConstituentExtracter<String>>(
-                        fieldValues.size());
+                // Elasticsearch uses a string offset gap of 1, the default on the builder.
+                NonMergingMultiSourceExtracter.Builder<String> builder = NonMergingMultiSourceExtracter.builder();
                 for (String s : fieldValues) {
-                    consituents.add(new ConstituentExtracter<String>(new StringSourceExtracter(s),
-                            s.length()));
+                    builder.add(new StringSourceExtracter(s), s.length());
                 }
-                return new NonMergingMultiSourceExtracter<String>(consituents);
+                return builder.build();
             }
         }
 
@@ -144,12 +144,12 @@ public class ExpirementalHighlighter implements Highlighter {
             case 1:
                 return buildSegmenter(fieldValues.get(0));
             default:
-                List<ConstituentSegmenter> consituents = new ArrayList<ConstituentSegmenter>(
-                        fieldValues.size());
+                // Elasticsearch uses a string offset gap of 1, the default on the builder.
+                MultiSegmenter.Builder builder = MultiSegmenter.builder();
                 for (String s : fieldValues) {
-                    consituents.add(new ConstituentSegmenter(buildSegmenter(s), s.length()));
+                    builder.add(buildSegmenter(s), s.length());
                 }
-                return new MultiSegmenter(consituents);
+                return builder.build();
             }
         }
 
@@ -162,7 +162,8 @@ public class ExpirementalHighlighter implements Highlighter {
 
         private HitEnum buildHitEnum() throws IOException {
             if (context.field.fieldOptions().options() != null) {
-                String hitSource = (String)context.field.fieldOptions().options().get("hit_source");
+                String hitSource = (String) context.field.fieldOptions().options()
+                        .get("hit_source");
                 if (hitSource != null) {
                     if (hitSource.equals("postings")) {
                         return buildPostingsHitEnum();
@@ -199,8 +200,8 @@ public class ExpirementalHighlighter implements Highlighter {
                     cacheEntry.queryWeigher.acceptableTerms(),
                     cacheEntry.queryWeigher.termWeigher());
         }
+
         private HitEnum buildTokenStreamHitEnum() throws IOException {
-            this.tokenStreams = new ArrayList<TokenStream>();
             List<String> fieldValues = getFieldValues();
             switch (fieldValues.size()) {
             case 0:
@@ -208,9 +209,35 @@ public class ExpirementalHighlighter implements Highlighter {
             case 1:
                 return buildTokenStreamHitEnum(fieldValues.get(0));
             default:
-                // TODO something to combine token stream hit enums
-                throw new UnsupportedOperationException(
-                        "Can't extract matches from multiple sources yet");
+                int positionGap = 1;
+                if (context.mapper instanceof StringFieldMapper) {
+                    positionGap = ((StringFieldMapper) context.mapper).getPositionOffsetGap();
+                }
+                /*
+                 * Note that it is super important that this process is _lazy_
+                 * because we can't have multiple TokenStreams open per
+                 * analyzer.
+                 */
+                Iterator<HitEnum> hitEnumsFromStreams = Iterators.transform(fieldValues.iterator(),
+                        new Function<String, HitEnum>() {
+                    @Override
+                    public HitEnum apply(String fieldValue) {
+                        try {
+                            if (tokenStream != null) {
+                                try {
+                                    tokenStream.end();
+                                } finally {
+                                    tokenStream.close();
+                                }
+                            }
+                            return buildTokenStreamHitEnum(fieldValue);
+                        } catch (IOException e) {
+                            throw new RuntimeException(e);
+                        }
+
+                    }
+                });
+                return new ConcatHitEnum(hitEnumsFromStreams, positionGap, 1);
             }
         }
 
@@ -220,7 +247,7 @@ public class ExpirementalHighlighter implements Highlighter {
                 analyzer = context.context.analysisService().defaultIndexAnalyzer();
             }
             TokenStream tokenStream = analyzer.tokenStream(context.fieldName, source);
-            this.tokenStreams.add(tokenStream);
+            this.tokenStream = tokenStream;
             return new WeightFilteredHitEnumWrapper(new TokenStreamHitEnum(tokenStream,
                     cacheEntry.queryWeigher.termWeigher()), 0);
         }

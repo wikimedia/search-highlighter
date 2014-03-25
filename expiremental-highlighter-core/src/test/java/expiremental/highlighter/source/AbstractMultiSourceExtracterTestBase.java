@@ -1,22 +1,23 @@
 package expiremental.highlighter.source;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
-
-import java.util.ArrayList;
-import java.util.List;
-
 import org.junit.Test;
+import org.junit.runner.RunWith;
+
+import com.carrotsearch.randomizedtesting.RandomizedRunner;
+import com.carrotsearch.randomizedtesting.RandomizedTest;
 
 import expiremental.highlighter.SourceExtracter;
-import expiremental.highlighter.source.AbstractMultiSourceExtracter.ConstituentExtracter;
+import expiremental.highlighter.source.AbstractMultiSourceExtracter.Builder;
 
 /**
  * Base class for tests for extensions to AbstractMultiSourceExtracter that can
  * extract Strings.
  */
-public abstract class AbstractMultiSourceExtracterTestBase {
-    protected abstract SourceExtracter<String> build(List<ConstituentExtracter<String>> extracters);
+@RunWith(RandomizedRunner.class)
+public abstract class AbstractMultiSourceExtracterTestBase extends RandomizedTest {
+    protected abstract Builder<String, ? extends Builder<String, ?>> builder(int offsetGap);
+
+    protected int offsetGap;
 
     /**
      * Must be overridden to test the merge or lack of support for merging.
@@ -25,12 +26,12 @@ public abstract class AbstractMultiSourceExtracterTestBase {
     public abstract void merge();
 
     protected SourceExtracter<String> build(String... s) {
-        List<ConstituentExtracter<String>> extracters = new ArrayList<ConstituentExtracter<String>>();
+        offsetGap = rarely() ? between(0, 100) : 1;
+        Builder<String, ? extends Builder<String, ?>> builder = builder(offsetGap);
         for (String string : s) {
-            extracters.add(new ConstituentExtracter<String>(new StringSourceExtracter(string),
-                    string.length()));
+            builder.add(new StringSourceExtracter(string), string.length());
         }
-        return build(extracters);
+        return builder.build();
     }
 
     @Test
@@ -47,10 +48,17 @@ public abstract class AbstractMultiSourceExtracterTestBase {
     public void entirelyWithinOneString() {
         SourceExtracter<String> extracter = build("foo", "bar", "baz", "cupcakes");
         assertEquals("foo", extracter.extract(0, 3));
-        assertEquals("bar", extracter.extract(3, 6));
-        assertEquals("baz", extracter.extract(6, 9));
-        assertEquals("cupcakes", extracter.extract(9, 17));
-        assertEquals("up", extracter.extract(10, 12));
+        assertEquals("bar", extracter.extract(3 + offsetGap, 6 + offsetGap));
+        assertEquals("baz", extracter.extract(6 + offsetGap * 2, 9 + offsetGap * 2));
+        assertEquals("cupcakes", extracter.extract(9 + offsetGap * 3, 17 + offsetGap * 3));
+        assertEquals("up", extracter.extract(10 + offsetGap * 3, 12 + offsetGap * 3));
+    }
+    
+    @Test
+    public void endOfAString() {
+        SourceExtracter<String> extracter = build("foo", "cupcakes");
+        assertEquals("", extracter.extract(3, 3));
+        assertEquals("", extracter.extract(11 + offsetGap, 11 + offsetGap));
     }
 
     @Test
