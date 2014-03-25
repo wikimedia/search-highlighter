@@ -2,6 +2,7 @@ package org.elasticsearch.search.highlight;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 import org.apache.lucene.analysis.Analyzer;
@@ -22,7 +23,7 @@ import expiremental.highlighter.SnippetChooser;
 import expiremental.highlighter.SnippetFormatter;
 import expiremental.highlighter.SourceExtracter;
 import expiremental.highlighter.elasticsearch.ElasticsearchQueryFlattener;
-import expiremental.highlighter.hit.ReplayingHitEnum;
+import expiremental.highlighter.hit.ConcatHitEnum;
 import expiremental.highlighter.hit.WeightFilteredHitEnumWrapper;
 import expiremental.highlighter.lucene.hit.DocsAndPositionsHitEnum;
 import expiremental.highlighter.lucene.hit.TokenStreamHitEnum;
@@ -208,32 +209,35 @@ public class ExpirementalHighlighter implements Highlighter {
             case 1:
                 return buildTokenStreamHitEnum(fieldValues.get(0));
             default:
-                // TODO switch to just in time creation of the TokenStream so we don't have to record
-                ReplayingHitEnum replaying = new ReplayingHitEnum();
                 int positionGap = 1;
                 if (context.mapper instanceof StringFieldMapper) {
                     positionGap = ((StringFieldMapper) context.mapper).getPositionOffsetGap();
                 }
-                replaying.record(Iterators.transform(fieldValues.iterator(),
+                /*
+                 * Note that it is super important that this process is _lazy_
+                 * because we can't have multiple TokenStreams open per
+                 * analyzer.
+                 */
+                Iterator<HitEnum> hitEnumsFromStreams = Iterators.transform(fieldValues.iterator(),
                         new Function<String, HitEnum>() {
-                            @Override
-                            public HitEnum apply(String fieldValue) {
+                    @Override
+                    public HitEnum apply(String fieldValue) {
+                        try {
+                            if (tokenStream != null) {
                                 try {
-                                    if (tokenStream != null) {
-                                        try {
-                                            tokenStream.end();
-                                        } finally {
-                                            tokenStream.close();
-                                        }
-                                    }
-                                    return buildTokenStreamHitEnum(fieldValue);
-                                } catch (IOException e) {
-                                    throw new RuntimeException(e);
+                                    tokenStream.end();
+                                } finally {
+                                    tokenStream.close();
                                 }
-
                             }
-                        }), positionGap, 1);
-                return replaying;
+                            return buildTokenStreamHitEnum(fieldValue);
+                        } catch (IOException e) {
+                            throw new RuntimeException(e);
+                        }
+
+                    }
+                });
+                return new ConcatHitEnum(hitEnumsFromStreams, positionGap, 1);
             }
         }
 

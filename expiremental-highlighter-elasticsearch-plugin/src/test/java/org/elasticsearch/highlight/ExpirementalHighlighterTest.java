@@ -16,7 +16,7 @@ import org.junit.Test;
 
 public class ExpirementalHighlighterTest extends ElasticsearchIntegrationTest {
     private static final List<String> HIT_SOURCES = ImmutableList.of(
-            "analyze");
+            "postings", "vectors", "analyze");
 
     @Test
     public void basic() {
