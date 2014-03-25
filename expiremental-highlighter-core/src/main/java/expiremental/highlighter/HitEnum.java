@@ -42,6 +42,15 @@ public interface HitEnum extends Segment {
             public boolean lessThan(HitEnum lhs, HitEnum rhs) {
                 return lhs.position() < rhs.position();
             }
+        },
+        OFFSETS {
+            @Override
+            public boolean lessThan(HitEnum lhs, HitEnum rhs) {
+                if (lhs.startOffset() != rhs.startOffset()) {
+                    return lhs.startOffset() < rhs.startOffset();
+                }
+                return lhs.endOffset() < rhs.endOffset();
+            }
         };
     }
 }
