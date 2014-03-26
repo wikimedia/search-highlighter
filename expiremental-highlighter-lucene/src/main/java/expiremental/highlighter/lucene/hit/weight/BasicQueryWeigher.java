@@ -50,6 +50,10 @@ public class BasicQueryWeigher {
         });
     }
 
+    public boolean singleTerm() {
+        return exactMatches.size() == 1;
+    }
+    
     public TermWeigher<BytesRef> termWeigher() {
         return new ExactMatchTermWeigher<BytesRef>(exactMatches, 0);
     }

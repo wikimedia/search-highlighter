@@ -21,9 +21,11 @@ which method it uses.
 * Fragment either by scanning for characters (like the FVH does) or by
 delegating to Java's BreakIterator (like the Postings Highlighter).  Scanning
 is noticably faster in some cases.
+* Combine hits using multiple different fields.
 
 This highlighter does not (currently):
 * Respect phrase mathces at all (all phrases are reduced to terms)
+* Support require_field_match
 
 Elasticsearch installation
 --------------------------
@@ -64,3 +66,75 @@ Then you can use it by searching like so:
   }
 }
 ```
+
+Elasticsearch options
+---------------------
+The ```fragmenter``` field to defaults to ```scan``` but can also be set to
+```sentence```.  ```sentence``` produces results that look like the Postings
+Highlighter.  ```scan``` produces results that look like the Fast Vectory
+Highlighter.  Example:
+```js
+  "highlight": {
+    "fields": {
+      "title": {
+        "type": "expiremental",
+        "fragmenter": "sentence"
+      }
+    }
+  }
+```
+
+The ```default_similarity``` option defaults to true for queries with more then
+one term.  It will weigh each matched term using Lucene's default similarity
+model similarly to how the Fast Vectory Highlighter weighs terms.  If can be
+set to false to leave out that weighing.  If there is only a single term in the
+query it will never be used.
+```js
+  "highlight": {
+    "fields": {
+      "title": {
+        "type": "expiremental",
+        "options": {
+          "default_similarity": false
+        }
+      }
+    }
+  }
+```
+
+The ```hit_source``` option can force detecting matched terms from a particular
+source.  It can be either ```postings```, ```vectors```, or ```analyze```.  If
+set to ```postings``` but the field isn't indexed with ```index_options``` set
+to ```offsets``` or set to ```vectors``` but ```term_vector``` isn't set to
+```positions_offsets``` then the highlight throw back an error.  Defaults to
+using the first option that wouldn't throw an error.
+```js
+  "highlight": {
+    "fields": {
+      "title": {
+        "type": "expiremental",
+        "options": {
+          "hit_source": "analyze"
+        }
+      }
+    }
+  }
+```
+
+Elasticsearch matched_field support
+-----------------------------------
+This highlighter supports ```matched_fields``` just like the Fast Vectory
+Highlighter.  See the [documentation](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/search-request-highlighting.html#matched-fields)
+for more on it.  The only real difference is that each fields ```hit_source```
+is determined independently.  If one field is short feel free to leave out any
+special settings for ```index_options``` or ```term_vector```.
+
+
+Offsets in postings or term vectors
+-----------------------------------
+Since adding offsets to the postings (set ```index_options``` to ```offsets```
+in Elasticsearch) and creating term vectors with offsets (set ```term_vector```
+to ```positions_offsets``` in Elasticsearch) both act to speed up highligting
+of this highlighter you have a choice which to use.  Unless you have a
+compelling reason go with adding offsets to the postings.  That is faster (by
+my tests) and uses much less space.

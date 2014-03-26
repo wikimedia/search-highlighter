@@ -6,8 +6,14 @@ import static org.elasticsearch.index.query.QueryBuilders.fuzzyQuery;
 import static org.elasticsearch.index.query.QueryBuilders.matchPhrasePrefixQuery;
 import static org.elasticsearch.index.query.QueryBuilders.matchPhraseQuery;
 import static org.elasticsearch.index.query.QueryBuilders.rangeQuery;
+import static org.elasticsearch.index.query.QueryBuilders.regexpQuery;
+import static org.elasticsearch.index.query.QueryBuilders.spanFirstQuery;
+import static org.elasticsearch.index.query.QueryBuilders.spanNearQuery;
+import static org.elasticsearch.index.query.QueryBuilders.spanNotQuery;
+import static org.elasticsearch.index.query.QueryBuilders.spanOrQuery;
+import static org.elasticsearch.index.query.QueryBuilders.spanTermQuery;
 import static org.elasticsearch.index.query.QueryBuilders.termQuery;
-import static org.elasticsearch.index.query.QueryBuilders.*;
+import static org.elasticsearch.index.query.QueryBuilders.wildcardQuery;
 import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertAcked;
 import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertFailures;
 import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertHighlight;
@@ -15,7 +21,9 @@ import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertNoFa
 import static org.hamcrest.Matchers.equalTo;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchResponse;
@@ -253,6 +261,40 @@ public class ExpirementalHighlighterTest extends ElasticsearchIntegrationTest {
     }
 
     @Test
+    public void useDefaultSimilarity() throws IOException {
+        buildIndex();
+        client().prepareIndex("test", "test").setSource("test", new String[] {"test", "foo foo"}).get();
+        // We need enough "foo" so that a whole bunch end up on the shard with the above entry.
+        for (int i = 0; i < 1000; i++) {
+            client().prepareIndex("test", "test").setSource("test", "foo").get();    
+        }
+        refresh();
+
+        SearchRequestBuilder search = testSearch(
+                boolQuery().should(termQuery("test", "test")).should(termQuery("test", "foo")))
+                .setHighlighterOrder("score");
+        for (String hitSource : HIT_SOURCES) {
+            SearchResponse response = setHitSource(search, hitSource).get();
+            assertHighlight(response, 0, "test", 0, equalTo("<em>test</em>"));
+        }
+        
+        Map<String, Object> options = new HashMap<String, Object>();
+        options.put("default_similarity", false);
+        for (String hitSource : HIT_SOURCES) {
+            options.put("hit_source", hitSource);
+            SearchResponse response = search.setHighlighterOptions(options).get();
+            assertHighlight(response, 0, "test", 0, equalTo("<em>foo</em> <em>foo</em>"));
+        }
+        
+        options.put("default_similarity", true);
+        for (String hitSource : HIT_SOURCES) {
+            options.put("hit_source", hitSource);
+            SearchResponse response = search.setHighlighterOptions(options).get();
+            assertHighlight(response, 0, "test", 0, equalTo("<em>test</em>"));
+        }
+    }
+
+    @Test
     public void matchedFields() throws IOException {
         buildIndex();
         indexTestData();
@@ -283,7 +325,6 @@ public class ExpirementalHighlighterTest extends ElasticsearchIntegrationTest {
             assertHighlight(response, 0, "test", 0,
                     equalTo("<em>tests</em> very simple <em>test</em>"));
         }
-
     }
 
     @Test
@@ -338,6 +379,8 @@ public class ExpirementalHighlighterTest extends ElasticsearchIntegrationTest {
         }
     }
 
+    // TODO matched_fields with different hit source
+    
     /**
      * A simple search for the term "test".
      */

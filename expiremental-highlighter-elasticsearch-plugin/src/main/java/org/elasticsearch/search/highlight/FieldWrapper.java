@@ -9,6 +9,7 @@ import java.util.Locale;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.index.FieldInfo;
+import org.apache.lucene.util.BytesRef;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.base.Function;
 import org.elasticsearch.common.collect.Iterators;
@@ -24,9 +25,13 @@ import expiremental.highlighter.elasticsearch.BreakIteratorSegmenterFactory;
 import expiremental.highlighter.elasticsearch.CharScanningSegmenterFactory;
 import expiremental.highlighter.elasticsearch.SegmenterFactory;
 import expiremental.highlighter.hit.ConcatHitEnum;
+import expiremental.highlighter.hit.TermWeigher;
 import expiremental.highlighter.hit.WeightFilteredHitEnumWrapper;
+import expiremental.highlighter.hit.weight.CachingTermWeigher;
+import expiremental.highlighter.hit.weight.MultiplyingTermWeigher;
 import expiremental.highlighter.lucene.hit.DocsAndPositionsHitEnum;
 import expiremental.highlighter.lucene.hit.TokenStreamHitEnum;
+import expiremental.highlighter.lucene.hit.weight.DefaultSimilarityTermWeigher;
 import expiremental.highlighter.snippet.MultiSegmenter;
 import expiremental.highlighter.source.NonMergingMultiSourceExtracter;
 import expiremental.highlighter.source.StringSourceExtracter;
@@ -144,7 +149,8 @@ public class FieldWrapper {
             }
             return new BreakIteratorSegmenterFactory(locale);
         }
-        throw new IllegalArgumentException("Unknown fragmenter:  '" + options.fragmenter() + "'.  Options are 'scan' or 'sentence'.");
+        throw new IllegalArgumentException("Unknown fragmenter:  '" + options.fragmenter()
+                + "'.  Options are 'scan' or 'sentence'.");
     }
 
     public HitEnum buildHitEnum() throws IOException {
@@ -192,13 +198,13 @@ public class FieldWrapper {
     private HitEnum buildPostingsHitEnum() throws IOException {
         return DocsAndPositionsHitEnum.fromPostings(context.hitContext.reader(),
                 context.hitContext.docId(), context.fieldName,
-                cacheEntry.queryWeigher.acceptableTerms(), cacheEntry.queryWeigher.termWeigher());
+                cacheEntry.queryWeigher.acceptableTerms(), getTermWeigher(false));
     }
 
     private HitEnum buildTermVectorsHitEnum() throws IOException {
         return DocsAndPositionsHitEnum.fromTermVectors(context.hitContext.reader(),
                 context.hitContext.docId(), context.fieldName,
-                cacheEntry.queryWeigher.acceptableTerms(), cacheEntry.queryWeigher.termWeigher());
+                cacheEntry.queryWeigher.acceptableTerms(), getTermWeigher(false));
     }
 
     private HitEnum buildTokenStreamHitEnum() throws IOException {
@@ -260,6 +266,27 @@ public class FieldWrapper {
         }
         this.tokenStream = tokenStream;
         return new WeightFilteredHitEnumWrapper(new TokenStreamHitEnum(tokenStream,
-                cacheEntry.queryWeigher.termWeigher()), 0);
+                getTermWeigher(false)), 0);
+    }
+
+    private TermWeigher<BytesRef> getTermWeigher(boolean mightWeighTermsMultipleTimes) {
+        boolean slowToWeighTermsMultipleTimes = false;
+        TermWeigher<BytesRef> weigher = cacheEntry.queryWeigher.termWeigher();
+        // No need to add fancy term weights if there is only one term or we
+        // aren't using score order.
+        if (!cacheEntry.queryWeigher.singleTerm() && context.field.fieldOptions().scoreOrdered()) {
+            Boolean useDefaultSimilarity = (Boolean) context.field.fieldOptions().options()
+                    .get("default_similarity");
+            if (useDefaultSimilarity == null || useDefaultSimilarity == true) {
+                slowToWeighTermsMultipleTimes = true;
+                weigher = new MultiplyingTermWeigher<BytesRef>(weigher,
+                        new DefaultSimilarityTermWeigher(context.hitContext.reader(),
+                                context.fieldName));
+            }
+        }
+        if (mightWeighTermsMultipleTimes && slowToWeighTermsMultipleTimes) {
+            weigher = new CachingTermWeigher<BytesRef>(weigher);
+        }
+        return weigher;
     }
 }

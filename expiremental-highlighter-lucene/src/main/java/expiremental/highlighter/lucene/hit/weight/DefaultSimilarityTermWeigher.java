@@ -12,12 +12,12 @@ import expiremental.highlighter.lucene.WrappedExceptionFromLucene;
 /**
  * Weighs terms similarly to {@link DefaultSimilarity}.
  */
-public class DefaultSimilarityWeighTermWeigher implements TermWeigher<BytesRef> {
+public class DefaultSimilarityTermWeigher implements TermWeigher<BytesRef> {
     private final IndexReader reader;
     private final String fieldName;
     private final int numDocs;
 
-    public DefaultSimilarityWeighTermWeigher(IndexReader reader, String fieldName) {
+    public DefaultSimilarityTermWeigher(IndexReader reader, String fieldName) {
         this.reader = reader;
         this.fieldName = fieldName;
         numDocs = reader.numDocs();
