@@ -4,10 +4,12 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Locale;
 
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.index.FieldInfo;
+import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.base.Function;
 import org.elasticsearch.common.collect.Iterators;
 import org.elasticsearch.index.mapper.FieldMapper;
@@ -18,11 +20,13 @@ import org.elasticsearch.search.highlight.SearchContextHighlight.FieldOptions;
 import expiremental.highlighter.HitEnum;
 import expiremental.highlighter.Segmenter;
 import expiremental.highlighter.SourceExtracter;
+import expiremental.highlighter.elasticsearch.BreakIteratorSegmenterFactory;
+import expiremental.highlighter.elasticsearch.CharScanningSegmenterFactory;
+import expiremental.highlighter.elasticsearch.SegmenterFactory;
 import expiremental.highlighter.hit.ConcatHitEnum;
 import expiremental.highlighter.hit.WeightFilteredHitEnumWrapper;
 import expiremental.highlighter.lucene.hit.DocsAndPositionsHitEnum;
 import expiremental.highlighter.lucene.hit.TokenStreamHitEnum;
-import expiremental.highlighter.snippet.CharScanningSegmenter;
 import expiremental.highlighter.snippet.MultiSegmenter;
 import expiremental.highlighter.source.NonMergingMultiSourceExtracter;
 import expiremental.highlighter.source.StringSourceExtracter;
@@ -106,27 +110,41 @@ public class FieldWrapper {
         // TODO loading source is expensive if you don't need it. Delay
         // this.
         List<String> fieldValues = getFieldValues();
+        SegmenterFactory segmenterFactory = buildSegmenterFactory();
         switch (fieldValues.size()) {
         case 0:
-            return buildSegmenter("");
+            return segmenterFactory.build("");
         case 1:
-            return buildSegmenter(fieldValues.get(0));
+            return segmenterFactory.build(fieldValues.get(0));
         default:
             // Elasticsearch uses a string offset gap of 1, the default on the
             // builder.
             MultiSegmenter.Builder builder = MultiSegmenter.builder();
             for (String s : fieldValues) {
-                builder.add(buildSegmenter(s), s.length());
+                builder.add(segmenterFactory.build(s), s.length());
             }
             return builder.build();
         }
     }
 
-    private Segmenter buildSegmenter(String source) {
+    private SegmenterFactory buildSegmenterFactory() {
         FieldOptions options = context.field.fieldOptions();
-        // TODO boundaryChars
-        return new CharScanningSegmenter(source, options.fragmentCharSize(),
-                options.boundaryMaxScan());
+        if (options.fragmenter() == null || options.fragmenter().equals("scan")) {
+            // TODO boundaryChars
+            return new CharScanningSegmenterFactory(options.fragmentCharSize(),
+                    options.boundaryMaxScan());
+        }
+        if (options.fragmenter().equals("sentence")) {
+            String localeString = (String) options.options().get("locale");
+            Locale locale;
+            if (localeString == null) {
+                locale = Locale.US;
+            } else {
+                locale = Strings.parseLocaleString(localeString);
+            }
+            return new BreakIteratorSegmenterFactory(locale);
+        }
+        throw new IllegalArgumentException("Unknown fragmenter:  '" + options.fragmenter() + "'.  Options are 'scan' or 'sentence'.");
     }
 
     public HitEnum buildHitEnum() throws IOException {

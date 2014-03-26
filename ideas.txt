@@ -9,3 +9,5 @@ Maybe real phrase detection.  Maybe real span support.
 Probably poor man's phrase detection - just boost things that are near one another a bit.
 
 Special HitEnum for testing that asserts that you don't go beyond the end.  I know Lucene uses something like this.
+
+Non splitting segmenter.

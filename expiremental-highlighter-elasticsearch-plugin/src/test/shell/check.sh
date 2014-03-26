@@ -43,8 +43,14 @@ curl -XPOST http://localhost:9200/test/_refresh?pretty
 
 function go() {
   highlighter="$1"
-  if [ "$highlighter" != "expiremental" ]; then
+  count=200
+  if [ "$highlighter" == "expiremental" ]; then
     hit_source="$2"
+    fragmenter="$3"
+  fi
+  if [ "$highlighter" = "plain" ]; then
+    fragmenter="span"
+    count=50
   fi
   echo '{
   "_source": false,
@@ -61,20 +67,17 @@ function go() {
     "fields": {
       "title": {
         "number_of_fragments": '$number_of_fragments',
-        "type": "'$highlighter'"
+        "type": "'$highlighter'",
+        "fragmenter": "'$fragmenter'"
       }
     }
   }
 }' > /tmp/post
-  printf "%15s %20s %7s %10s %1s " $highlighter "$search" $order "$hit_source" $number_of_fragments
+  printf "%15s %20s %7s %10s %10s %1s " $highlighter "$search" $order "$hit_source" $fragmenter $number_of_fragments
   if [ "$mode" = "check" ]; then
     curl -s -XPOST "http://localhost:9200/test/test/_search?pretty" -d @/tmp/post > /tmp/result
     grep "<em>" /tmp/result || cat /tmp/result
   elif [ "$mode" = "bench" ]; then
-    count=200
-    if [ "$highlighter" = "plain" ]; then
-      count=50
-    fi
     ab -c 3 -n $count -p /tmp/post http://localhost:9200/test/_search 2>&1 | grep Total:
   fi
 }
@@ -83,9 +86,10 @@ function each() {
   for highlighter in plain fvh postings; do
     go $highlighter
   done
-  for hit_source in postings vectors analyze; do
-    go expiremental $hit_source
-  done
+  go expiremental postings scan
+  go expiremental postings sentence
+  go expiremental vectors scan
+  go expiremental analyze scan
 }
 
 function suite() {
@@ -103,8 +107,9 @@ function suite() {
     each
     export search=many
     each
-    export search="hug* str*"
+    export search="hug* AND str*"
     each
+    export search=many
   done
 }
 

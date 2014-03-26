@@ -190,14 +190,13 @@ public class ExpirementalHighlighterTest extends ElasticsearchIntegrationTest {
         buildIndex();
         indexTestData();
 
-        SearchRequestBuilder search = testSearch(spanNotQuery()
-                .include(spanTermQuery("test", "test")).exclude(spanTermQuery("test", "tests")));
+        SearchRequestBuilder search = testSearch(spanNotQuery().include(
+                spanTermQuery("test", "test")).exclude(spanTermQuery("test", "tests")));
         for (String hitSource : HIT_SOURCES) {
             SearchResponse response = setHitSource(search, hitSource).get();
             // Note that we really don't respect the spans - we basically just
             // convert it into a term query
-            assertHighlight(response, 0, "test", 0,
-                    equalTo("tests very simple <em>test</em>"));
+            assertHighlight(response, 0, "test", 0, equalTo("tests very simple <em>test</em>"));
         }
     }
 
@@ -236,6 +235,20 @@ public class ExpirementalHighlighterTest extends ElasticsearchIntegrationTest {
             assertHighlight(response, 0, "test", 0,
                     equalTo("<em>tests</em> very simple <em>test</em>"));
             assertHighlight(response, 0, "test", 1, equalTo("with two fields to <em>test</em>"));
+        }
+    }
+
+    @Test
+    public void sentenceFragmenter() throws IOException {
+        buildIndex();
+        indexTestData("The quick brown fox jumped over the lazy test.  And some other test sentence.");
+
+        SearchRequestBuilder search = testSearch().addHighlightedField(
+                new HighlightBuilder.Field("test").fragmenter("sentence").numOfFragments(3));
+        for (String hitSource : HIT_SOURCES) {
+            SearchResponse response = setHitSource(search, hitSource).get();
+            assertHighlight(response, 0, "test", 0, equalTo("The quick brown fox jumped over the lazy <em>test</em>.  "));
+            assertHighlight(response, 0, "test", 1, equalTo("And some other <em>test</em> sentence."));
         }
     }
 
@@ -323,7 +336,6 @@ public class ExpirementalHighlighterTest extends ElasticsearchIntegrationTest {
                 assertFailures(response);
             }
         }
-
     }
 
     /**
