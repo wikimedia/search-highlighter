@@ -4,6 +4,7 @@ import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
 import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertAcked;
 import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertFailures;
 import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertHighlight;
+import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertNoFailures;
 import static org.hamcrest.Matchers.equalTo;
 
 import java.io.IOException;
@@ -119,6 +120,41 @@ public class ExpirementalHighlighterTest extends ElasticsearchIntegrationTest {
         }
     }
 
+    @Test
+    public void settingHitSourceWithoutDataIsAnError() throws IOException {
+        buildIndex(false, false);
+        client().prepareIndex("test", "test", "1").setSource("test", "tests very simple test")
+                .get();
+        refresh();
+
+        SearchRequestBuilder search = testSearch().addHighlightedField("test");
+        for (String hitSource : HIT_SOURCES) {
+            SearchResponse response = setHitSource(search, hitSource).get();
+            if (hitSource.equals("analyze")) {
+                assertNoFailures(response);
+            } else {
+                // I wish I could throw an HTTP 400 here but I don't believe I
+                // can.
+                assertFailures(response);
+            }
+        }
+
+        // Now with matched fields!
+        search = testSearch().addHighlightedField(
+                new HighlightBuilder.Field("test").matchedFields("test", "test.english"));
+        for (String hitSource : HIT_SOURCES) {
+            SearchResponse response = setHitSource(search, hitSource).get();
+            if (hitSource.equals("analyze")) {
+                assertNoFailures(response);
+            } else {
+                // I wish I could throw an HTTP 400 here but I don't believe I
+                // can.
+                assertFailures(response);
+            }
+        }
+
+    }
+
     /**
      * A simple search for the term test.
      */
@@ -134,24 +170,39 @@ public class ExpirementalHighlighterTest extends ElasticsearchIntegrationTest {
     }
 
     private void buildIndex() throws IOException {
+        buildIndex(true, true);
+    }
+
+    private void buildIndex(boolean offsetsInPostings, boolean fvhLikeTermVectors)
+            throws IOException {
         XContentBuilder builder = jsonBuilder().startObject().startObject("test")
-                .startObject("properties").startObject("test").field("type", "string")
-                .field("index_options", "offsets").field("term_vector", "with_positions_offsets")
-                .startObject("fields");
-        addField(builder, "whitespace", "whitespace");
-        addField(builder, "english", "english");
-        addField(builder, "english2", "english");
+                .startObject("properties").startObject("test").field("type", "string");
+        addProperties(builder, offsetsInPostings, fvhLikeTermVectors);
+        builder.startObject("fields");
+        addField(builder, "whitespace", "whitespace", offsetsInPostings, fvhLikeTermVectors);
+        addField(builder, "english", "english", offsetsInPostings, fvhLikeTermVectors);
+        addField(builder, "english2", "english", offsetsInPostings, fvhLikeTermVectors);
         builder.endObject().endObject().endObject().endObject();
         assertAcked(prepareCreate("test").addMapping("test", builder));
         ensureYellow();
     }
 
-    private void addField(XContentBuilder builder, String name, String analyzer) throws IOException {
+    private void addField(XContentBuilder builder, String name, String analyzer,
+            boolean offsetsInPostings, boolean fvhLikeTermVectors) throws IOException {
         builder.startObject(name);
         builder.field("type", "string");
         builder.field("analyzer", analyzer);
-        builder.field("index_options", "offsets");
-        builder.field("term_vector", "with_positions_offsets");
+        addProperties(builder, offsetsInPostings, fvhLikeTermVectors);
         builder.endObject();
+    }
+
+    private void addProperties(XContentBuilder builder, boolean offsetsInPostings,
+            boolean fvhLikeTermVectors) throws IOException {
+        if (offsetsInPostings) {
+            builder.field("index_options", "offsets");
+        }
+        if (fvhLikeTermVectors) {
+            builder.field("term_vector", "with_positions_offsets");
+        }
     }
 }
