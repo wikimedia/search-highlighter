@@ -134,9 +134,17 @@ public class FieldWrapper {
             String hitSource = (String) context.field.fieldOptions().options().get("hit_source");
             if (hitSource != null) {
                 if (hitSource.equals("postings")) {
+                    if (!canUsePostingsHitEnum()) {
+                        throw new IllegalArgumentException(
+                                "Can't use postings as a hit source without settings index_options to postings");
+                    }
                     return buildPostingsHitEnum();
                 } else if (hitSource.equals("vectors")) {
-                    return buildTermVectorHitEnum();
+                    if (!canUseVectorsHitEnum()) {
+                        throw new IllegalArgumentException(
+                                "Can't use vectors as a hit source without settings term_vector to with_positions_offsets");
+                    }
+                    return buildTermVectorsHitEnum();
                 } else if (hitSource.equals("analyze")) {
                     return buildTokenStreamHitEnum();
                 } else {
@@ -144,15 +152,23 @@ public class FieldWrapper {
                 }
             }
         }
-        if (context.mapper.fieldType().indexOptions() == FieldInfo.IndexOptions.DOCS_AND_FREQS_AND_POSITIONS_AND_OFFSETS) {
+        if (canUsePostingsHitEnum()) {
             return buildPostingsHitEnum();
         }
-        if (context.mapper.fieldType().storeTermVectors()
-                && context.mapper.fieldType().storeTermVectorOffsets()
-                && context.mapper.fieldType().storeTermVectorPositions()) {
-            return buildTermVectorHitEnum();
+        if (canUseVectorsHitEnum()) {
+            return buildTermVectorsHitEnum();
         }
         return buildTokenStreamHitEnum();
+    }
+
+    private boolean canUsePostingsHitEnum() {
+        return context.mapper.fieldType().indexOptions() == FieldInfo.IndexOptions.DOCS_AND_FREQS_AND_POSITIONS_AND_OFFSETS;
+    }
+
+    private boolean canUseVectorsHitEnum() {
+        return context.mapper.fieldType().storeTermVectors()
+                && context.mapper.fieldType().storeTermVectorOffsets()
+                && context.mapper.fieldType().storeTermVectorPositions();
     }
 
     private HitEnum buildPostingsHitEnum() throws IOException {
@@ -161,7 +177,7 @@ public class FieldWrapper {
                 cacheEntry.queryWeigher.acceptableTerms(), cacheEntry.queryWeigher.termWeigher());
     }
 
-    private HitEnum buildTermVectorHitEnum() throws IOException {
+    private HitEnum buildTermVectorsHitEnum() throws IOException {
         return DocsAndPositionsHitEnum.fromTermVectors(context.hitContext.reader(),
                 context.hitContext.docId(), context.fieldName,
                 cacheEntry.queryWeigher.acceptableTerms(), cacheEntry.queryWeigher.termWeigher());
@@ -218,9 +234,11 @@ public class FieldWrapper {
         TokenStream tokenStream;
         try {
             tokenStream = analyzer.tokenStream(context.fieldName, source);
-        } catch(IllegalStateException e) {
-            // Uhg, I wish we didn't have this limitation but it isn't really very common and shouldn't be too big of a problem.
-            throw new UnsupportedOperationException("If analyzing to find hits each matched field must have a unique analyzer.", e);
+        } catch (IllegalStateException e) {
+            // Uhg, I wish we didn't have this limitation but it isn't really
+            // very common and shouldn't be too big of a problem.
+            throw new UnsupportedOperationException(
+                    "If analyzing to find hits each matched field must have a unique analyzer.", e);
         }
         this.tokenStream = tokenStream;
         return new WeightFilteredHitEnumWrapper(new TokenStreamHitEnum(tokenStream,
