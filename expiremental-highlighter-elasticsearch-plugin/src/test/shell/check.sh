@@ -66,13 +66,13 @@ function go() {
     }
   }
 }' > /tmp/post
-  printf "%15s %10s %7s %10s %1s " $highlighter $search $order "$hit_source" $number_of_fragments
+  printf "%15s %20s %7s %10s %1s " $highlighter "$search" $order "$hit_source" $number_of_fragments
   if [ "$mode" = "check" ]; then
     curl -s -XPOST "http://localhost:9200/test/test/_search?pretty" -d @/tmp/post > /tmp/result
     grep "<em>" /tmp/result || cat /tmp/result
   elif [ "$mode" = "bench" ]; then
     count=200
-    if [ "$highlighter" = "plain" ] && [ "$search" = "huge" ]; then
+    if [ "$highlighter" = "plain" ]; then
       count=50
     fi
     ab -c 3 -n $count -p /tmp/post http://localhost:9200/test/_search 2>&1 | grep Total:
@@ -102,6 +102,8 @@ function suite() {
     export search=huge
     each
     export search=many
+    each
+    export search="hug* str*"
     each
   done
 }

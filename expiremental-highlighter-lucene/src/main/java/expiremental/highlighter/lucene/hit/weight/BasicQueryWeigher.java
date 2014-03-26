@@ -1,6 +1,9 @@
 package expiremental.highlighter.lucene.hit.weight;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.apache.lucene.index.IndexReader;
@@ -23,7 +26,7 @@ import expiremental.highlighter.lucene.QueryFlattener.Callback;
  */
 public class BasicQueryWeigher {
     private final Map<BytesRef, Float> exactMatches = new HashMap<BytesRef, Float>();
-    private final CompiledAutomaton acceptable;
+    private CompiledAutomaton acceptable;
 
     public BasicQueryWeigher(IndexReader reader, Query query) {
         this(new QueryFlattener(1000), reader, query);
@@ -45,9 +48,6 @@ public class BasicQueryWeigher {
                 }
             }
         });
-        // TODO acceptable should be built lazily.
-        // TODO acceptable should grab the queries that can become automatons and merge them rather then blow them out.
-        acceptable = new CompiledAutomaton(BasicAutomata.makeStringUnion(exactMatches.keySet()));
     }
 
     public TermWeigher<BytesRef> termWeigher() {
@@ -55,6 +55,15 @@ public class BasicQueryWeigher {
     }
 
     public CompiledAutomaton acceptableTerms() {
+        if (acceptable == null) {
+            // Sort the terms in UTF-8 order.
+            List<BytesRef> terms = new ArrayList<BytesRef>(exactMatches.size());
+            terms.addAll(exactMatches.keySet());
+            Collections.sort(terms);
+            // TODO acceptable should grab the queries that can become
+            // automatons and merge them rather then blow them out.
+            acceptable = new CompiledAutomaton(BasicAutomata.makeStringUnion(terms));
+        }
         return acceptable;
     }
 }

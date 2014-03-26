@@ -1,6 +1,13 @@
 package org.elasticsearch.highlight;
 
 import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
+import static org.elasticsearch.index.query.QueryBuilders.boolQuery;
+import static org.elasticsearch.index.query.QueryBuilders.fuzzyQuery;
+import static org.elasticsearch.index.query.QueryBuilders.matchPhrasePrefixQuery;
+import static org.elasticsearch.index.query.QueryBuilders.matchPhraseQuery;
+import static org.elasticsearch.index.query.QueryBuilders.rangeQuery;
+import static org.elasticsearch.index.query.QueryBuilders.termQuery;
+import static org.elasticsearch.index.query.QueryBuilders.*;
 import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertAcked;
 import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertFailures;
 import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertHighlight;
@@ -15,7 +22,7 @@ import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.common.collect.ImmutableList;
 import org.elasticsearch.common.collect.ImmutableMap;
 import org.elasticsearch.common.xcontent.XContentBuilder;
-import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.search.highlight.HighlightBuilder;
 import org.elasticsearch.test.ElasticsearchIntegrationTest;
 import org.junit.Test;
@@ -25,27 +32,197 @@ public class ExpirementalHighlighterTest extends ElasticsearchIntegrationTest {
             "analyze");
 
     @Test
-    public void basic() throws IOException {
+    public void singleTermQuery() throws IOException {
         buildIndex();
-        client().prepareIndex("test", "test", "1").setSource("test", "a very simple test").get();
-        refresh();
-        SearchRequestBuilder search = testSearch().addHighlightedField("test");
+        indexTestData();
 
+        SearchRequestBuilder search = testSearch();
         for (String hitSource : HIT_SOURCES) {
             SearchResponse response = setHitSource(search, hitSource).get();
-            assertHighlight(response, 0, "test", 0, equalTo("a very simple <em>test</em>"));
+            assertHighlight(response, 0, "test", 0, equalTo("tests very simple <em>test</em>"));
+        }
+    }
+
+    @Test
+    public void boolOfTermQueries() throws IOException {
+        buildIndex();
+        indexTestData();
+
+        SearchRequestBuilder search = testSearch(boolQuery().must(termQuery("test", "test")).must(
+                termQuery("test", "simple")));
+        for (String hitSource : HIT_SOURCES) {
+            SearchResponse response = setHitSource(search, hitSource).get();
+            assertHighlight(response, 0, "test", 0,
+                    equalTo("tests very <em>simple</em> <em>test</em>"));
+        }
+    }
+
+    @Test
+    public void singlePhraseQuery() throws IOException {
+        buildIndex();
+        indexTestData();
+
+        SearchRequestBuilder search = testSearch(matchPhraseQuery("test", "simple test"));
+        for (String hitSource : HIT_SOURCES) {
+            SearchResponse response = setHitSource(search, hitSource).get();
+            assertHighlight(response, 0, "test", 0,
+                    equalTo("tests very <em>simple</em> <em>test</em>"));
+        }
+    }
+
+    @Test
+    public void singlePhrasePrefixQuery() throws IOException {
+        buildIndex();
+        indexTestData();
+
+        SearchRequestBuilder search = testSearch(matchPhrasePrefixQuery("test", "simple te"));
+        for (String hitSource : HIT_SOURCES) {
+            SearchResponse response = setHitSource(search, hitSource).get();
+            // You can see right here that we aren't careful with phrase queries
+            // like the FVH is.
+            assertHighlight(response, 0, "test", 0,
+                    equalTo("<em>tests</em> very <em>simple</em> <em>test</em>"));
+        }
+    }
+
+    @Test
+    public void singleFuzzyQuery() throws IOException {
+        buildIndex();
+        indexTestData();
+
+        SearchRequestBuilder search = testSearch(fuzzyQuery("test", "test"));
+        for (String hitSource : HIT_SOURCES) {
+            SearchResponse response = setHitSource(search, hitSource).get();
+            assertHighlight(response, 0, "test", 0,
+                    equalTo("<em>tests</em> very simple <em>test</em>"));
+        }
+    }
+
+    @Test
+    public void singleRangeQuery() throws IOException {
+        buildIndex();
+        indexTestData();
+
+        SearchRequestBuilder search = testSearch(rangeQuery("test").from("teso").to("tesz"));
+        for (String hitSource : HIT_SOURCES) {
+            SearchResponse response = setHitSource(search, hitSource).get();
+            assertHighlight(response, 0, "test", 0,
+                    equalTo("<em>tests</em> very simple <em>test</em>"));
+        }
+    }
+
+    @Test
+    public void singleWildcardQuery() throws IOException {
+        buildIndex();
+        indexTestData();
+
+        SearchRequestBuilder search = testSearch(wildcardQuery("test", "te?t"));
+        for (String hitSource : HIT_SOURCES) {
+            SearchResponse response = setHitSource(search, hitSource).get();
+            assertHighlight(response, 0, "test", 0, equalTo("tests very simple <em>test</em>"));
+        }
+
+        search = testSearch(wildcardQuery("test", "te*"));
+        for (String hitSource : HIT_SOURCES) {
+            SearchResponse response = setHitSource(search, hitSource).get();
+            assertHighlight(response, 0, "test", 0,
+                    equalTo("<em>tests</em> very simple <em>test</em>"));
+        }
+    }
+
+    @Test
+    public void singleRegexpQuery() throws IOException {
+        buildIndex();
+        indexTestData();
+
+        SearchRequestBuilder search = testSearch(regexpQuery("test", "tests?"));
+        for (String hitSource : HIT_SOURCES) {
+            SearchResponse response = setHitSource(search, hitSource).get();
+            assertHighlight(response, 0, "test", 0,
+                    equalTo("<em>tests</em> very simple <em>test</em>"));
+        }
+    }
+
+    @Test
+    public void singleSpanTermQuery() throws IOException {
+        buildIndex();
+        indexTestData();
+
+        SearchRequestBuilder search = testSearch(spanTermQuery("test", "test"));
+        for (String hitSource : HIT_SOURCES) {
+            SearchResponse response = setHitSource(search, hitSource).get();
+            assertHighlight(response, 0, "test", 0, equalTo("tests very simple <em>test</em>"));
+        }
+    }
+
+    @Test
+    public void singleSpanFirstQuery() throws IOException {
+        buildIndex();
+        indexTestData();
+
+        SearchRequestBuilder search = testSearch(spanFirstQuery(spanTermQuery("test", "test"), 5));
+        for (String hitSource : HIT_SOURCES) {
+            SearchResponse response = setHitSource(search, hitSource).get();
+            // Note that we really don't respect the spans - we basically just
+            // convert it into a term query
+            assertHighlight(response, 0, "test", 0, equalTo("tests very simple <em>test</em>"));
+        }
+    }
+
+    @Test
+    public void singleSpanNearQuery() throws IOException {
+        buildIndex();
+        indexTestData();
+
+        SearchRequestBuilder search = testSearch(spanNearQuery().slop(5)
+                .clause(spanTermQuery("test", "tests")).clause(spanTermQuery("test", "test")));
+        for (String hitSource : HIT_SOURCES) {
+            SearchResponse response = setHitSource(search, hitSource).get();
+            // Note that we really don't respect the spans - we basically just
+            // convert it into a term query
+            assertHighlight(response, 0, "test", 0,
+                    equalTo("<em>tests</em> very simple <em>test</em>"));
+        }
+    }
+
+    @Test
+    public void singleSpanNotQuery() throws IOException {
+        buildIndex();
+        indexTestData();
+
+        SearchRequestBuilder search = testSearch(spanNotQuery()
+                .include(spanTermQuery("test", "test")).exclude(spanTermQuery("test", "tests")));
+        for (String hitSource : HIT_SOURCES) {
+            SearchResponse response = setHitSource(search, hitSource).get();
+            // Note that we really don't respect the spans - we basically just
+            // convert it into a term query
+            assertHighlight(response, 0, "test", 0,
+                    equalTo("tests very simple <em>test</em>"));
+        }
+    }
+
+    @Test
+    public void singleSpanOrQuery() throws IOException {
+        buildIndex();
+        indexTestData();
+
+        SearchRequestBuilder search = testSearch(spanOrQuery()
+                .clause(spanTermQuery("test", "test")).clause(spanTermQuery("test", "tests")));
+        for (String hitSource : HIT_SOURCES) {
+            SearchResponse response = setHitSource(search, hitSource).get();
+            // Note that we really don't respect the spans - we basically just
+            // convert it into a term query
+            assertHighlight(response, 0, "test", 0,
+                    equalTo("<em>tests</em> very simple <em>test</em>"));
         }
     }
 
     @Test
     public void multiValued() throws IOException {
         buildIndex();
-        client().prepareIndex("test", "test", "1")
-                .setSource("test",
-                        new String[] { "tests very simple test", "with two fields to test" }).get();
-        refresh();
-        SearchRequestBuilder search = testSearch().addHighlightedField("test", 100, 100);
+        indexTestData(new String[] { "tests very simple test", "with two fields to test" });
 
+        SearchRequestBuilder search = testSearch().addHighlightedField("test", 100, 100);
         for (String hitSource : HIT_SOURCES) {
             SearchResponse response = setHitSource(search, hitSource).get();
             assertHighlight(response, 0, "test", 0, equalTo("tests very simple <em>test</em>"));
@@ -54,7 +231,6 @@ public class ExpirementalHighlighterTest extends ElasticsearchIntegrationTest {
 
         search = testSearch().addHighlightedField(
                 new HighlightBuilder.Field("test").matchedFields("test.english"));
-
         for (String hitSource : HIT_SOURCES) {
             SearchResponse response = setHitSource(search, hitSource).get();
             assertHighlight(response, 0, "test", 0,
@@ -66,9 +242,8 @@ public class ExpirementalHighlighterTest extends ElasticsearchIntegrationTest {
     @Test
     public void matchedFields() throws IOException {
         buildIndex();
-        client().prepareIndex("test", "test", "1").setSource("test", "tests very simple test")
-                .get();
-        refresh();
+        indexTestData();
+
         SearchRequestBuilder search = testSearch().addHighlightedField(
                 new HighlightBuilder.Field("test").matchedFields("test.english"));
         // One matched field
@@ -101,9 +276,7 @@ public class ExpirementalHighlighterTest extends ElasticsearchIntegrationTest {
     @Test
     public void matchedFieldsSameAnalyzer() throws IOException {
         buildIndex();
-        client().prepareIndex("test", "test", "1").setSource("test", "tests very simple test")
-                .get();
-        refresh();
+        indexTestData();
         SearchRequestBuilder search = testSearch().addHighlightedField(
                 new HighlightBuilder.Field("test").matchedFields("test.english", "test.english2"));
 
@@ -123,11 +296,9 @@ public class ExpirementalHighlighterTest extends ElasticsearchIntegrationTest {
     @Test
     public void settingHitSourceWithoutDataIsAnError() throws IOException {
         buildIndex(false, false);
-        client().prepareIndex("test", "test", "1").setSource("test", "tests very simple test")
-                .get();
-        refresh();
+        indexTestData();
 
-        SearchRequestBuilder search = testSearch().addHighlightedField("test");
+        SearchRequestBuilder search = testSearch();
         for (String hitSource : HIT_SOURCES) {
             SearchResponse response = setHitSource(search, hitSource).get();
             if (hitSource.equals("analyze")) {
@@ -156,12 +327,18 @@ public class ExpirementalHighlighterTest extends ElasticsearchIntegrationTest {
     }
 
     /**
-     * A simple search for the term test.
+     * A simple search for the term "test".
      */
     private SearchRequestBuilder testSearch() {
-        return client().prepareSearch("test").setTypes("test")
-                .setQuery(QueryBuilders.termQuery("test", "test"))
-                .setHighlighterType("expiremental");
+        return testSearch(termQuery("test", "test"));
+    }
+
+    /**
+     * A simple search for the term test.
+     */
+    private SearchRequestBuilder testSearch(QueryBuilder builder) {
+        return client().prepareSearch("test").setTypes("test").setQuery(builder)
+                .setHighlighterType("expiremental").addHighlightedField("test");
     }
 
     private SearchRequestBuilder setHitSource(SearchRequestBuilder search, String hitSource) {
@@ -204,5 +381,14 @@ public class ExpirementalHighlighterTest extends ElasticsearchIntegrationTest {
         if (fvhLikeTermVectors) {
             builder.field("term_vector", "with_positions_offsets");
         }
+    }
+
+    private void indexTestData() {
+        indexTestData("tests very simple test");
+    }
+
+    private void indexTestData(Object contents) {
+        client().prepareIndex("test", "test", "1").setSource("test", contents).get();
+        refresh();
     }
 }
