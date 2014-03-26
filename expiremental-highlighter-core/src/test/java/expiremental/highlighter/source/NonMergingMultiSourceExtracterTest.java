@@ -14,7 +14,7 @@ public class NonMergingMultiSourceExtracterTest extends AbstractMultiSourceExtra
     @Override
     public void merge() {
         try {
-            build("a", "b").extract(0, 2);
+            build("a", "b").extract(0, 2 + offsetGap);
             fail("Expected exception");
         } catch(UnsupportedOperationException e) {
             //expected

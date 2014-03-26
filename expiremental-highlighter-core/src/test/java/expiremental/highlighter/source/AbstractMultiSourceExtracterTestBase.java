@@ -17,6 +17,7 @@ import expiremental.highlighter.source.AbstractMultiSourceExtracter.Builder;
 public abstract class AbstractMultiSourceExtracterTestBase extends RandomizedTest {
     protected abstract Builder<String, ? extends Builder<String, ?>> builder(int offsetGap);
 
+    protected SourceExtracter<String> extracter;
     protected int offsetGap;
 
     /**
@@ -26,12 +27,17 @@ public abstract class AbstractMultiSourceExtracterTestBase extends RandomizedTes
     public abstract void merge();
 
     protected SourceExtracter<String> build(String... s) {
-        offsetGap = rarely() ? between(0, 100) : 1;
+        return build(rarely() ? between(0, 100) : 1, s);
+    }
+
+    protected SourceExtracter<String> build(int offsetGap, String... s) {
+        this.offsetGap = offsetGap;
         Builder<String, ? extends Builder<String, ?>> builder = builder(offsetGap);
         for (String string : s) {
             builder.add(new StringSourceExtracter(string), string.length());
         }
-        return builder.build();
+        extracter = builder.build();
+        return extracter;
     }
 
     @Test
@@ -46,7 +52,7 @@ public abstract class AbstractMultiSourceExtracterTestBase extends RandomizedTes
 
     @Test
     public void entirelyWithinOneString() {
-        SourceExtracter<String> extracter = build("foo", "bar", "baz", "cupcakes");
+        build("foo", "bar", "baz", "cupcakes");
         assertEquals("foo", extracter.extract(0, 3));
         assertEquals("bar", extracter.extract(3 + offsetGap, 6 + offsetGap));
         assertEquals("baz", extracter.extract(6 + offsetGap * 2, 9 + offsetGap * 2));
@@ -56,9 +62,15 @@ public abstract class AbstractMultiSourceExtracterTestBase extends RandomizedTes
     
     @Test
     public void endOfAString() {
-        SourceExtracter<String> extracter = build("foo", "cupcakes");
+        build("foo", "cupcakes");
         assertEquals("", extracter.extract(3, 3));
         assertEquals("", extracter.extract(11 + offsetGap, 11 + offsetGap));
+    }
+
+    @Test
+    public void insideOffset() {
+        build(100, "foo", "cupcakes");
+        assertEquals("foo", extracter.extract(0, 3 + offsetGap - 1));
     }
 
     @Test

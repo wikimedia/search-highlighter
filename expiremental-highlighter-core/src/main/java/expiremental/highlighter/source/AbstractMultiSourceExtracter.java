@@ -13,16 +13,19 @@ abstract class AbstractMultiSourceExtracter<T> implements SourceExtracter<T> {
     interface Builder<T, S extends Builder<T, S>> {
         /**
          * Add a segmenter.
+         *
          * @param segmenter the segmenter to delegate to
          * @param length the length of the source underlying the segmenter
          * @return this for chaining
          */
         S add(SourceExtracter<T> extracter, int length);
+
         /**
          * Build the segmenter.
          */
         SourceExtracter<T> build();
     }
+
     private final List<ConstituentExtracter<T>> extracters;
     private final int offsetGap;
 
@@ -56,7 +59,8 @@ abstract class AbstractMultiSourceExtracter<T> implements SourceExtracter<T> {
         Iterator<ConstituentExtracter<T>> extractersItr = extracters.iterator();
         while (extractersItr.hasNext()) {
             ConstituentExtracter<T> candidate = extractersItr.next();
-            if (startOffset < candidate.length || (startOffset == endOffset && startOffset == candidate.length)) {
+            if (startOffset < candidate.length
+                    || (startOffset == endOffset && startOffset == candidate.length)) {
                 extracter = candidate;
                 break;
             }
@@ -79,11 +83,19 @@ abstract class AbstractMultiSourceExtracter<T> implements SourceExtracter<T> {
         while (extractersItr.hasNext()) {
             extracter = extractersItr.next();
             if (endOffset <= extracter.length) {
-                extracts.add(extracter.extracter.extract(0, endOffset));
+                // If the request ended before this field started (in the
+                // offset) then don't extract anything.
+                if (endOffset > 0) {
+                    extracts.add(extracter.extracter.extract(0, endOffset));
+                }
                 break;
             }
             extracts.add(extracter.extracter.extract(0, extracter.length));
             endOffset -= extracter.length + offsetGap;
+        }
+        // No need to merge if we scanned and still only got one extract.
+        if (extracts.size() == 1) {
+            return extracts.get(0);
         }
         return merge(extracts);
     }
