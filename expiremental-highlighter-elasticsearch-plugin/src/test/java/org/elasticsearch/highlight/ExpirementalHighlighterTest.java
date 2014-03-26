@@ -27,25 +27,21 @@ public class ExpirementalHighlighterTest extends ElasticsearchIntegrationTest {
     @Test
     public void basic() throws IOException {
         buildIndex();
-        client().prepareIndex("test", "test", "1").setSource("test", "a very simple test").get();
-        refresh();
-        SearchRequestBuilder search = testSearch().addHighlightedField("test");
+        indexTestData();
 
+        SearchRequestBuilder search = testSearch().addHighlightedField("test");
         for (String hitSource : HIT_SOURCES) {
             SearchResponse response = setHitSource(search, hitSource).get();
-            assertHighlight(response, 0, "test", 0, equalTo("a very simple <em>test</em>"));
+            assertHighlight(response, 0, "test", 0, equalTo("tests very simple <em>test</em>"));
         }
     }
 
     @Test
     public void multiValued() throws IOException {
         buildIndex();
-        client().prepareIndex("test", "test", "1")
-                .setSource("test",
-                        new String[] { "tests very simple test", "with two fields to test" }).get();
-        refresh();
-        SearchRequestBuilder search = testSearch().addHighlightedField("test", 100, 100);
+        indexTestData(new String[] { "tests very simple test", "with two fields to test" });
 
+        SearchRequestBuilder search = testSearch().addHighlightedField("test", 100, 100);
         for (String hitSource : HIT_SOURCES) {
             SearchResponse response = setHitSource(search, hitSource).get();
             assertHighlight(response, 0, "test", 0, equalTo("tests very simple <em>test</em>"));
@@ -54,7 +50,6 @@ public class ExpirementalHighlighterTest extends ElasticsearchIntegrationTest {
 
         search = testSearch().addHighlightedField(
                 new HighlightBuilder.Field("test").matchedFields("test.english"));
-
         for (String hitSource : HIT_SOURCES) {
             SearchResponse response = setHitSource(search, hitSource).get();
             assertHighlight(response, 0, "test", 0,
@@ -66,9 +61,8 @@ public class ExpirementalHighlighterTest extends ElasticsearchIntegrationTest {
     @Test
     public void matchedFields() throws IOException {
         buildIndex();
-        client().prepareIndex("test", "test", "1").setSource("test", "tests very simple test")
-                .get();
-        refresh();
+        indexTestData();
+
         SearchRequestBuilder search = testSearch().addHighlightedField(
                 new HighlightBuilder.Field("test").matchedFields("test.english"));
         // One matched field
@@ -101,9 +95,7 @@ public class ExpirementalHighlighterTest extends ElasticsearchIntegrationTest {
     @Test
     public void matchedFieldsSameAnalyzer() throws IOException {
         buildIndex();
-        client().prepareIndex("test", "test", "1").setSource("test", "tests very simple test")
-                .get();
-        refresh();
+        indexTestData();
         SearchRequestBuilder search = testSearch().addHighlightedField(
                 new HighlightBuilder.Field("test").matchedFields("test.english", "test.english2"));
 
@@ -123,9 +115,7 @@ public class ExpirementalHighlighterTest extends ElasticsearchIntegrationTest {
     @Test
     public void settingHitSourceWithoutDataIsAnError() throws IOException {
         buildIndex(false, false);
-        client().prepareIndex("test", "test", "1").setSource("test", "tests very simple test")
-                .get();
-        refresh();
+        indexTestData();
 
         SearchRequestBuilder search = testSearch().addHighlightedField("test");
         for (String hitSource : HIT_SOURCES) {
@@ -204,5 +194,14 @@ public class ExpirementalHighlighterTest extends ElasticsearchIntegrationTest {
         if (fvhLikeTermVectors) {
             builder.field("term_vector", "with_positions_offsets");
         }
+    }
+
+    private void indexTestData() {
+        indexTestData("tests very simple test");
+    }
+
+    private void indexTestData(Object contents) {
+        client().prepareIndex("test", "test", "1").setSource("test", contents).get();
+        refresh();
     }
 }
