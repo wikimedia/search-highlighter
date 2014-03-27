@@ -123,14 +123,37 @@ using the first option that wouldn't throw an error.
   }
 ```
 
-Elasticsearch matched_field support
------------------------------------
-This highlighter supports ```matched_fields``` just like the Fast Vectory
-Highlighter.  See the [documentation](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/search-request-highlighting.html#matched-fields)
-for more on it.  The only real difference is that each fields ```hit_source```
-is determined independently.  If one field is short feel free to leave out any
-special settings for ```index_options``` or ```term_vector```.
+The ```boost_before``` option lets you set up boosts before positions.  For
+example, this will multiply the weight of matches before the 20th position by
+5 abd before the 100th position by 1.5.
+```js
+  "highlight": {
+    "fields": {
+      "title": {
+        "type": "expiremental",
+        "options": {
+          "boost_before": {
+            "20": 5,
+            "100": 1.5
+          }
+        }
+      }
+    }
+  }
+```
 
+The ```matched_fields``` field turns on combining matches from multiple fields,
+just like the Fast Vector Highlighter.  See the [Elasticsearch documentation](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/search-request-highlighting.html#matched-fields)
+for more on it.  The only real difference is that if ```hit_source``` is left
+out then each field's HitSource is determined independently if .  If one field
+is short feel free to leave out any special settings for ```index_options``` or
+for ```term_vector```s.
+
+If you aren't using Elasticsearch, you can combine hits from multiple sources
+using:
+```java
+new OverlapMergingHitEnumWrapper(new MergingHitEnum(hitsToMerge, HitEnum.LessThans.OFFSETS));
+```
 
 Offsets in postings or term vectors
 -----------------------------------

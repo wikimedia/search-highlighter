@@ -5,6 +5,8 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
+import java.util.TreeMap;
 
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.TokenStream;
@@ -26,6 +28,7 @@ import expiremental.highlighter.elasticsearch.CharScanningSegmenterFactory;
 import expiremental.highlighter.elasticsearch.SegmenterFactory;
 import expiremental.highlighter.elasticsearch.WholeSourceSegmenterFactory;
 import expiremental.highlighter.hit.ConcatHitEnum;
+import expiremental.highlighter.hit.PositionBoostingHitEnumWrapper;
 import expiremental.highlighter.hit.TermWeigher;
 import expiremental.highlighter.hit.WeightFilteredHitEnumWrapper;
 import expiremental.highlighter.hit.weight.CachingTermWeigher;
@@ -158,6 +161,34 @@ public class FieldWrapper {
     }
 
     public HitEnum buildHitEnum() throws IOException {
+        HitEnum e = buildHitEnumForSource();
+        FieldOptions options = context.field.fieldOptions();
+        if (!options.scoreOrdered()) {
+            // If we're not score ordered then there isn't any point in changing
+            // the enum's weights.
+            return e;
+        }
+        // TODO move this up so we don't have to redo it per matched_field
+        @SuppressWarnings("unchecked")
+        Map<String, Object> boostBefore = (Map<String, Object>)context.field.fieldOptions().options().get("boost_before");
+        if (boostBefore != null) {
+            TreeMap<Integer, Float> ordered = new TreeMap<Integer, Float>();
+            for (Map.Entry<String, Object> entry : boostBefore.entrySet()) {
+                if (!(entry.getValue() instanceof Number)) {
+                    throw new IllegalArgumentException("boost_before must be a flat object who's values are numbers.");
+                }
+                ordered.put(Integer.valueOf(entry.getKey()), (Float)entry.getValue());
+            }
+            PositionBoostingHitEnumWrapper boosting = new PositionBoostingHitEnumWrapper(e);
+            e = boosting;
+            for (Map.Entry<Integer, Float> entry: ordered.entrySet()) {
+                boosting.add(entry.getKey(), entry.getValue());
+            }
+        }
+        return e;
+    }
+
+    private HitEnum buildHitEnumForSource() throws IOException {
         if (context.field.fieldOptions().options() != null) {
             String hitSource = (String) context.field.fieldOptions().options().get("hit_source");
             if (hitSource != null) {

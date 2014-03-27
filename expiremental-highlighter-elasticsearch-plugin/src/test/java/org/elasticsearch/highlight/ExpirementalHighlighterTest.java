@@ -276,6 +276,29 @@ public class ExpirementalHighlighterTest extends ElasticsearchIntegrationTest {
     }
 
     @Test
+    public void boostBefore() throws IOException {
+        buildIndex();
+        indexTestData("The quick brown fox jumped over the lazy test.  And some other test.  " +
+                "Junk junk junk junk junk junk junk junk junk junk junk test test test.");
+
+
+        SearchRequestBuilder search = testSearch(
+                boolQuery().should(termQuery("test", "test")).should(termQuery("test", "foo")))
+                .addHighlightedField(new HighlightBuilder.Field("test").fragmenter("sentence").numOfFragments(3))
+                .setHighlighterOrder("score");
+        Map<String, Object> options = new HashMap<String, Object>();
+        options.put("boost_before", ImmutableMap.of("10", 4f, "20", 2f));
+        for (String hitSource : HIT_SOURCES) {
+            options.put("hit_source", hitSource);
+            SearchResponse response = search.setHighlighterOptions(options).get();
+            assertHighlight(response, 0, "test", 0, equalTo("The quick brown fox jumped over the lazy <em>test</em>.  "));
+            assertHighlight(response, 0, "test", 1, equalTo("Junk junk junk junk junk junk junk " +
+                    "junk junk junk junk <em>test</em> <em>test</em> <em>test</em>."));
+            assertHighlight(response, 0, "test", 2, equalTo("And some other <em>test</em>.  "));
+        }
+    }
+
+    @Test
     public void useDefaultSimilarity() throws IOException {
         buildIndex();
         client().prepareIndex("test", "test").setSource("test", new String[] {"test", "foo foo"}).get();
