@@ -1,4 +1,4 @@
-Expiremental Highlighter
+Expiremental Highlighter [![Build Status](https://travis-ci.org/nik9000/expiremental-highlighter.svg?branch=master)](https://travis-ci.org/nik9000/expiremental-highlighter)
 ========================
 
 Text highlighter for Java designed to be pluggable enough for easy
@@ -7,24 +7,24 @@ hits are weighed or how they are grouped into snippets without knowing about
 the guts of Lucene or Elasticsearch.
 
 Comes in three flavors:
-* Core: No dependencies jar containing most of the interesting logic.
-* Lucene: A jar containing a bridge between the core and lucene.
-* Elasticsearch: An Elasticsearch plugin.
+* Core: No dependencies jar containing most of the interesting logic
+* Lucene: A jar containing a bridge between the core and lucene
+* Elasticsearch: An Elasticsearch plugin
 
 
 Elasticsearch value proposition
 -------------------------------
-This highlighter can
-* Generate hits by reanalyzing the string, loading offset from postings, or
-loading offsets from term vectors.  It produces the same output regardless of
-which method it uses.
-* Fragment either by scanning for characters (like the FVH does) or by
-delegating to Java's BreakIterator (like the Postings Highlighter).  Scanning
-is noticably faster in some cases.
-* Combine hits using multiple different fields.
+This highlighter
+* Doesn't need offsets in postings or term enums with offsets but can use
+either to speed itself up.
+* Can fragment like the Postings Highlighter, the Fast Vector Highlighter,
+or it can highlight the entire field.
+* Combine hits using multiple different fields (aka ```matched_field```
+support).
+* Boost matches that appear early in the document.
 
 This highlighter does not (currently):
-* Respect phrase mathces at all (all phrases are reduced to terms)
+* Respect phrase matches at all (all phrases are reduced to terms)
 * Support require_field_match
 
 Elasticsearch installation
@@ -141,6 +141,8 @@ example, this will multiply the weight of matches before the 20th position by
     }
   }
 ```
+Note that the position is not reset between multiple values of the same field
+but is handled independently for each ```matched_field```.
 
 The ```matched_fields``` field turns on combining matches from multiple fields,
 just like the Fast Vector Highlighter.  See the [Elasticsearch documentation](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/search-request-highlighting.html#matched-fields)
