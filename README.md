@@ -32,7 +32,7 @@ Elasticsearch installation
 
 | Expiremental Highlighter Plugin |  ElasticSearch  |
 |---------------------------------|-----------------|
-| master                          | 1.0.1 -> master |
+| master                          | 1.1.0 -> master |
 
 At this point nothing has been pushed to Elasticsearch's plugin repository so
 you have to clone the plugin locally, build it by going to the cloned directory
