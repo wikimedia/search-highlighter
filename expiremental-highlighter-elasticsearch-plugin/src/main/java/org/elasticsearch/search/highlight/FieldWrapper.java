@@ -144,7 +144,7 @@ public class FieldWrapper {
                     options.boundaryMaxScan());
         }
         if (options.fragmenter().equals("sentence")) {
-            String localeString = (String) options.options().get("locale");
+            String localeString = (String) getOption("locale");
             Locale locale;
             if (localeString == null) {
                 locale = Locale.US;
@@ -170,7 +170,7 @@ public class FieldWrapper {
         }
         // TODO move this up so we don't have to redo it per matched_field
         @SuppressWarnings("unchecked")
-        Map<String, Object> boostBefore = (Map<String, Object>)context.field.fieldOptions().options().get("boost_before");
+        Map<String, Object> boostBefore = (Map<String, Object>)getOption("boost_before");
         if (boostBefore != null) {
             TreeMap<Integer, Float> ordered = new TreeMap<Integer, Float>();
             for (Map.Entry<String, Object> entry : boostBefore.entrySet()) {
@@ -310,8 +310,7 @@ public class FieldWrapper {
         // No need to add fancy term weights if there is only one term or we
         // aren't using score order.
         if (!cacheEntry.queryWeigher.singleTerm() && context.field.fieldOptions().scoreOrdered()) {
-            Boolean useDefaultSimilarity = (Boolean) context.field.fieldOptions().options()
-                    .get("default_similarity");
+            Boolean useDefaultSimilarity = (Boolean) getOption("default_similarity");
             if (useDefaultSimilarity == null || useDefaultSimilarity == true) {
                 slowToWeighTermsMultipleTimes = true;
                 weigher = new MultiplyingTermWeigher<BytesRef>(weigher,
@@ -323,5 +322,12 @@ public class FieldWrapper {
             weigher = new CachingTermWeigher<BytesRef>(weigher);
         }
         return weigher;
+    }
+    
+    private Object getOption(String key) {
+        if (context.field.fieldOptions().options() == null) {
+            return null;
+        }
+        return context.field.fieldOptions().options().get(key);
     }
 }

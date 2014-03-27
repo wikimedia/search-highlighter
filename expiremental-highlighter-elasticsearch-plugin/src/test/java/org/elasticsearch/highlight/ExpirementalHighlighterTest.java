@@ -418,6 +418,16 @@ public class ExpirementalHighlighterTest extends ElasticsearchIntegrationTest {
     }
 
     // TODO matched_fields with different hit source
+    // TODO infer proper hit source
+    
+    @Test
+    public void highlightWithoutOptionsDoesntBlowUp() throws IOException {
+        buildIndex();
+        indexTestData();
+
+        assertNoFailures(testSearch().get());
+        assertNoFailures(testSearch().setHighlighterOrder("score").get());
+    }
     
     /**
      * A simple search for the term "test".
