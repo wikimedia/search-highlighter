@@ -261,11 +261,26 @@ public class ExpirementalHighlighterTest extends ElasticsearchIntegrationTest {
     }
 
     @Test
+    public void noneFragmenter() throws IOException {
+        buildIndex();
+        indexTestData("The quick brown fox jumped over the lazy test.  And some other test sentence.");
+
+        SearchRequestBuilder search = testSearch().addHighlightedField(
+                new HighlightBuilder.Field("test").fragmenter("none").numOfFragments(3));
+        for (String hitSource : HIT_SOURCES) {
+            SearchResponse response = setHitSource(search, hitSource).get();
+            assertHighlight(response, 0, "test", 0,
+                    equalTo("The quick brown fox jumped over the lazy <em>test</em>.  "
+                            + "And some other <em>test</em> sentence."));
+        }
+    }
+
+    @Test
     public void useDefaultSimilarity() throws IOException {
         buildIndex();
         client().prepareIndex("test", "test").setSource("test", new String[] {"test", "foo foo"}).get();
         // We need enough "foo" so that a whole bunch end up on the shard with the above entry.
-        for (int i = 0; i < 1000; i++) {
+        for (int i = 0; i < 100; i++) {
             client().prepareIndex("test", "test").setSource("test", "foo").get();    
         }
         refresh();

@@ -70,9 +70,11 @@ Then you can use it by searching like so:
 Elasticsearch options
 ---------------------
 The ```fragmenter``` field to defaults to ```scan``` but can also be set to
-```sentence```.  ```sentence``` produces results that look like the Postings
-Highlighter.  ```scan``` produces results that look like the Fast Vectory
-Highlighter.  Example:
+```sentence``` or ```none```.  ```scan``` produces results that look like the
+Fast Vector Highlighter.  ```sentence``` produces results that look like the
+Postings Highlighter.  ```none``` won't fragment on anything so it is cleaner
+if you have to highlight the whole field.  Multi-valued fields will always
+fragment between each value, even on ```none```.  Example:
 ```js
   "highlight": {
     "fields": {

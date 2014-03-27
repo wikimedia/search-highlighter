@@ -16,6 +16,7 @@ curl -XPOST "http://localhost:9200/test/test?pretty" -d '{"title": "a pretty tin
 echo '{"title": "a much larger string to test with ' > /tmp/largerString
 echo '{"title": "huge string with ' > /tmp/hugeString
 echo '{"title": "many string with ' > /tmp/manyString
+echo '{"title": ["multi"' > /tmp/multiString
 rm -f /tmp/hugePart
 for i in {1..100}; do
   echo "very very very " >> /tmp/hugePart
@@ -30,20 +31,27 @@ for i in {1..1000}; do
   echo 'much much more text.  ' >> /tmp/hugeString
 done
 for i in {1..100}; do
-  cat /tmp/hugePart >> /tmp/manyString
+  cat /tmp/manyPart >> /tmp/manyString
   echo 'much much more text.  ' >> /tmp/manyString
+done
+for i in {1..10000}; do
+  echo ', "multi"' >> /tmp/multiString
 done
 echo 'and larger at the end"}' >> /tmp/largerString
 echo 'and huge at the end"}' >> /tmp/hugeString
 echo '"}' >> /tmp/manyString
+echo ']}' >> /tmp/multiString
 curl -XPOST "http://localhost:9200/test/test?pretty" -d @/tmp/largerString
 curl -XPOST "http://localhost:9200/test/test?pretty" -d @/tmp/hugeString
 curl -XPOST "http://localhost:9200/test/test?pretty" -d @/tmp/manyString
+curl -XPOST "http://localhost:9200/test/test?pretty" -d @/tmp/multiString
 curl -XPOST http://localhost:9200/test/_refresh?pretty
 
 function go() {
   highlighter="$1"
   count=200
+  hit_source=""
+  fragmenter=""
   if [ "$highlighter" == "expiremental" ]; then
     hit_source="$2"
     fragmenter="$3"
@@ -73,21 +81,17 @@ function go() {
     }
   }
 }' > /tmp/post
-  printf "%15s %20s %7s %10s %10s %1s " $highlighter "$search" $order "$hit_source" $fragmenter $number_of_fragments
-  if [ "$mode" = "check" ]; then
-    curl -s -XPOST "http://localhost:9200/test/test/_search?pretty" -d @/tmp/post > /tmp/result
-    grep "<em>" /tmp/result || cat /tmp/result
-  elif [ "$mode" = "bench" ]; then
-    ab -c 3 -n $count -p /tmp/post http://localhost:9200/test/_search 2>&1 | grep Total:
-  fi
+  printf "%15s %20s %7s %10s %10s %1s " "$highlighter" "$search" "$order" "$hit_source" "$fragmenter" "$number_of_fragments"
+  ab -c 3 -n $count -p /tmp/post http://localhost:9200/test/_search 2>&1 | grep Total:
 }
 
 function each() {
-  for highlighter in plain fvh postings; do
-    go $highlighter
-  done
+  go plain
+  go fvh
+  go postings
   go expiremental postings scan
   go expiremental postings sentence
+  go expiremental postings none
   go expiremental vectors scan
   go expiremental analyze scan
 }
@@ -109,12 +113,10 @@ function suite() {
     each
     export search="hug* AND str*"
     each
-    export search=many
+    export search=multi
+    each
   done
 }
-
-export mode=check
-suite
 
 export mode=bench
 suite

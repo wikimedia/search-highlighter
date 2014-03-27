@@ -24,6 +24,7 @@ import expiremental.highlighter.SourceExtracter;
 import expiremental.highlighter.elasticsearch.BreakIteratorSegmenterFactory;
 import expiremental.highlighter.elasticsearch.CharScanningSegmenterFactory;
 import expiremental.highlighter.elasticsearch.SegmenterFactory;
+import expiremental.highlighter.elasticsearch.WholeSourceSegmenterFactory;
 import expiremental.highlighter.hit.ConcatHitEnum;
 import expiremental.highlighter.hit.TermWeigher;
 import expiremental.highlighter.hit.WeightFilteredHitEnumWrapper;
@@ -148,6 +149,9 @@ public class FieldWrapper {
                 locale = Strings.parseLocaleString(localeString);
             }
             return new BreakIteratorSegmenterFactory(locale);
+        }
+        if (options.fragmenter().equals("none")) {
+            return new WholeSourceSegmenterFactory();
         }
         throw new IllegalArgumentException("Unknown fragmenter:  '" + options.fragmenter()
                 + "'.  Options are 'scan' or 'sentence'.");
