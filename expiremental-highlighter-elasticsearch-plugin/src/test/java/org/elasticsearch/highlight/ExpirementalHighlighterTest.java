@@ -19,7 +19,7 @@ import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertFail
 import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertHighlight;
 import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertNoFailures;
 import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertNotHighlighted;
-import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.*;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -35,6 +35,7 @@ import org.elasticsearch.common.collect.ImmutableList;
 import org.elasticsearch.common.collect.ImmutableMap;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.index.query.QueryBuilder;
+import org.elasticsearch.rest.RestStatus;
 import org.elasticsearch.search.highlight.HighlightBuilder;
 import org.elasticsearch.test.ElasticsearchIntegrationTest;
 import org.junit.Test;
@@ -377,12 +378,13 @@ public class ExpirementalHighlighterTest extends ElasticsearchIntegrationTest {
                 new HighlightBuilder.Field("test").matchedFields("test.english", "test.english2"));
 
         for (String hitSource : HIT_SOURCES) {
-            SearchResponse response = setHitSource(search, hitSource).get();
+            setHitSource(search, hitSource);
             if (hitSource.equals("analyze")) {
                 // I wish I could throw an HTTP 400 here but I don't believe I
                 // can.
-                assertFailures(response);
+                assertFailures(search, RestStatus.INTERNAL_SERVER_ERROR, containsString("unique analyzer"));
             } else {
+                SearchResponse response = search.get();
                 assertHighlight(response, 0, "test", 0,
                         equalTo("<em>tests</em> very simple <em>test</em>"));
             }
@@ -478,10 +480,43 @@ public class ExpirementalHighlighterTest extends ElasticsearchIntegrationTest {
 
         SearchRequestBuilder search = testSearch(termQuery("find_me", "test"));
         for (String hitSource : HIT_SOURCES) {
-            System.err.println("hit_source:  " + hitSource);
             SearchResponse response = setHitSource(search, hitSource).get();
             assertNotHighlighted(response, 0, "test");
         }
+    }
+
+    @Test
+    public void noMatch() throws IOException {
+        String shortString = "Lets segment this thing.  Yay.";
+        String longString = "Lets segment a much longer sentence because "
+                + "we really like long sentences but we shouldn't return "
+                + "everything because that'd be too much don't you think?  Yes.";
+
+        buildIndex();
+        client().prepareIndex("test", "test", "short")
+                .setSource("test", shortString, "find_me", "shortstring").get();
+        client().prepareIndex("test", "test", "long")
+                .setSource("test", longString, "find_me", "longstring").get();
+        refresh();
+
+        HighlightBuilder.Field field = new HighlightBuilder.Field("test").noMatchSize(10);
+        SearchRequestBuilder search = testSearch(termQuery("find_me", "shortstring")).addHighlightedField(
+                field);
+        field.fragmenter("scan");
+        assertHighlight(search.get(), 0, "test", 0, equalTo("Lets segment"));
+        field.fragmenter("sentence");
+        assertHighlight(search.get(), 0, "test", 0, equalTo("Lets segment this thing.  "));
+        field.fragmenter("none");
+        assertHighlight(search.get(), 0, "test", 0, equalTo(shortString));
+
+        search = testSearch(termQuery("find_me", "longstring")).addHighlightedField(
+                field);
+        field.fragmenter("scan");
+        assertHighlight(search.get(), 0, "test", 0, equalTo("Lets segment"));
+        field.fragmenter("sentence");
+        assertHighlight(search.get(), 0, "test", 0, equalTo("Lets segment a much longer "));
+        field.fragmenter("none");
+        assertHighlight(search.get(), 0, "test", 0, equalTo(longString));
     }
 
     // TODO matched_fields with different hit source

@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.TreeMap;
 
@@ -12,21 +11,18 @@ import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.index.FieldInfo;
 import org.apache.lucene.util.BytesRef;
-import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.base.Function;
 import org.elasticsearch.common.collect.Iterators;
 import org.elasticsearch.index.mapper.FieldMapper;
 import org.elasticsearch.index.mapper.core.StringFieldMapper;
 import org.elasticsearch.search.highlight.ExpirementalHighlighter.CacheEntry;
+import org.elasticsearch.search.highlight.ExpirementalHighlighter.HighlightExecutionContext;
 import org.elasticsearch.search.highlight.SearchContextHighlight.FieldOptions;
 
 import expiremental.highlighter.HitEnum;
 import expiremental.highlighter.Segmenter;
 import expiremental.highlighter.SourceExtracter;
-import expiremental.highlighter.elasticsearch.BreakIteratorSegmenterFactory;
-import expiremental.highlighter.elasticsearch.CharScanningSegmenterFactory;
 import expiremental.highlighter.elasticsearch.SegmenterFactory;
-import expiremental.highlighter.elasticsearch.WholeSourceSegmenterFactory;
 import expiremental.highlighter.hit.ConcatHitEnum;
 import expiremental.highlighter.hit.PositionBoostingHitEnumWrapper;
 import expiremental.highlighter.hit.TermWeigher;
@@ -41,6 +37,7 @@ import expiremental.highlighter.source.NonMergingMultiSourceExtracter;
 import expiremental.highlighter.source.StringSourceExtracter;
 
 public class FieldWrapper {
+    private final HighlightExecutionContext executionContext;
     private final HighlighterContext context;
     private final CacheEntry cacheEntry;
     private List<String> values;
@@ -52,8 +49,24 @@ public class FieldWrapper {
     /**
      * Build a wrapper around the default field in the context.
      */
-    public FieldWrapper(HighlighterContext context, CacheEntry cacheEntry) {
+    public FieldWrapper(HighlightExecutionContext executionContext, HighlighterContext context, 
+            CacheEntry cacheEntry) {
+        this.executionContext = executionContext;
         this.context = context;
+        this.cacheEntry = cacheEntry;
+    }
+
+    /**
+     * Build a wrapper around fieldName which is not the default field in the
+     * context.
+     */
+    public FieldWrapper(HighlightExecutionContext executionContext, HighlighterContext context,
+            CacheEntry cacheEntry, String fieldName) {
+        assert !context.fieldName.equals(fieldName);
+        FieldMapper<?> mapper = context.context.smartNameFieldMapper(fieldName);
+        this.executionContext = executionContext;
+        this.context = new HighlighterContext(fieldName, context.field, mapper, context.context,
+                context.hitContext, context.query);
         this.cacheEntry = cacheEntry;
     }
 
@@ -68,18 +81,6 @@ public class FieldWrapper {
                 tokenStream.close();
             }
         }
-    }
-
-    /**
-     * Build a wrapper around fieldName which is not the default field in the
-     * context.
-     */
-    public FieldWrapper(HighlighterContext context, CacheEntry cacheEntry, String fieldName) {
-        assert !context.fieldName.equals(fieldName);
-        FieldMapper<?> mapper = context.context.smartNameFieldMapper(fieldName);
-        this.context = new HighlighterContext(fieldName, context.field, mapper, context.context,
-                context.hitContext, context.query);
-        this.cacheEntry = cacheEntry;
     }
 
     public List<String> getFieldValues() throws IOException {
@@ -119,7 +120,7 @@ public class FieldWrapper {
         // TODO loading source is expensive if you don't need it. Delay
         // this.
         List<String> fieldValues = getFieldValues();
-        SegmenterFactory segmenterFactory = buildSegmenterFactory();
+        SegmenterFactory segmenterFactory = executionContext.getSegmenterFactory();
         switch (fieldValues.size()) {
         case 0:
             return segmenterFactory.build("");
@@ -136,30 +137,6 @@ public class FieldWrapper {
         }
     }
 
-    private SegmenterFactory buildSegmenterFactory() {
-        FieldOptions options = context.field.fieldOptions();
-        if (options.fragmenter() == null || options.fragmenter().equals("scan")) {
-            // TODO boundaryChars
-            return new CharScanningSegmenterFactory(options.fragmentCharSize(),
-                    options.boundaryMaxScan());
-        }
-        if (options.fragmenter().equals("sentence")) {
-            String localeString = (String) getOption("locale");
-            Locale locale;
-            if (localeString == null) {
-                locale = Locale.US;
-            } else {
-                locale = Strings.parseLocaleString(localeString);
-            }
-            return new BreakIteratorSegmenterFactory(locale);
-        }
-        if (options.fragmenter().equals("none")) {
-            return new WholeSourceSegmenterFactory();
-        }
-        throw new IllegalArgumentException("Unknown fragmenter:  '" + options.fragmenter()
-                + "'.  Options are 'scan' or 'sentence'.");
-    }
-
     public HitEnum buildHitEnum() throws IOException {
         HitEnum e = buildHitEnumForSource();
         FieldOptions options = context.field.fieldOptions();
@@ -170,7 +147,7 @@ public class FieldWrapper {
         }
         // TODO move this up so we don't have to redo it per matched_field
         @SuppressWarnings("unchecked")
-        Map<String, Object> boostBefore = (Map<String, Object>)getOption("boost_before");
+        Map<String, Object> boostBefore = (Map<String, Object>)executionContext.getOption("boost_before");
         if (boostBefore != null) {
             TreeMap<Integer, Float> ordered = new TreeMap<Integer, Float>();
             for (Map.Entry<String, Object> entry : boostBefore.entrySet()) {
@@ -310,7 +287,7 @@ public class FieldWrapper {
         // No need to add fancy term weights if there is only one term or we
         // aren't using score order.
         if (!cacheEntry.queryWeigher.singleTerm() && context.field.fieldOptions().scoreOrdered()) {
-            Boolean useDefaultSimilarity = (Boolean) getOption("default_similarity");
+            Boolean useDefaultSimilarity = (Boolean) executionContext.getOption("default_similarity");
             if (useDefaultSimilarity == null || useDefaultSimilarity == true) {
                 slowToWeighTermsMultipleTimes = true;
                 weigher = new MultiplyingTermWeigher<BytesRef>(weigher,
@@ -322,12 +299,5 @@ public class FieldWrapper {
             weigher = new CachingTermWeigher<BytesRef>(weigher);
         }
         return weigher;
-    }
-    
-    private Object getOption(String key) {
-        if (context.field.fieldOptions().options() == null) {
-            return null;
-        }
-        return context.field.fieldOptions().options().get(key);
     }
 }

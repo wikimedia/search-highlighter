@@ -3,17 +3,24 @@ package org.elasticsearch.search.highlight;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
 
+import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.text.StringText;
 import org.elasticsearch.common.text.Text;
 import org.elasticsearch.search.fetch.FetchPhaseExecutionException;
+import org.elasticsearch.search.highlight.SearchContextHighlight.FieldOptions;
 
 import expiremental.highlighter.HitEnum;
 import expiremental.highlighter.Snippet;
 import expiremental.highlighter.SnippetChooser;
 import expiremental.highlighter.SnippetFormatter;
+import expiremental.highlighter.elasticsearch.SentenceIteratorSegmenterFactory;
+import expiremental.highlighter.elasticsearch.CharScanningSegmenterFactory;
 import expiremental.highlighter.elasticsearch.ElasticsearchQueryFlattener;
+import expiremental.highlighter.elasticsearch.SegmenterFactory;
+import expiremental.highlighter.elasticsearch.WholeSourceSegmenterFactory;
 import expiremental.highlighter.hit.MergingHitEnum;
 import expiremental.highlighter.hit.OverlapMergingHitEnumWrapper;
 import expiremental.highlighter.lucene.hit.weight.BasicQueryWeigher;
@@ -60,23 +67,33 @@ public class ExpirementalHighlighter implements Highlighter {
         private final CacheEntry cacheEntry;
         private FieldWrapper defaultField;
         private List<FieldWrapper> extraFields;
+        private SegmenterFactory segmenterFactory;
 
         HighlightExecutionContext(HighlighterContext context, CacheEntry cacheEntry) {
             this.context = context;
             this.cacheEntry = cacheEntry;
-            defaultField = new FieldWrapper(context, cacheEntry);
+            defaultField = new FieldWrapper(this, context, cacheEntry);
         }
 
         HighlightField highlight() throws IOException {
             List<Snippet> snippets = buildChooser().choose(defaultField.buildSegmenter(),
                     buildHitEnum(), context.field.fieldOptions().numberOfFragments());
             if (snippets.size() == 0) {
+                int noMatchSize = context.field.fieldOptions().noMatchSize();
+                if (noMatchSize > 0) {
+                    List<String> fieldValues = defaultField.getFieldValues();
+                    if (fieldValues.size() > 0) {
+                        Text fragment = new StringText(getSegmenterFactory()
+                                .extractNoMatchFragment(fieldValues.get(0), noMatchSize));
+                        return new HighlightField(context.fieldName, new Text[] {fragment});
+                    }
+                }
                 return null;
             }
             return new HighlightField(context.fieldName, formatSnippets(snippets));
         }
 
-        private void cleanup() throws Exception {
+        void cleanup() throws Exception {
             Exception lastCaught = null;
             try {
                 defaultField.cleanup();
@@ -95,6 +112,20 @@ public class ExpirementalHighlighter implements Highlighter {
             if (lastCaught != null) {
                 throw lastCaught;
             }
+        }
+
+        SegmenterFactory getSegmenterFactory() {
+            if (segmenterFactory == null) {
+                segmenterFactory = buildSegmenterFactory();
+            }
+            return segmenterFactory;
+        }
+
+        Object getOption(String key) {
+            if (context.field.fieldOptions().options() == null) {
+                return null;
+            }
+            return context.field.fieldOptions().options().get(key);
         }
 
         /**
@@ -123,7 +154,7 @@ public class ExpirementalHighlighter implements Highlighter {
                 if (context.fieldName.equals(field)) {
                     wrapper = defaultField;
                 } else {
-                    wrapper = new FieldWrapper(context, cacheEntry, field);
+                    wrapper = new FieldWrapper(this, context, cacheEntry, field);
                 }
                 toMerge.add(wrapper.buildHitEnum());
                 extraFields.add(wrapper);
@@ -148,6 +179,30 @@ public class ExpirementalHighlighter implements Highlighter {
                 result[i++] = new StringText(formatter.format(snippet));
             }
             return result;
+        }
+
+        private SegmenterFactory buildSegmenterFactory() {
+            FieldOptions options = context.field.fieldOptions();
+            if (options.fragmenter() == null || options.fragmenter().equals("scan")) {
+                // TODO boundaryChars
+                return new CharScanningSegmenterFactory(options.fragmentCharSize(),
+                        options.boundaryMaxScan());
+            }
+            if (options.fragmenter().equals("sentence")) {
+                String localeString = (String) getOption("locale");
+                Locale locale;
+                if (localeString == null) {
+                    locale = Locale.US;
+                } else {
+                    locale = Strings.parseLocaleString(localeString);
+                }
+                return new SentenceIteratorSegmenterFactory(locale, options.boundaryMaxScan());
+            }
+            if (options.fragmenter().equals("none")) {
+                return new WholeSourceSegmenterFactory();
+            }
+            throw new IllegalArgumentException("Unknown fragmenter:  '" + options.fragmenter()
+                    + "'.  Options are 'scan' or 'sentence'.");
         }
     }
 }
