@@ -91,6 +91,9 @@ fragment between each value, even on ```none```.  Example:
 If using the ```sentence``` fragmenter you can specify the locale used for
 sentence rules with the ```locale``` option as above.
 
+Each fragmenter has different ```no_match_size``` strategies based on the
+spirit of the fragmenter.
+
 The ```default_similarity``` option defaults to true for queries with more then
 one term.  It will weigh each matched term using Lucene's default similarity
 model similarly to how the Fast Vectory Highlighter weighs terms.  If can be
