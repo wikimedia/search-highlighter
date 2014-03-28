@@ -18,13 +18,17 @@ import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertAcke
 import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertFailures;
 import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertHighlight;
 import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertNoFailures;
+import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertNotHighlighted;
 import static org.hamcrest.Matchers.equalTo;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
 
+import org.elasticsearch.action.index.IndexRequestBuilder;
 import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.common.collect.ImmutableList;
@@ -416,9 +420,6 @@ public class ExpirementalHighlighterTest extends ElasticsearchIntegrationTest {
             }
         }
     }
-
-    // TODO matched_fields with different hit source
-    // TODO infer proper hit source
     
     @Test
     public void highlightWithoutOptionsDoesntBlowUp() throws IOException {
@@ -428,6 +429,63 @@ public class ExpirementalHighlighterTest extends ElasticsearchIntegrationTest {
         assertNoFailures(testSearch().get());
         assertNoFailures(testSearch().setHighlighterOrder("score").get());
     }
+
+    @Test
+    public void dataInOtherFields() throws IOException {
+        buildIndex();
+        client().prepareIndex("test", "test", "1")
+                .setSource("test", "tests very simple test", "other",
+                        "break me maybe?  lets make this pretty long tests").get();
+        refresh();
+
+        SearchRequestBuilder search = testSearch();
+        for (String hitSource : HIT_SOURCES) {
+            SearchResponse response = setHitSource(search, hitSource).get();
+            assertHighlight(response, 0, "test", 0, equalTo("tests very simple <em>test</em>"));
+        }
+    }
+
+    @Test
+    public void dataInOtherDocuments() throws IOException {
+        buildIndex();
+        client().prepareIndex("test", "test", "2")
+                .setSource("test", "break me maybe?  lets make this pretty long tests").get();
+        indexTestData();
+
+        SearchRequestBuilder search = testSearch();
+        for (String hitSource : HIT_SOURCES) {
+            SearchResponse response = setHitSource(search, hitSource).get();
+            assertHighlight(response, 0, "test", 0, equalTo("tests very simple <em>test</em>"));
+        }
+    }
+
+    @Test
+    public void noMatchesThisDocButMatchesOthers() throws IOException, InterruptedException,
+            ExecutionException {
+        buildIndex();
+        // This is the doc we're looking for and it doesn't have a match in the
+        // column we're highlighting
+        client().prepareIndex("test", "test", "1")
+                .setSource("test", "no match here", "find_me", "test").get();
+        // These docs have a match in the column we're highlighting. We need a
+        // bunch of them to make sure some end up in the same segment as what
+        // we're looking for.
+        List<IndexRequestBuilder> extra = new ArrayList<IndexRequestBuilder>();
+        for (int i = 0; i < 100; i++) {
+            extra.add(client().prepareIndex("test", "test", "other " + i).setSource("test", "test"));
+        }
+        indexRandom(true, extra);
+
+        SearchRequestBuilder search = testSearch(termQuery("find_me", "test"));
+        for (String hitSource : HIT_SOURCES) {
+            System.err.println("hit_source:  " + hitSource);
+            SearchResponse response = setHitSource(search, hitSource).get();
+            assertNotHighlighted(response, 0, "test");
+        }
+    }
+
+    // TODO matched_fields with different hit source
+    // TODO infer proper hit source
     
     /**
      * A simple search for the term "test".

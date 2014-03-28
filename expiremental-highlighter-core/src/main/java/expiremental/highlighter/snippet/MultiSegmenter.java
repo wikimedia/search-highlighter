@@ -89,7 +89,7 @@ public final class MultiSegmenter implements Segmenter {
     /**
      * Segmenters to which the MultiSegmenter delegates.
      */
-    public static class ConstituentSegmenter {
+    private static class ConstituentSegmenter {
         private final Segmenter segmenter;
         private final int length;
 
@@ -144,6 +144,7 @@ public final class MultiSegmenter implements Segmenter {
         if (inSegmenterStartOffset < 0) {
             return findSegmenterBackwards();
         }
+        assert segmenter != null;
         if (inSegmenterStartOffset >= segmenter.length) {
             inSegmenterStartOffset -= segmenter.length + offsetGap;
             lastStartOffset += segmenter.length + offsetGap;

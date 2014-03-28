@@ -41,7 +41,7 @@ public class ExpirementalHighlighter implements Highlighter {
             HighlightExecutionContext executionContext = new HighlightExecutionContext(context,
                     entry);
             try {
-                return new HighlightField(context.fieldName, executionContext.highlight());
+                return executionContext.highlight();
             } finally {
                 executionContext.cleanup();
             }
@@ -67,9 +67,13 @@ public class ExpirementalHighlighter implements Highlighter {
             defaultField = new FieldWrapper(context, cacheEntry);
         }
 
-        Text[] highlight() throws IOException {
-            return formatSnippets(buildChooser().choose(defaultField.buildSegmenter(),
-                    buildHitEnum(), context.field.fieldOptions().numberOfFragments()));
+        HighlightField highlight() throws IOException {
+            List<Snippet> snippets = buildChooser().choose(defaultField.buildSegmenter(),
+                    buildHitEnum(), context.field.fieldOptions().numberOfFragments());
+            if (snippets.size() == 0) {
+                return null;
+            }
+            return new HighlightField(context.fieldName, formatSnippets(snippets));
         }
 
         private void cleanup() throws Exception {

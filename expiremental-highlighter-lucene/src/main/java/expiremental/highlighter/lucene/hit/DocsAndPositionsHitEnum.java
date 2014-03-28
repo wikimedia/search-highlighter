@@ -42,7 +42,9 @@ public class DocsAndPositionsHitEnum implements HitEnum {
             CompiledAutomaton acceptable, TermWeigher<BytesRef> weigher) throws IOException {
         List<AtomicReaderContext> leaves = reader.getContext().leaves();
         int leaf = ReaderUtil.subIndex(docId, leaves);
-        AtomicReader atomicReader = leaves.get(leaf).reader();
+        AtomicReaderContext subcontext = leaves.get(leaf);
+        AtomicReader atomicReader = subcontext.reader();
+        docId -= subcontext.docBase;
         return fromTerms(atomicReader.terms(fieldName), acceptable, reader, docId,
                 weigher);
     }
@@ -57,17 +59,21 @@ public class DocsAndPositionsHitEnum implements HitEnum {
         BytesRef term;
         List<HitEnum> enums = new ArrayList<HitEnum>();
         while ((term = termsEnum.next()) != null) {
-            // Ape Lucene's DefaultSimilarity's weight like Lucene's
-            // FieldTermStack does.
-            DocsAndPositionsEnum dp = termsEnum.docsAndPositions(null, null);
+            DocsAndPositionsEnum dp = termsEnum.docsAndPositions(null, null, DocsAndPositionsEnum.FLAG_OFFSETS);
             if (dp == null) {
                 continue;
             }
-            int advanceResult = docId >= 0 ? dp.advance(docId) : dp.nextDoc();
-            if (advanceResult == DocIdSetIterator.NO_MORE_DOCS) {
-                continue;
+            if (docId < 0) {
+                if (dp.nextDoc() == DocIdSetIterator.NO_MORE_DOCS) {
+                    continue;
+                }
+            } else {
+                if (dp.advance(docId) != docId) {
+                    continue;
+                }
             }
-            enums.add(new DocsAndPositionsHitEnum(dp, weigher.weigh(term)));
+            HitEnum e = new DocsAndPositionsHitEnum(dp, weigher.weigh(term));
+            enums.add(e);
         }
         return new MergingHitEnum(enums, HitEnum.LessThans.POSITION);
     }
@@ -96,6 +102,7 @@ public class DocsAndPositionsHitEnum implements HitEnum {
         current++;
         try {
             position = dp.nextPosition();
+            assert dp.startOffset() < dp.endOffset();
             return true;
         } catch (IOException e) {
             throw new WrappedExceptionFromLucene(e);

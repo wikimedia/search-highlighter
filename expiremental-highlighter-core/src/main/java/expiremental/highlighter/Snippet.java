@@ -34,6 +34,7 @@ public class Snippet implements Segment {
             this.startOffset = startOffset;
             this.endOffset = endOffset;
             this.weight = weight;
+            assert startOffset <= endOffset;
         }
 
         @Override

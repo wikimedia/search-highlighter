@@ -33,6 +33,7 @@ public class OverlapMergingHitEnumWrapper implements HitEnum {
         position = delegate.position();
         startOffset = delegate.startOffset();
         endOffset = delegate.endOffset();
+        assert startOffset <= endOffset;
         weight = delegate.weight();
         while (true) {
             if (!delegate.next()) {
@@ -50,6 +51,8 @@ public class OverlapMergingHitEnumWrapper implements HitEnum {
             }
             // Merge overlapping hits
             endOffset = delegate.endOffset();
+            assert delegate.startOffset() <= delegate.endOffset();
+            assert startOffset <= endOffset;
             weight = Math.max(weight, delegate.weight());
         }
         return true;
