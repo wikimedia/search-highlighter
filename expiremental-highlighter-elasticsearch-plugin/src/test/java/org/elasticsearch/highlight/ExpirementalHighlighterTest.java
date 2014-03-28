@@ -292,7 +292,7 @@ public class ExpirementalHighlighterTest extends ElasticsearchIntegrationTest {
                 .addHighlightedField(new HighlightBuilder.Field("test").fragmenter("sentence").numOfFragments(3))
                 .setHighlighterOrder("score");
         Map<String, Object> options = new HashMap<String, Object>();
-        options.put("boost_before", ImmutableMap.of("10", 4f, "20", 2f));
+        options.put("boost_before", ImmutableMap.of("10", 4, "20", 2f));
         for (String hitSource : HIT_SOURCES) {
             options.put("hit_source", hitSource);
             SearchResponse response = search.setHighlighterOptions(options).get();

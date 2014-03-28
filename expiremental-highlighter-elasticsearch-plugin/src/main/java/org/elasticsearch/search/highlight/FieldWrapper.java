@@ -154,7 +154,7 @@ public class FieldWrapper {
                 if (!(entry.getValue() instanceof Number)) {
                     throw new IllegalArgumentException("boost_before must be a flat object who's values are numbers.");
                 }
-                ordered.put(Integer.valueOf(entry.getKey()), (Float)entry.getValue());
+                ordered.put(Integer.valueOf(entry.getKey()), ((Number)entry.getValue()).floatValue());
             }
             PositionBoostingHitEnumWrapper boosting = new PositionBoostingHitEnumWrapper(e);
             e = boosting;
