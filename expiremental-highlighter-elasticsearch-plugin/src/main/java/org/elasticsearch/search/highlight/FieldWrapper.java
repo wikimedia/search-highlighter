@@ -172,13 +172,13 @@ public class FieldWrapper {
                 if (hitSource.equals("postings")) {
                     if (!canUsePostingsHitEnum()) {
                         throw new IllegalArgumentException(
-                                "Can't use postings as a hit source without settings index_options to postings");
+                                "Can't use postings as a hit source without setting index_options to postings");
                     }
                     return buildPostingsHitEnum();
                 } else if (hitSource.equals("vectors")) {
                     if (!canUseVectorsHitEnum()) {
                         throw new IllegalArgumentException(
-                                "Can't use vectors as a hit source without settings term_vector to with_positions_offsets");
+                                "Can't use vectors as a hit source without setting term_vector to with_positions_offsets");
                     }
                     return buildTermVectorsHitEnum();
                 } else if (hitSource.equals("analyze")) {

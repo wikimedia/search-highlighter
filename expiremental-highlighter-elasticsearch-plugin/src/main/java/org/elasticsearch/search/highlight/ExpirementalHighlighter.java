@@ -76,8 +76,12 @@ public class ExpirementalHighlighter implements Highlighter {
         }
 
         HighlightField highlight() throws IOException {
+            int numberOfSnippets = context.field.fieldOptions().numberOfFragments();
+            if (numberOfSnippets == 0) {
+                numberOfSnippets = 1;
+            }
             List<Snippet> snippets = buildChooser().choose(defaultField.buildSegmenter(),
-                    buildHitEnum(), context.field.fieldOptions().numberOfFragments());
+                    buildHitEnum(), numberOfSnippets);
             if (snippets.size() == 0) {
                 int noMatchSize = context.field.fieldOptions().noMatchSize();
                 if (noMatchSize > 0) {
@@ -183,6 +187,9 @@ public class ExpirementalHighlighter implements Highlighter {
 
         private SegmenterFactory buildSegmenterFactory() {
             FieldOptions options = context.field.fieldOptions();
+            if (options.numberOfFragments() == 0) {
+                return new WholeSourceSegmenterFactory();
+            }
             if (options.fragmenter() == null || options.fragmenter().equals("scan")) {
                 // TODO boundaryChars
                 return new CharScanningSegmenterFactory(options.fragmentCharSize(),

@@ -382,7 +382,8 @@ public class ExpirementalHighlighterTest extends ElasticsearchIntegrationTest {
             if (hitSource.equals("analyze")) {
                 // I wish I could throw an HTTP 400 here but I don't believe I
                 // can.
-                assertFailures(search, RestStatus.INTERNAL_SERVER_ERROR, containsString("unique analyzer"));
+                assertFailures(search, RestStatus.INTERNAL_SERVER_ERROR,
+                        containsString("unique analyzer"));
             } else {
                 SearchResponse response = search.get();
                 assertHighlight(response, 0, "test", 0,
@@ -398,13 +399,15 @@ public class ExpirementalHighlighterTest extends ElasticsearchIntegrationTest {
 
         SearchRequestBuilder search = testSearch();
         for (String hitSource : HIT_SOURCES) {
-            SearchResponse response = setHitSource(search, hitSource).get();
+            setHitSource(search, hitSource);
             if (hitSource.equals("analyze")) {
+                SearchResponse response = search.get();
                 assertNoFailures(response);
             } else {
                 // I wish I could throw an HTTP 400 here but I don't believe I
                 // can.
-                assertFailures(response);
+                assertFailures(search, RestStatus.INTERNAL_SERVER_ERROR,
+                        containsString("as a hit source without setting"));
             }
         }
 
@@ -412,13 +415,15 @@ public class ExpirementalHighlighterTest extends ElasticsearchIntegrationTest {
         search = testSearch().addHighlightedField(
                 new HighlightBuilder.Field("test").matchedFields("test", "test.english"));
         for (String hitSource : HIT_SOURCES) {
-            SearchResponse response = setHitSource(search, hitSource).get();
+            setHitSource(search, hitSource);
             if (hitSource.equals("analyze")) {
+                SearchResponse response = search.get();
                 assertNoFailures(response);
             } else {
                 // I wish I could throw an HTTP 400 here but I don't believe I
                 // can.
-                assertFailures(response);
+                assertFailures(search, RestStatus.INTERNAL_SERVER_ERROR,
+                        containsString("as a hit source without setting"));
             }
         }
     }
@@ -517,6 +522,17 @@ public class ExpirementalHighlighterTest extends ElasticsearchIntegrationTest {
         assertHighlight(search.get(), 0, "test", 0, equalTo("Lets segment a much longer "));
         field.fragmenter("none");
         assertHighlight(search.get(), 0, "test", 0, equalTo(longString));
+    }
+
+    @Test
+    public void zeroFragmentsReturnsWholeField() throws IOException {
+        buildIndex();
+        indexTestData("This test is long enough to demonstrate that we switched to the whole field segmenter.");
+
+        SearchRequestBuilder search = testSearch().addHighlightedField(
+                new HighlightBuilder.Field("test").numOfFragments(0).fragmentSize(10));
+        assertHighlight(search.get(), 0, "test", 0, equalTo("This <em>test</em> is "
+                + "long enough to demonstrate that we switched to the whole field segmenter."));
     }
 
     // TODO matched_fields with different hit source
