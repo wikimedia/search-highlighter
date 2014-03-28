@@ -80,11 +80,16 @@ fragment between each value, even on ```none```.  Example:
     "fields": {
       "title": {
         "type": "expiremental",
-        "fragmenter": "sentence"
+        "fragmenter": "sentence",
+        "options": {
+          "locale": "en_us"
+        }
       }
     }
   }
 ```
+If using the ```sentence``` fragmenter you can specify the locale used for
+sentence rules with the ```locale``` option as above.
 
 The ```default_similarity``` option defaults to true for queries with more then
 one term.  It will weigh each matched term using Lucene's default similarity
@@ -108,8 +113,8 @@ The ```hit_source``` option can force detecting matched terms from a particular
 source.  It can be either ```postings```, ```vectors```, or ```analyze```.  If
 set to ```postings``` but the field isn't indexed with ```index_options``` set
 to ```offsets``` or set to ```vectors``` but ```term_vector``` isn't set to
-```positions_offsets``` then the highlight throw back an error.  Defaults to
-using the first option that wouldn't throw an error.
+```with_positions_offsets``` then the highlight throw back an error.  Defaults
+to using the first option that wouldn't throw an error.
 ```js
   "highlight": {
     "fields": {
@@ -161,7 +166,7 @@ Offsets in postings or term vectors
 -----------------------------------
 Since adding offsets to the postings (set ```index_options``` to ```offsets```
 in Elasticsearch) and creating term vectors with offsets (set ```term_vector```
-to ```positions_offsets``` in Elasticsearch) both act to speed up highligting
-of this highlighter you have a choice which to use.  Unless you have a
-compelling reason go with adding offsets to the postings.  That is faster (by
-my tests) and uses much less space.
+to ```with_positions_offsets``` in Elasticsearch) both act to speed up
+highligting of this highlighter you have a choice which to use.  Unless you
+have a compelling reason go with adding offsets to the postings.  That is
+faster (by my tests, at least) and uses much less space.
