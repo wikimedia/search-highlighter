@@ -3,7 +3,7 @@ function search() {
   echo '
 {
   "_source": false,
-  "size": 500,
+  "size": 50,
   "query": {
     "query_string": {
       "query": "'$search'",
@@ -44,8 +44,8 @@ function search() {
     }
   }
 }' > /tmp/post
-  curl -XPOST 'http://localhost:9200/wikipedia/_search?pretty' -d @/tmp/post
-  # ab -c 3 -n 50 -p /tmp/post 'http://localhost:9200/wikipedia/_search' 2>&1 | grep Total:
+  # curl -XPOST 'http://localhost:9200/wikipedia/_search?pretty' -d @/tmp/post
+  ab -c 3 -n 50 -p /tmp/post 'http://localhost:9200/wikipedia/_search' 2>&1 | grep Total:
 }
 
 search 'Main Page'

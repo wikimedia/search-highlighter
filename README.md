@@ -19,7 +19,7 @@ This highlighter
 either to speed itself up.
 * Can fragment like the Postings Highlighter, the Fast Vector Highlighter,
 or it can highlight the entire field.
-* Combine hits using multiple different fields (aka ```matched_field```
+* Combine hits using multiple different fields (aka ```matched_fields```
 support).
 * Boost matches that appear early in the document.
 
@@ -147,7 +147,7 @@ example, this will multiply the weight of matches before the 20th position by
   }
 ```
 Note that the position is not reset between multiple values of the same field
-but is handled independently for each ```matched_field```.
+but is handled independently for each of the ```matched_fields```.
 
 The ```matched_fields``` field turns on combining matches from multiple fields,
 just like the Fast Vector Highlighter.  See the [Elasticsearch documentation](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/search-request-highlighting.html#matched-fields)
@@ -155,6 +155,9 @@ for more on it.  The only real difference is that if ```hit_source``` is left
 out then each field's HitSource is determined independently if .  If one field
 is short feel free to leave out any special settings for ```index_options``` or
 for ```term_vector```s.
+
+A limitation in ```matched_fields```: if the highlighlighter has to analyze the
+field value to find hits then you can't reuse analyzers in each matched field.
 
 If you aren't using Elasticsearch, you can combine hits from multiple sources
 using:
