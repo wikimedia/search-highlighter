@@ -3,13 +3,13 @@
 curl -XDELETE "http://localhost:9200/test?pretty"
 curl -XPOST "http://localhost:9200/test?pretty"
 curl -XPUT http://localhost:9200/test/test/_mapping?pretty -d'{
-    "properties": {
-      "title" : {
-        "type": "string",
-        "index_options": "offsets",
-        "term_vector": "with_positions_offsets"
-      }
+  "properties": {
+    "title" : {
+      "type": "string",
+      "index_options": "offsets",
+      "term_vector": "with_positions_offsets"
     }
+  }
 }'
 
 curl -XPOST "http://localhost:9200/test/test?pretty" -d '{"title": "a pretty tiny string to test with "}'
