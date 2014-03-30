@@ -21,7 +21,7 @@ public class CharScanningSegmenterFactory implements SegmenterFactory {
     @Override
     public String extractNoMatchFragment(String value, int size) {
         // We can just delegate down the the fragmenter and let it scan characters.
-        Segment bounds = new CharScanningSegmenter(value, size, boundaryMaxScan).pickBounds(0, 0, size, value.length());
+        Segment bounds = new CharScanningSegmenter(value, size, boundaryMaxScan).memo(0, size).pickBounds(0, value.length());
         return value.substring(bounds.startOffset(), bounds.endOffset());
     }
 }

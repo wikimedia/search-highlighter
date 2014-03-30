@@ -2,7 +2,6 @@ package expiremental.highlighter.snippet;
 
 import java.text.BreakIterator;
 
-import expiremental.highlighter.Segment;
 import expiremental.highlighter.Segmenter;
 import expiremental.highlighter.SimpleSegment;
 
@@ -12,21 +11,17 @@ import expiremental.highlighter.SimpleSegment;
  */
 public class BreakIteratorSegmenter implements Segmenter {
     private final BreakIterator breakIterator;
+    /**
+     * Start of the current sentence.
+     */
     private int currentStart = Integer.MAX_VALUE;
+    /**
+     * End of the current sentence.
+     */
     private int currentEnd = Integer.MIN_VALUE;
 
     public BreakIteratorSegmenter(BreakIterator breakIterator) {
         this.breakIterator = breakIterator;
-    }
-
-    @Override
-    public Segment pickBounds(int minStartOffset, int maxStartOffset, int minEndOffset,
-            int maxEndOffset) {
-        // Make sure we're acceptable _and_ position currentStart and currentEnd
-        if (!acceptable(maxStartOffset, minEndOffset)) {
-            throw new IllegalArgumentException("Will not pick bounds for unaccepted match.");
-        }
-        return new SimpleSegment(currentStart, currentEnd);
     }
 
     @Override
@@ -49,5 +44,14 @@ public class BreakIteratorSegmenter implements Segmenter {
         }
         // By definition maxStartOffset is within the sentence.
         return minEndOffset <= currentEnd;
+    }
+
+    @Override
+    public Memo memo(int maxStartOffset, int minEndOffset) {
+        // Make sure we're acceptable _and_ position currentStart and currentEnd
+        if (!acceptable(maxStartOffset, minEndOffset)) {
+            throw new IllegalArgumentException("Will not pick bounds for unaccepted match.");
+        }
+        return new ImmediateSegmenterMemo(new SimpleSegment(currentStart, currentEnd));
     }
 }

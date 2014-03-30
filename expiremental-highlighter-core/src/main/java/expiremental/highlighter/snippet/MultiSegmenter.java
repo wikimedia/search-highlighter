@@ -34,11 +34,14 @@ public final class MultiSegmenter implements Segmenter {
     public static class Builder {
         private final List<ConstituentSegmenter> segmenters = new ArrayList<ConstituentSegmenter>();
         private final int offsetGap;
+
         private Builder(int offsetGap) {
             this.offsetGap = offsetGap;
         }
+
         /**
          * Add a segmenter.
+         * 
          * @param segmenter the segmenter to delegate to
          * @param length the length of the source underlying the segmenter
          * @return this for chaining
@@ -47,6 +50,7 @@ public final class MultiSegmenter implements Segmenter {
             segmenters.add(new ConstituentSegmenter(segmenter, length));
             return this;
         }
+
         public MultiSegmenter build() {
             return new MultiSegmenter(segmenters, offsetGap);
         }
@@ -58,7 +62,7 @@ public final class MultiSegmenter implements Segmenter {
     private final int offsetGap;
 
     private final List<ConstituentSegmenter> segmenters;
-    
+
     /**
      * The index of the last segmenter we used. We try to reuse it rather then
      * hunt it down again because it is likely to be reused frequently. At least
@@ -85,7 +89,7 @@ public final class MultiSegmenter implements Segmenter {
         this.segmenters = segmenters;
         this.offsetGap = offsetGap;
     }
-    
+
     /**
      * Segmenters to which the MultiSegmenter delegates.
      */
@@ -100,32 +104,28 @@ public final class MultiSegmenter implements Segmenter {
     }
 
     @Override
-    public Segment pickBounds(int minStartOffset, int maxStartOffset, int minEndOffset,
-            int maxEndOffset) {
-        if (!updateSegmenter(maxStartOffset)) {
-            throw new IllegalArgumentException("Start offset outside the bounds of all segmenters.");
-        }
-        maxStartOffset = Math.max(0, maxStartOffset - lastStartOffset);
-        minStartOffset = Math.max(0, minStartOffset - lastStartOffset);
-        minEndOffset = Math.min(segmenter.length, minEndOffset - lastStartOffset);
-        maxEndOffset = Math.min(segmenter.length, maxEndOffset - lastStartOffset);
-        Segment picked = segmenter.segmenter.pickBounds(minStartOffset, maxStartOffset, minEndOffset,
-                maxEndOffset);
-        // Now we have to transform the coordinants of the segmenter back into the merged coordinants
-        return new SimpleSegment(picked.startOffset() + lastStartOffset, picked.endOffset() + lastStartOffset);
-    }
-
-    @Override
     public boolean acceptable(int maxStartOffset, int minEndOffset) {
         if (!updateSegmenter(maxStartOffset)) {
             return false;
         }
         minEndOffset -= lastStartOffset;
-        // inSegmenterStartOffset is only going to be 0 if we ask for a hit _between_ segments.
+        // inSegmenterStartOffset is only going to be 0 if we ask for a hit
+        // _between_ segments.
         if (minEndOffset > segmenter.length || inSegmenterStartOffset < 0) {
             return false;
         }
         return segmenter.segmenter.acceptable(maxStartOffset, minEndOffset);
+    }
+
+    @Override
+    public Memo memo(int maxStartOffset, int minEndOffset) {
+        if (!updateSegmenter(maxStartOffset)) {
+            throw new IllegalArgumentException("Start offset outside the bounds of all segmenters.");
+        }
+        maxStartOffset = Math.max(0, maxStartOffset - lastStartOffset);
+        minEndOffset = Math.min(segmenter.length, minEndOffset - lastStartOffset);
+        return new MulitSegmenterMemo(lastStartOffset, segmenter.length, segmenter.segmenter.memo(
+                maxStartOffset, minEndOffset));
     }
 
     /**
@@ -161,6 +161,7 @@ public final class MultiSegmenter implements Segmenter {
      * whatever it would be in the current segmenter - the current segmenter's
      * length. {@linkplain lastStartOffset} must also be pushed to the start
      * offset of the *next* segmenter.
+     * 
      * @return did we find a segmenter?
      */
     private boolean findSegmenterForwards() {
@@ -196,5 +197,28 @@ public final class MultiSegmenter implements Segmenter {
             }
         }
         return false;
+    }
+
+    private static class MulitSegmenterMemo implements Memo {
+        private final int lastStartOffset;
+        private final int segmenterLength;
+        private final Memo memo;
+
+        private MulitSegmenterMemo(int lastStartOffset, int segmenterLength, Memo memo) {
+            this.lastStartOffset = lastStartOffset;
+            this.segmenterLength = segmenterLength;
+            this.memo = memo;
+        }
+
+        @Override
+        public Segment pickBounds(int minStartOffset, int maxEndOffset) {
+            minStartOffset = Math.max(0, minStartOffset - lastStartOffset);
+            maxEndOffset = Math.min(segmenterLength, maxEndOffset - lastStartOffset);
+            Segment picked = memo.pickBounds(minStartOffset, maxEndOffset);
+            // Now we have to transform the coordinants of the segmenter back
+            // into the merged coordinants
+            return new SimpleSegment(picked.startOffset() + lastStartOffset, picked.endOffset()
+                    + lastStartOffset);
+        }
     }
 }

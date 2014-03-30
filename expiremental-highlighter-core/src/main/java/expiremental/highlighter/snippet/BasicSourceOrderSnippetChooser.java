@@ -23,7 +23,7 @@ public class BasicSourceOrderSnippetChooser extends AbstractBasicSnippetChooser<
     }
     @Override
     protected void snippet(State state, int startOffset, int endOffset, List<Hit> hits) {
-        Segment bounds = state.segmenter.pickBounds(state.lastSnippetEnd, startOffset, endOffset, Integer.MAX_VALUE);
+        Segment bounds = state.segmenter.memo(startOffset, endOffset).pickBounds(state.lastSnippetEnd, Integer.MAX_VALUE);
         state.results.add(new Snippet(bounds.startOffset(), bounds.endOffset(), hits));
         state.lastSnippetEnd = endOffset;
     }

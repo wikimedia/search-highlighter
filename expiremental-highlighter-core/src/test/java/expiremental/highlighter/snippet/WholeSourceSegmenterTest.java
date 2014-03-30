@@ -26,7 +26,7 @@ public class WholeSourceSegmenterTest {
     public void empty() {
         setup("");
         assertTrue(segmenter.acceptable(0, 0));
-        assertThat(segmenter.pickBounds(0, 0, 0, Integer.MAX_VALUE), extracted(extracter, ""));
+        assertThat(segmenter.memo(0, 0).pickBounds(0, Integer.MAX_VALUE), extracted(extracter, ""));
         assertFalse(segmenter.acceptable(0, 1));
     }
 
@@ -34,8 +34,8 @@ public class WholeSourceSegmenterTest {
     public void singleChar() {
         setup("a");
         assertTrue(segmenter.acceptable(0, 1));
-        assertThat(segmenter.pickBounds(0, 0, 1, Integer.MAX_VALUE), extracted(extracter, "a"));
-        assertThat(segmenter.pickBounds(0, 0, 0, Integer.MAX_VALUE), extracted(extracter, "a"));
+        assertThat(segmenter.memo(0, 1).pickBounds(0, Integer.MAX_VALUE), extracted(extracter, "a"));
+        assertThat(segmenter.memo(0, 0).pickBounds(0, Integer.MAX_VALUE), extracted(extracter, "a"));
         assertFalse(segmenter.acceptable(0, 2));
     }
 
@@ -45,11 +45,11 @@ public class WholeSourceSegmenterTest {
         int end = source.length() - 1;
         for (int i = 0; i < end; i++) {
             assertTrue(segmenter.acceptable(0, i));
-            assertThat(segmenter.pickBounds(0, 0, i, Integer.MAX_VALUE),
+            assertThat(segmenter.memo(0, i).pickBounds(0, Integer.MAX_VALUE),
                     extracted(extracter, source));
 
             assertTrue(segmenter.acceptable(i, end));
-            assertThat(segmenter.pickBounds(0, i, end, Integer.MAX_VALUE),
+            assertThat(segmenter.memo(i, end).pickBounds(0, Integer.MAX_VALUE),
                     extracted(extracter, source));
         }
     }

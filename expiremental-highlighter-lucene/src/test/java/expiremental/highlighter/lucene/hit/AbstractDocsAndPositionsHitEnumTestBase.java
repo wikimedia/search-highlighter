@@ -83,6 +83,6 @@ public abstract class AbstractDocsAndPositionsHitEnumTestBase extends AbstractLu
     }
 
     protected Analyzer englishStemmingAnalyzer() {
-        return trackAnalyzer(new EnglishAnalyzer(Version.LUCENE_46, CharArraySet.EMPTY_SET));
+        return trackAnalyzer(new EnglishAnalyzer(Version.LUCENE_47, CharArraySet.EMPTY_SET));
     }
 }

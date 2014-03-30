@@ -27,8 +27,7 @@ public class BasicScoreOrderSnippetChooser extends AbstractBasicSnippetChooser<B
         }
         if (state.results.size() < state.max) {
             ProtoSnippet snippet = new ProtoSnippet();
-            snippet.startOffset = startOffset;
-            snippet.endOffset = endOffset;
+            snippet.memo = state.segmenter.memo(startOffset, endOffset);
             snippet.hits = hits;
             snippet.weight = weight;
             state.results.add(snippet);
@@ -38,8 +37,7 @@ public class BasicScoreOrderSnippetChooser extends AbstractBasicSnippetChooser<B
         if (top.weight >= weight) {
             return;
         }
-        top.startOffset = startOffset;
-        top.endOffset = endOffset;
+        top.memo = state.segmenter.memo(startOffset, endOffset);
         top.hits = hits;
         top.weight = weight;
         state.results.updateTop();
@@ -51,7 +49,7 @@ public class BasicScoreOrderSnippetChooser extends AbstractBasicSnippetChooser<B
         while ((proto = state.results.pop()) != null) {
             // Maybe we can sort the protos in document order and this'll be a score cutoff document order.
             // And!  We can use the clamping to prevent the margins from being on top of the other....
-            Segment bounds = state.segmenter.pickBounds(0, proto.startOffset, proto.endOffset, Integer.MAX_VALUE);
+            Segment bounds = proto.memo.pickBounds(0, Integer.MAX_VALUE);
             results.add(new Snippet(bounds.startOffset(), bounds.endOffset(), proto.hits));
         }
         Collections.reverse(results);
@@ -70,8 +68,7 @@ public class BasicScoreOrderSnippetChooser extends AbstractBasicSnippetChooser<B
     
     private class ProtoSnippet {
         private float weight;
-        private int startOffset;
-        private int endOffset;
+        private Segmenter.Memo memo;
         private List<Hit> hits;
     }
     

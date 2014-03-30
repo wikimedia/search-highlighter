@@ -16,13 +16,12 @@ public class WholeSourceSegmenter implements Segmenter {
     }
 
     @Override
-    public Segment pickBounds(int minStartOffset, int maxStartOffset, int minEndOffset,
-            int maxEndOffset) {
-        return segment;
+    public boolean acceptable(int maxStartOffset, int minEndOffset) {
+        return minEndOffset <= segment.endOffset();
     }
 
     @Override
-    public boolean acceptable(int maxStartOffset, int minEndOffset) {
-        return minEndOffset <= segment.endOffset();
+    public Memo memo(int maxStartOffset, int minEndOffset) {
+        return new ImmediateSegmenterMemo(segment);
     }
 }

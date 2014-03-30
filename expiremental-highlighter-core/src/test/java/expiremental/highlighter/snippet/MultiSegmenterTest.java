@@ -47,7 +47,7 @@ public class MultiSegmenterTest extends RandomizedTest {
     public void singleStringSingleChar() {
         setup("a");
         assertTrue(segmenter.acceptable(0, 1));
-        assertThat(segmenter.pickBounds(0, 0, 1, Integer.MAX_VALUE),
+        assertThat(segmenter.memo(0, 1).pickBounds(0, Integer.MAX_VALUE),
                 extracted(extracter, equalTo("a")));
         assertFalse(segmenter.acceptable(0, 2));
     }
@@ -56,7 +56,7 @@ public class MultiSegmenterTest extends RandomizedTest {
     public void startWithSomeEmptyThenSingleChar() {
         setup("", "", "", "a");
         assertTrue(segmenter.acceptable(offsetGap * 3, offsetGap * 3 + 1));
-        assertThat(segmenter.pickBounds(0, offsetGap * 3, offsetGap * 3 + 1, Integer.MAX_VALUE),
+        assertThat(segmenter.memo(offsetGap * 3, offsetGap * 3 + 1).pickBounds(0, Integer.MAX_VALUE),
                 extracted(extracter, equalTo("a")));
         assertFalse(segmenter.acceptable(0, 1));
         assertFalse(segmenter.acceptable(offsetGap * 3, offsetGap * 3 + 3));
@@ -66,7 +66,7 @@ public class MultiSegmenterTest extends RandomizedTest {
     public void startWithSingleCharThenSomeEmpty() {
         setup("a", "", "", "", "");
         assertTrue(segmenter.acceptable(0, 1));
-        assertThat(segmenter.pickBounds(0, 0, 1, Integer.MAX_VALUE),
+        assertThat(segmenter.memo(0, 1).pickBounds(0, Integer.MAX_VALUE),
                 extracted(extracter, equalTo("a")));
         assertFalse(segmenter.acceptable(0, 2));
     }
@@ -76,19 +76,19 @@ public class MultiSegmenterTest extends RandomizedTest {
         setup("a", "", "", "", "The quick brown fox jumped over the lazy dog.");
         // Grab some matches from the first string
         assertTrue(segmenter.acceptable(0, 1));
-        assertThat(segmenter.pickBounds(0, 0, 1, Integer.MAX_VALUE),
+        assertThat(segmenter.memo(0, 1).pickBounds(0, Integer.MAX_VALUE),
                 extracted(extracter, equalTo("a")));
         assertFalse(segmenter.acceptable(0, 2));
 
         // Now jump to the second
         assertTrue(segmenter.acceptable(offsetGap * 4 + 5, offsetGap * 4 + 36));
         assertThat(
-                segmenter.pickBounds(0, offsetGap * 4 + 5, offsetGap * 4 + 36, Integer.MAX_VALUE),
+                segmenter.memo(offsetGap * 4 + 5, offsetGap * 4 + 36).pickBounds(0, Integer.MAX_VALUE),
                 extracted(extracter, equalTo("The quick brown fox jumped over the lazy dog.")));
 
         // Now jump back to the first
         assertTrue(segmenter.acceptable(0, 1));
-        assertThat(segmenter.pickBounds(0, 0, 1, Integer.MAX_VALUE),
+        assertThat(segmenter.memo(0, 1).pickBounds(0, Integer.MAX_VALUE),
                 extracted(extracter, equalTo("a")));
     }
 
@@ -97,13 +97,13 @@ public class MultiSegmenterTest extends RandomizedTest {
         setup("a very simple test", "with two fields to test");
         // Grab some matches from the first string
         assertTrue(segmenter.acceptable(14, 18));
-        assertThat(segmenter.pickBounds(0, 14, 1, Integer.MAX_VALUE),
+        assertThat(segmenter.memo(14, 18).pickBounds(0, Integer.MAX_VALUE),
                 extracted(extracter, equalTo("a very simple test")));
         assertFalse(segmenter.acceptable(16, 25));
 
         // Now jump to the second
         assertTrue(segmenter.acceptable(offsetGap + 34, offsetGap + 38));
-        assertThat(segmenter.pickBounds(0, offsetGap + 34, offsetGap + 38, Integer.MAX_VALUE),
+        assertThat(segmenter.memo(offsetGap + 34, offsetGap + 38).pickBounds(0, Integer.MAX_VALUE),
                 extracted(extracter, equalTo("with two fields to test")));
     }
 
