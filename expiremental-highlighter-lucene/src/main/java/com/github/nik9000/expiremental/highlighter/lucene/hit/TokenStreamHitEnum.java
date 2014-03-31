@@ -1,4 +1,4 @@
-package expiremental.highlighter.lucene.hit;
+package com.github.nik9000.expiremental.highlighter.lucene.hit;
 
 import java.io.IOException;
 
@@ -8,9 +8,9 @@ import org.apache.lucene.analysis.tokenattributes.PositionIncrementAttribute;
 import org.apache.lucene.analysis.tokenattributes.TermToBytesRefAttribute;
 import org.apache.lucene.util.BytesRef;
 
-import expiremental.highlighter.HitEnum;
-import expiremental.highlighter.hit.TermWeigher;
-import expiremental.highlighter.lucene.WrappedExceptionFromLucene;
+import com.github.nik9000.expiremental.highlighter.HitEnum;
+import com.github.nik9000.expiremental.highlighter.hit.TermWeigher;
+import com.github.nik9000.expiremental.highlighter.lucene.WrappedExceptionFromLucene;
 
 /**
  * Enumerate hits by pumping a TokenStream.  Similar to how the "plain" highlighter works in Lucene.  Note that this will enumerate all hits, even those

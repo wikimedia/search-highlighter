@@ -1,8 +1,8 @@
-package expiremental.highlighter.hit;
+package com.github.nik9000.expiremental.highlighter.hit;
 
 import java.util.Iterator;
 
-import expiremental.highlighter.HitEnum;
+import com.github.nik9000.expiremental.highlighter.HitEnum;
 
 /**
  * HitEnum that concatenates multiple HitEnums. It should behave exactly the

@@ -1,9 +1,9 @@
-package expiremental.highlighter.hit.weight;
+package com.github.nik9000.expiremental.highlighter.hit.weight;
 
 import java.util.HashMap;
 import java.util.Map;
 
-import expiremental.highlighter.hit.TermWeigher;
+import com.github.nik9000.expiremental.highlighter.hit.TermWeigher;
 
 /**
  * Caches results from another TermWeigher. Obviously, this is only

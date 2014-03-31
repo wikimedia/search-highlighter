@@ -1,4 +1,4 @@
-package expiremental.highlighter.hit;
+package com.github.nik9000.expiremental.highlighter.hit;
 
 /**
  * Weighs hits based only on the hit location. Some HitEnums will require this

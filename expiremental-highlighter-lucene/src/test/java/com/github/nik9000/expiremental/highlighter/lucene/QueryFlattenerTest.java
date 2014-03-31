@@ -1,6 +1,5 @@
-package expiremental.highlighter.lucene;
+package com.github.nik9000.expiremental.highlighter.lucene;
 
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.*;
 
 import org.apache.lucene.index.Term;
@@ -11,7 +10,8 @@ import org.apache.lucene.search.TermQuery;
 import org.apache.lucene.search.BooleanClause.Occur;
 import org.junit.Test;
 
-import expiremental.highlighter.lucene.QueryFlattener.Callback;
+import com.github.nik9000.expiremental.highlighter.lucene.QueryFlattener;
+import com.github.nik9000.expiremental.highlighter.lucene.QueryFlattener.Callback;
 
 public class QueryFlattenerTest {
     @Test

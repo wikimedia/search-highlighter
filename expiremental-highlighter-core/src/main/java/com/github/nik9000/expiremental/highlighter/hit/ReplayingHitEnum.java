@@ -1,10 +1,10 @@
-package expiremental.highlighter.hit;
+package com.github.nik9000.expiremental.highlighter.hit;
 
 import java.util.ArrayDeque;
 import java.util.Iterator;
 import java.util.Queue;
 
-import expiremental.highlighter.HitEnum;
+import com.github.nik9000.expiremental.highlighter.HitEnum;
 
 /**
  * HitEnum for which you record hits by calling record then replay hits using

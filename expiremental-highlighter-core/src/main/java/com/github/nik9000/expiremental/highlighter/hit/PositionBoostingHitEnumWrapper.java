@@ -1,9 +1,9 @@
-package expiremental.highlighter.hit;
+package com.github.nik9000.expiremental.highlighter.hit;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import expiremental.highlighter.HitEnum;
+import com.github.nik9000.expiremental.highlighter.HitEnum;
 
 /**
  * HitEnum that wraps a position ordered HitEnum and boosts early positions

@@ -1,9 +1,9 @@
-package expiremental.highlighter.snippet;
+package com.github.nik9000.expiremental.highlighter.snippet;
 
 import java.text.BreakIterator;
 
-import expiremental.highlighter.Segmenter;
-import expiremental.highlighter.SimpleSegment;
+import com.github.nik9000.expiremental.highlighter.Segmenter;
+import com.github.nik9000.expiremental.highlighter.SimpleSegment;
 
 /**
  * Segmenter that splits based on boundaries from a {@linkplain BreakIterator}.

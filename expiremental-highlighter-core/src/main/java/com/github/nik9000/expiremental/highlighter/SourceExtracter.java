@@ -1,4 +1,4 @@
-package expiremental.highlighter;
+package com.github.nik9000.expiremental.highlighter;
 
 /**
  * Extracts matches from the source.

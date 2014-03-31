@@ -1,6 +1,6 @@
-package expiremental.highlighter;
+package com.github.nik9000.expiremental.highlighter;
 
-import expiremental.highlighter.Snippet.Hit;
+import com.github.nik9000.expiremental.highlighter.Snippet.Hit;
 
 public class SnippetFormatter {
     private final SourceExtracter<? extends CharSequence> extracter;

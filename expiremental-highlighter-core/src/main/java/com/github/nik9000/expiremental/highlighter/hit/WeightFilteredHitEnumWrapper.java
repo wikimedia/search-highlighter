@@ -1,6 +1,6 @@
-package expiremental.highlighter.hit;
+package com.github.nik9000.expiremental.highlighter.hit;
 
-import expiremental.highlighter.HitEnum;
+import com.github.nik9000.expiremental.highlighter.HitEnum;
 
 /**
  * Filters a HitEnum to hits that have more then a certain weight.

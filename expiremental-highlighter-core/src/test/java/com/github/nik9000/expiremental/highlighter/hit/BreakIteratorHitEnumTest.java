@@ -1,10 +1,11 @@
-package expiremental.highlighter.hit;
+package com.github.nik9000.expiremental.highlighter.hit;
 
 import java.text.BreakIterator;
 import java.util.Locale;
 
-import expiremental.highlighter.HitEnum;
-import expiremental.highlighter.hit.weight.ConstantHitWeigher;
+import com.github.nik9000.expiremental.highlighter.HitEnum;
+import com.github.nik9000.expiremental.highlighter.hit.BreakIteratorHitEnum;
+import com.github.nik9000.expiremental.highlighter.hit.weight.ConstantHitWeigher;
 
 public class BreakIteratorHitEnumTest extends AbstractHitEnumTestBase {
 	@Override

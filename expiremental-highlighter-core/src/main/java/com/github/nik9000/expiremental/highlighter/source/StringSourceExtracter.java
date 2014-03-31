@@ -1,6 +1,6 @@
-package expiremental.highlighter.source;
+package com.github.nik9000.expiremental.highlighter.source;
 
-import expiremental.highlighter.SourceExtracter;
+import com.github.nik9000.expiremental.highlighter.SourceExtracter;
 
 public final class StringSourceExtracter implements SourceExtracter<String> {
     private final String source;

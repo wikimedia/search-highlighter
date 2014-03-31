@@ -1,6 +1,6 @@
-package expiremental.highlighter.elasticsearch;
+package com.github.nik9000.expiremental.highlighter.elasticsearch;
 
-import expiremental.highlighter.Segmenter;
+import com.github.nik9000.expiremental.highlighter.Segmenter;
 
 public interface SegmenterFactory {
     Segmenter build(String value);

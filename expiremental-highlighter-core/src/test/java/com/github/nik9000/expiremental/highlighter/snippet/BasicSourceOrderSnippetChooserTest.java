@@ -1,6 +1,6 @@
-package expiremental.highlighter.snippet;
+package com.github.nik9000.expiremental.highlighter.snippet;
 
-import static expiremental.highlighter.Matchers.extracted;
+import static com.github.nik9000.expiremental.highlighter.Matchers.extracted;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 
@@ -10,9 +10,9 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import com.carrotsearch.randomizedtesting.RandomizedRunner;
-
-import expiremental.highlighter.Snippet;
-import expiremental.highlighter.SnippetChooser;
+import com.github.nik9000.expiremental.highlighter.Snippet;
+import com.github.nik9000.expiremental.highlighter.SnippetChooser;
+import com.github.nik9000.expiremental.highlighter.snippet.BasicSourceOrderSnippetChooser;
 
 @RunWith(RandomizedRunner.class)
 public class BasicSourceOrderSnippetChooserTest extends AbstractBasicSnippetChooserTestBase {

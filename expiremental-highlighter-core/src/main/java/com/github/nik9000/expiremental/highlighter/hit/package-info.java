@@ -1,4 +1,4 @@
 /**
  * Enumerate weighted hits from a source document.
  */
-package expiremental.highlighter.hit;
+package com.github.nik9000.expiremental.highlighter.hit;

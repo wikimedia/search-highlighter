@@ -1,10 +1,11 @@
-package expiremental.highlighter.hit.weight;
+package com.github.nik9000.expiremental.highlighter.hit.weight;
 
 import static org.junit.Assert.assertEquals;
 
 import org.junit.Test;
 
-import expiremental.highlighter.hit.TermWeigher;
+import com.github.nik9000.expiremental.highlighter.hit.TermWeigher;
+import com.github.nik9000.expiremental.highlighter.hit.weight.CachingTermWeigher;
 
 
 public class CachingTermWeigherTest {

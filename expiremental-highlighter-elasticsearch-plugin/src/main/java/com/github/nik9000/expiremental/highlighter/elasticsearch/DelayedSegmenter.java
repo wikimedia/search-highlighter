@@ -1,11 +1,11 @@
-package expiremental.highlighter.elasticsearch;
+package com.github.nik9000.expiremental.highlighter.elasticsearch;
 
 import java.io.IOException;
 
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.search.highlight.FieldWrapper;
 
-import expiremental.highlighter.Segmenter;
+import com.github.nik9000.expiremental.highlighter.Segmenter;
 
 /**
  * Segmenter that delays the construction of a real segmenter until it is first

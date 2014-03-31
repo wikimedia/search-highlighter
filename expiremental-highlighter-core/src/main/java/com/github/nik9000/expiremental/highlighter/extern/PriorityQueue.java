@@ -1,4 +1,4 @@
-package expiremental.highlighter.extern;
+package com.github.nik9000.expiremental.highlighter.extern;
 
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more

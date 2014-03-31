@@ -1,8 +1,8 @@
-package expiremental.highlighter.hit.weight;
+package com.github.nik9000.expiremental.highlighter.hit.weight;
 
 import java.util.Map;
 
-import expiremental.highlighter.hit.TermWeigher;
+import com.github.nik9000.expiremental.highlighter.hit.TermWeigher;
 
 /**
  * Simple TermHitWeigher that weighs terms that are equal to provided examples.

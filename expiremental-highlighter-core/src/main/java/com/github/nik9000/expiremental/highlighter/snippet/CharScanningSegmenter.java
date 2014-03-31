@@ -1,10 +1,10 @@
-package expiremental.highlighter.snippet;
+package com.github.nik9000.expiremental.highlighter.snippet;
 
 import java.util.Arrays;
 
-import expiremental.highlighter.Segment;
-import expiremental.highlighter.Segmenter;
-import expiremental.highlighter.SimpleSegment;
+import com.github.nik9000.expiremental.highlighter.Segment;
+import com.github.nik9000.expiremental.highlighter.Segmenter;
+import com.github.nik9000.expiremental.highlighter.SimpleSegment;
 
 /**
  * Scans a char sequence looking for "boundary characters" to find that start

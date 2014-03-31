@@ -1,4 +1,4 @@
-package expiremental.highlighter;
+package com.github.nik9000.expiremental.highlighter;
 
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.closeTo;
@@ -7,6 +7,10 @@ import static org.hamcrest.Matchers.equalTo;
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
 import org.hamcrest.TypeSafeMatcher;
+
+import com.github.nik9000.expiremental.highlighter.HitEnum;
+import com.github.nik9000.expiremental.highlighter.Segment;
+import com.github.nik9000.expiremental.highlighter.SourceExtracter;
 
 public class Matchers {
     public static <T> Matcher<Segment> extracted(SourceExtracter<T> extracter, T t) {

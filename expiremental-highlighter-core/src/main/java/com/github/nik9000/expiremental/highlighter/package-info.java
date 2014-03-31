@@ -1,4 +1,4 @@
 /**
  * Text highlighter for Java designed to be pluggable enough for easy expirementation.
  */
-package expiremental.highlighter;
+package com.github.nik9000.expiremental.highlighter;

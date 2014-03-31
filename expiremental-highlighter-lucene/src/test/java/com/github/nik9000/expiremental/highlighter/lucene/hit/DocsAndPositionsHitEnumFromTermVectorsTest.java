@@ -1,4 +1,4 @@
-package expiremental.highlighter.lucene.hit;
+package com.github.nik9000.expiremental.highlighter.lucene.hit;
 
 import java.io.IOException;
 
@@ -6,9 +6,10 @@ import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.util.BytesRef;
 import org.apache.lucene.util.automaton.CompiledAutomaton;
 
-import expiremental.highlighter.HitEnum;
-import expiremental.highlighter.hit.weight.ConstantTermWeigher;
-import expiremental.highlighter.lucene.WrappedExceptionFromLucene;
+import com.github.nik9000.expiremental.highlighter.HitEnum;
+import com.github.nik9000.expiremental.highlighter.hit.weight.ConstantTermWeigher;
+import com.github.nik9000.expiremental.highlighter.lucene.WrappedExceptionFromLucene;
+import com.github.nik9000.expiremental.highlighter.lucene.hit.DocsAndPositionsHitEnum;
 
 /**
  * Tests DocsAndPositionsHitEnum using term vectors.

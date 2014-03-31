@@ -12,21 +12,21 @@ import org.elasticsearch.common.text.Text;
 import org.elasticsearch.search.fetch.FetchPhaseExecutionException;
 import org.elasticsearch.search.highlight.SearchContextHighlight.FieldOptions;
 
-import expiremental.highlighter.HitEnum;
-import expiremental.highlighter.Snippet;
-import expiremental.highlighter.SnippetChooser;
-import expiremental.highlighter.SnippetFormatter;
-import expiremental.highlighter.elasticsearch.CharScanningSegmenterFactory;
-import expiremental.highlighter.elasticsearch.DelayedSegmenter;
-import expiremental.highlighter.elasticsearch.ElasticsearchQueryFlattener;
-import expiremental.highlighter.elasticsearch.SegmenterFactory;
-import expiremental.highlighter.elasticsearch.SentenceIteratorSegmenterFactory;
-import expiremental.highlighter.elasticsearch.WholeSourceSegmenterFactory;
-import expiremental.highlighter.hit.MergingHitEnum;
-import expiremental.highlighter.hit.OverlapMergingHitEnumWrapper;
-import expiremental.highlighter.lucene.hit.weight.BasicQueryWeigher;
-import expiremental.highlighter.snippet.BasicScoreBasedSnippetChooser;
-import expiremental.highlighter.snippet.BasicSourceOrderSnippetChooser;
+import com.github.nik9000.expiremental.highlighter.HitEnum;
+import com.github.nik9000.expiremental.highlighter.Snippet;
+import com.github.nik9000.expiremental.highlighter.SnippetChooser;
+import com.github.nik9000.expiremental.highlighter.SnippetFormatter;
+import com.github.nik9000.expiremental.highlighter.elasticsearch.CharScanningSegmenterFactory;
+import com.github.nik9000.expiremental.highlighter.elasticsearch.DelayedSegmenter;
+import com.github.nik9000.expiremental.highlighter.elasticsearch.ElasticsearchQueryFlattener;
+import com.github.nik9000.expiremental.highlighter.elasticsearch.SegmenterFactory;
+import com.github.nik9000.expiremental.highlighter.elasticsearch.SentenceIteratorSegmenterFactory;
+import com.github.nik9000.expiremental.highlighter.elasticsearch.WholeSourceSegmenterFactory;
+import com.github.nik9000.expiremental.highlighter.hit.MergingHitEnum;
+import com.github.nik9000.expiremental.highlighter.hit.OverlapMergingHitEnumWrapper;
+import com.github.nik9000.expiremental.highlighter.lucene.hit.weight.BasicQueryWeigher;
+import com.github.nik9000.expiremental.highlighter.snippet.BasicScoreBasedSnippetChooser;
+import com.github.nik9000.expiremental.highlighter.snippet.BasicSourceOrderSnippetChooser;
 
 public class ExpirementalHighlighter implements Highlighter {
     private static final String CACHE_KEY = "highlight-expiremental";

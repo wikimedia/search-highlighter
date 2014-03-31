@@ -1,6 +1,6 @@
-package expiremental.highlighter.snippet;
+package com.github.nik9000.expiremental.highlighter.snippet;
 
-import static expiremental.highlighter.Matchers.extracted;
+import static com.github.nik9000.expiremental.highlighter.Matchers.extracted;
 import static org.hamcrest.Matchers.equalTo;
 
 import org.junit.Test;
@@ -8,12 +8,13 @@ import org.junit.runner.RunWith;
 
 import com.carrotsearch.randomizedtesting.RandomizedRunner;
 import com.carrotsearch.randomizedtesting.RandomizedTest;
+import com.github.nik9000.expiremental.highlighter.Segmenter;
+import com.github.nik9000.expiremental.highlighter.SourceExtracter;
+import com.github.nik9000.expiremental.highlighter.snippet.CharScanningSegmenter;
+import com.github.nik9000.expiremental.highlighter.snippet.MultiSegmenter;
+import com.github.nik9000.expiremental.highlighter.source.StringMergingMultiSourceExtracter;
+import com.github.nik9000.expiremental.highlighter.source.StringSourceExtracter;
 import com.google.common.base.Strings;
-
-import expiremental.highlighter.Segmenter;
-import expiremental.highlighter.SourceExtracter;
-import expiremental.highlighter.source.StringMergingMultiSourceExtracter;
-import expiremental.highlighter.source.StringSourceExtracter;
 
 @RunWith(RandomizedRunner.class)
 public class MultiSegmenterTest extends RandomizedTest {

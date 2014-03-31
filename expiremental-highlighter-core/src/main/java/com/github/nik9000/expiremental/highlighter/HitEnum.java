@@ -1,4 +1,4 @@
-package expiremental.highlighter;
+package com.github.nik9000.expiremental.highlighter;
 
 /**
  * Enumerate matched terms within text. Must call next when first returned. The

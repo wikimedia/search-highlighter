@@ -1,10 +1,10 @@
-package expiremental.highlighter.elasticsearch;
+package com.github.nik9000.expiremental.highlighter.elasticsearch;
 
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.search.Query;
 import org.elasticsearch.common.lucene.search.XFilteredQuery;
 
-import expiremental.highlighter.lucene.QueryFlattener;
+import com.github.nik9000.expiremental.highlighter.lucene.QueryFlattener;
 
 public class ElasticsearchQueryFlattener extends QueryFlattener {
     public ElasticsearchQueryFlattener(int maxMultiTermQueryTerms) {

@@ -1,10 +1,10 @@
-package expiremental.highlighter.hit;
+package com.github.nik9000.expiremental.highlighter.hit;
 
 import java.util.Collection;
 
-import expiremental.highlighter.HitEnum;
-import expiremental.highlighter.LessThan;
-import expiremental.highlighter.extern.PriorityQueue;
+import com.github.nik9000.expiremental.highlighter.HitEnum;
+import com.github.nik9000.expiremental.highlighter.LessThan;
+import com.github.nik9000.expiremental.highlighter.extern.PriorityQueue;
 
 /**
  * Merges multiple HitEnums.  They must all be sorted by the provided comparator or the results will be wrong.

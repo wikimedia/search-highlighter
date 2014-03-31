@@ -1,4 +1,4 @@
 /**
  * Weigh hits.
  */
-package expiremental.highlighter.hit.weight;
+package com.github.nik9000.expiremental.highlighter.hit.weight;

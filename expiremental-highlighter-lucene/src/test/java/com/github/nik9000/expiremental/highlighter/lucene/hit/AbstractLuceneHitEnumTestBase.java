@@ -1,4 +1,4 @@
-package expiremental.highlighter.lucene.hit;
+package com.github.nik9000.expiremental.highlighter.lucene.hit;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -11,8 +11,8 @@ import org.apache.lucene.analysis.MockTokenizer;
 import org.apache.lucene.analysis.TokenStream;
 import org.junit.After;
 
-import expiremental.highlighter.hit.AbstractHitEnumTestBase;
-import expiremental.highlighter.lucene.WrappedExceptionFromLucene;
+import com.github.nik9000.expiremental.highlighter.hit.AbstractHitEnumTestBase;
+import com.github.nik9000.expiremental.highlighter.lucene.WrappedExceptionFromLucene;
 
 /**
  * Base class for tests for Lucene based HitEnums.

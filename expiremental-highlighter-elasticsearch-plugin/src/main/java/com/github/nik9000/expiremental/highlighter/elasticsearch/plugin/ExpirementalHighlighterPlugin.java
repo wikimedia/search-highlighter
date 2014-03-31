@@ -1,4 +1,4 @@
-package expiremental.highlighter.elasticsearch.plugin;
+package com.github.nik9000.expiremental.highlighter.elasticsearch.plugin;
 
 import java.util.Collection;
 

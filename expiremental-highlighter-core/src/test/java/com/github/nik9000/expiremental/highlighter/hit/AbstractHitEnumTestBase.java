@@ -1,8 +1,8 @@
-package expiremental.highlighter.hit;
+package com.github.nik9000.expiremental.highlighter.hit;
 
-import static expiremental.highlighter.Matchers.advances;
-import static expiremental.highlighter.Matchers.hit;
-import static expiremental.highlighter.Matchers.isEmpty;
+import static com.github.nik9000.expiremental.highlighter.Matchers.advances;
+import static com.github.nik9000.expiremental.highlighter.Matchers.hit;
+import static com.github.nik9000.expiremental.highlighter.Matchers.isEmpty;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 
@@ -10,10 +10,9 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import com.carrotsearch.randomizedtesting.RandomizedRunner;
-
-import expiremental.highlighter.HitEnum;
-import expiremental.highlighter.SourceExtracter;
-import expiremental.highlighter.source.StringSourceExtracter;
+import com.github.nik9000.expiremental.highlighter.HitEnum;
+import com.github.nik9000.expiremental.highlighter.SourceExtracter;
+import com.github.nik9000.expiremental.highlighter.source.StringSourceExtracter;
 
 /**
  * Base tests for HitEnums that actually process a source string. Expects them to

@@ -1,10 +1,10 @@
-package expiremental.highlighter.source;
+package com.github.nik9000.expiremental.highlighter.source;
 
+import com.github.nik9000.expiremental.highlighter.SourceExtracter;
+import com.github.nik9000.expiremental.highlighter.source.StringMergingMultiSourceExtracter;
+import com.github.nik9000.expiremental.highlighter.source.AbstractMultiSourceExtracter.Builder;
 import com.google.common.base.Joiner;
 import com.google.common.base.Strings;
-
-import expiremental.highlighter.SourceExtracter;
-import expiremental.highlighter.source.AbstractMultiSourceExtracter.Builder;
 
 public class StringMergingMultiSourceExtracterTest extends AbstractMultiSourceExtracterTestBase {
     @Override

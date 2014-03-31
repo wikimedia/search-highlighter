@@ -1,6 +1,6 @@
-package expiremental.highlighter.snippet;
+package com.github.nik9000.expiremental.highlighter.snippet;
 
-import static expiremental.highlighter.Matchers.extracted;
+import static com.github.nik9000.expiremental.highlighter.Matchers.extracted;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.hasSize;
@@ -13,18 +13,19 @@ import java.util.Map;
 import org.junit.Before;
 import org.junit.Test;
 
-import expiremental.highlighter.HitEnum;
-import expiremental.highlighter.Segmenter;
-import expiremental.highlighter.Snippet;
-import expiremental.highlighter.SnippetChooser;
-import expiremental.highlighter.SourceExtracter;
-import expiremental.highlighter.hit.BreakIteratorHitEnum;
-import expiremental.highlighter.hit.HitWeigher;
-import expiremental.highlighter.hit.WeightFilteredHitEnumWrapper;
-import expiremental.highlighter.hit.weight.ConstantHitWeigher;
-import expiremental.highlighter.hit.weight.ExactMatchTermWeigher;
-import expiremental.highlighter.hit.weight.SourceExtractingHitWeigher;
-import expiremental.highlighter.source.StringSourceExtracter;
+import com.github.nik9000.expiremental.highlighter.HitEnum;
+import com.github.nik9000.expiremental.highlighter.Segmenter;
+import com.github.nik9000.expiremental.highlighter.Snippet;
+import com.github.nik9000.expiremental.highlighter.SnippetChooser;
+import com.github.nik9000.expiremental.highlighter.SourceExtracter;
+import com.github.nik9000.expiremental.highlighter.hit.BreakIteratorHitEnum;
+import com.github.nik9000.expiremental.highlighter.hit.HitWeigher;
+import com.github.nik9000.expiremental.highlighter.hit.WeightFilteredHitEnumWrapper;
+import com.github.nik9000.expiremental.highlighter.hit.weight.ConstantHitWeigher;
+import com.github.nik9000.expiremental.highlighter.hit.weight.ExactMatchTermWeigher;
+import com.github.nik9000.expiremental.highlighter.hit.weight.SourceExtractingHitWeigher;
+import com.github.nik9000.expiremental.highlighter.snippet.CharScanningSegmenter;
+import com.github.nik9000.expiremental.highlighter.source.StringSourceExtracter;
 
 public abstract class AbstractBasicSnippetChooserTestBase {
     protected abstract SnippetChooser build();

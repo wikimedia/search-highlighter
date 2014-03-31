@@ -1,6 +1,6 @@
-package expiremental.highlighter.hit.weight;
+package com.github.nik9000.expiremental.highlighter.hit.weight;
 
-import expiremental.highlighter.hit.HitWeigher;
+import com.github.nik9000.expiremental.highlighter.hit.HitWeigher;
 
 /**
  * Simple HitWeigher that adds a constant weight.

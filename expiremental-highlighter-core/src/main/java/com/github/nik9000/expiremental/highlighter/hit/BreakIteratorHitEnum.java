@@ -1,8 +1,8 @@
-package expiremental.highlighter.hit;
+package com.github.nik9000.expiremental.highlighter.hit;
 
 import java.text.BreakIterator;
 
-import expiremental.highlighter.HitEnum;
+import com.github.nik9000.expiremental.highlighter.HitEnum;
 
 /**
  * Implements a HitEnum with a BreakIterator and returns terms in the order they are in the text.

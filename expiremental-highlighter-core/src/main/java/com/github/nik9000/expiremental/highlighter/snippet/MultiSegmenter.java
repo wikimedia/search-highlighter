@@ -1,11 +1,11 @@
-package expiremental.highlighter.snippet;
+package com.github.nik9000.expiremental.highlighter.snippet;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import expiremental.highlighter.Segment;
-import expiremental.highlighter.Segmenter;
-import expiremental.highlighter.SimpleSegment;
+import com.github.nik9000.expiremental.highlighter.Segment;
+import com.github.nik9000.expiremental.highlighter.Segmenter;
+import com.github.nik9000.expiremental.highlighter.SimpleSegment;
 
 /**
  * Combines the results of multiple Segmenters in order. Adds hard stops between

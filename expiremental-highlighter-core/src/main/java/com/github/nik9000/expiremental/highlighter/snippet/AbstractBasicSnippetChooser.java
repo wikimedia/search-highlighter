@@ -1,14 +1,14 @@
-package expiremental.highlighter.snippet;
+package com.github.nik9000.expiremental.highlighter.snippet;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import expiremental.highlighter.HitEnum;
-import expiremental.highlighter.Segmenter;
-import expiremental.highlighter.Snippet;
-import expiremental.highlighter.Snippet.Hit;
-import expiremental.highlighter.SnippetChooser;
+import com.github.nik9000.expiremental.highlighter.HitEnum;
+import com.github.nik9000.expiremental.highlighter.Segmenter;
+import com.github.nik9000.expiremental.highlighter.Snippet;
+import com.github.nik9000.expiremental.highlighter.SnippetChooser;
+import com.github.nik9000.expiremental.highlighter.Snippet.Hit;
 
 public abstract class AbstractBasicSnippetChooser<S> implements SnippetChooser {
     protected abstract S init(Segmenter segmenter, int max);

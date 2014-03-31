@@ -1,12 +1,14 @@
-package expiremental.highlighter.hit.weight;
+package com.github.nik9000.expiremental.highlighter.hit.weight;
 
 import java.util.HashMap;
 import java.util.Map;
 
 import org.junit.Test;
-import static org.junit.Assert.*;
 
-import expiremental.highlighter.hit.TermWeigher;
+import com.github.nik9000.expiremental.highlighter.hit.TermWeigher;
+import com.github.nik9000.expiremental.highlighter.hit.weight.ExactMatchTermWeigher;
+
+import static org.junit.Assert.*;
 
 public class ExactMatchTermWeigherTest {
     @Test

@@ -1,7 +1,7 @@
-package expiremental.highlighter.snippet;
+package com.github.nik9000.expiremental.highlighter.snippet;
 
-import expiremental.highlighter.Segment;
-import expiremental.highlighter.Segmenter;
+import com.github.nik9000.expiremental.highlighter.Segment;
+import com.github.nik9000.expiremental.highlighter.Segmenter;
 
 /**
  * Simple implementation of Segmenter.Memo just returns a premade Segment.

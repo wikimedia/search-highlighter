@@ -1,4 +1,4 @@
 /**
  * Extract snippets from source documents.
  */
-package expiremental.highlighter.source;
+package com.github.nik9000.expiremental.highlighter.source;

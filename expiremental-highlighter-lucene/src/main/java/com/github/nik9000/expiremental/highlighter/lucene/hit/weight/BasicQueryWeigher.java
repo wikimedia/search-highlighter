@@ -1,4 +1,4 @@
-package expiremental.highlighter.lucene.hit.weight;
+package com.github.nik9000.expiremental.highlighter.lucene.hit.weight;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -15,10 +15,10 @@ import org.apache.lucene.util.BytesRef;
 import org.apache.lucene.util.automaton.BasicAutomata;
 import org.apache.lucene.util.automaton.CompiledAutomaton;
 
-import expiremental.highlighter.hit.TermWeigher;
-import expiremental.highlighter.hit.weight.ExactMatchTermWeigher;
-import expiremental.highlighter.lucene.QueryFlattener;
-import expiremental.highlighter.lucene.QueryFlattener.Callback;
+import com.github.nik9000.expiremental.highlighter.hit.TermWeigher;
+import com.github.nik9000.expiremental.highlighter.hit.weight.ExactMatchTermWeigher;
+import com.github.nik9000.expiremental.highlighter.lucene.QueryFlattener;
+import com.github.nik9000.expiremental.highlighter.lucene.QueryFlattener.Callback;
 
 /**
  * "Simple" way to extract weights from queries. Doesn't try doing anything

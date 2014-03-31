@@ -1,6 +1,6 @@
-package expiremental.highlighter.snippet;
+package com.github.nik9000.expiremental.highlighter.snippet;
 
-import static expiremental.highlighter.Matchers.extracted;
+import static com.github.nik9000.expiremental.highlighter.Matchers.extracted;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 
@@ -8,10 +8,10 @@ import java.util.List;
 
 import org.junit.Test;
 
+import com.github.nik9000.expiremental.highlighter.Snippet;
+import com.github.nik9000.expiremental.highlighter.SnippetChooser;
+import com.github.nik9000.expiremental.highlighter.snippet.BasicScoreBasedSnippetChooser;
 import com.google.common.collect.ImmutableMap;
-
-import expiremental.highlighter.Snippet;
-import expiremental.highlighter.SnippetChooser;
 
 public class BasicScoreBasedSnippetChooserTest extends AbstractBasicSnippetChooserTestBase {
     @Override

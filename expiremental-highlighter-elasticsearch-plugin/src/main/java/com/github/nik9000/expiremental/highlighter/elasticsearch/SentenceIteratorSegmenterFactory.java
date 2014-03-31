@@ -1,10 +1,10 @@
-package expiremental.highlighter.elasticsearch;
+package com.github.nik9000.expiremental.highlighter.elasticsearch;
 
 import java.text.BreakIterator;
 import java.util.Locale;
 
-import expiremental.highlighter.Segmenter;
-import expiremental.highlighter.snippet.BreakIteratorSegmenter;
+import com.github.nik9000.expiremental.highlighter.Segmenter;
+import com.github.nik9000.expiremental.highlighter.snippet.BreakIteratorSegmenter;
 
 public class SentenceIteratorSegmenterFactory implements SegmenterFactory {
     private final Locale locale;

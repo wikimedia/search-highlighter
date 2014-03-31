@@ -1,6 +1,6 @@
-package expiremental.highlighter.hit.weight;
+package com.github.nik9000.expiremental.highlighter.hit.weight;
 
-import expiremental.highlighter.hit.TermWeigher;
+import com.github.nik9000.expiremental.highlighter.hit.TermWeigher;
 
 /**
  * Simple TermWeigher that adds a constant weight.

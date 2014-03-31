@@ -1,6 +1,6 @@
-package expiremental.highlighter;
+package com.github.nik9000.expiremental.highlighter;
 
-import expiremental.highlighter.extern.PriorityQueue;
+import com.github.nik9000.expiremental.highlighter.extern.PriorityQueue;
 
 /**
  * Like Comparator but only determines if a < b.  Useful for working with {@link PriorityQueue}

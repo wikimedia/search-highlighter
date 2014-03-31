@@ -1,9 +1,9 @@
-package expiremental.highlighter.source;
+package com.github.nik9000.expiremental.highlighter.source;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import expiremental.highlighter.SourceExtracter;
+import com.github.nik9000.expiremental.highlighter.SourceExtracter;
 
 /**
  * Extracter that can extract from multiple extracters but never more then one

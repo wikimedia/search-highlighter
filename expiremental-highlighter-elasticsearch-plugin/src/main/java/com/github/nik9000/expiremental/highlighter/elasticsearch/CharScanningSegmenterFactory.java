@@ -1,8 +1,8 @@
-package expiremental.highlighter.elasticsearch;
+package com.github.nik9000.expiremental.highlighter.elasticsearch;
 
-import expiremental.highlighter.Segment;
-import expiremental.highlighter.Segmenter;
-import expiremental.highlighter.snippet.CharScanningSegmenter;
+import com.github.nik9000.expiremental.highlighter.Segment;
+import com.github.nik9000.expiremental.highlighter.Segmenter;
+import com.github.nik9000.expiremental.highlighter.snippet.CharScanningSegmenter;
 
 public class CharScanningSegmenterFactory implements SegmenterFactory {
     private final int fragmentCharSize;

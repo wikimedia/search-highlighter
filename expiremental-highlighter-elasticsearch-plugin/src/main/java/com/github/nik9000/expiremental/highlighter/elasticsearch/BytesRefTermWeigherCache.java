@@ -1,11 +1,11 @@
-package expiremental.highlighter.elasticsearch;
+package com.github.nik9000.expiremental.highlighter.elasticsearch;
 
 import org.apache.lucene.util.BytesRef;
 import org.elasticsearch.common.util.BigArrays;
 import org.elasticsearch.common.util.BytesRefHash;
 import org.elasticsearch.common.util.FloatArray;
 
-import expiremental.highlighter.hit.weight.CachingTermWeigher;
+import com.github.nik9000.expiremental.highlighter.hit.weight.CachingTermWeigher;
 
 /**
  * Implementation of CachingTermWeighter.Cache using Elasticsearch's BytesRef

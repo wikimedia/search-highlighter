@@ -1,4 +1,4 @@
-package expiremental.highlighter;
+package com.github.nik9000.expiremental.highlighter;
 
 /**
  * Simple, immutable implementation of Segment.

@@ -1,8 +1,8 @@
-package expiremental.highlighter.snippet;
+package com.github.nik9000.expiremental.highlighter.snippet;
 
-import expiremental.highlighter.Segment;
-import expiremental.highlighter.Segmenter;
-import expiremental.highlighter.SimpleSegment;
+import com.github.nik9000.expiremental.highlighter.Segment;
+import com.github.nik9000.expiremental.highlighter.Segmenter;
+import com.github.nik9000.expiremental.highlighter.SimpleSegment;
 
 /**
  * Segmenter that doesn't segment at all - just returns the 0 to the length of

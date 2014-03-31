@@ -1,4 +1,4 @@
-package expiremental.highlighter.lucene.hit.weight;
+package com.github.nik9000.expiremental.highlighter.lucene.hit.weight;
 
 import java.io.IOException;
 
@@ -6,8 +6,8 @@ import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.util.BytesRef;
 
-import expiremental.highlighter.hit.TermWeigher;
-import expiremental.highlighter.lucene.WrappedExceptionFromLucene;
+import com.github.nik9000.expiremental.highlighter.hit.TermWeigher;
+import com.github.nik9000.expiremental.highlighter.lucene.WrappedExceptionFromLucene;
 
 /**
  * Weighs terms similarly to {@link DefaultSimilarity}.

@@ -1,15 +1,16 @@
-package expiremental.highlighter.snippet;
+package com.github.nik9000.expiremental.highlighter.snippet;
 
-import static expiremental.highlighter.Matchers.extracted;
+import static com.github.nik9000.expiremental.highlighter.Matchers.extracted;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 import org.junit.Test;
 
-import expiremental.highlighter.Segmenter;
-import expiremental.highlighter.SourceExtracter;
-import expiremental.highlighter.source.StringSourceExtracter;
+import com.github.nik9000.expiremental.highlighter.Segmenter;
+import com.github.nik9000.expiremental.highlighter.SourceExtracter;
+import com.github.nik9000.expiremental.highlighter.snippet.WholeSourceSegmenter;
+import com.github.nik9000.expiremental.highlighter.source.StringSourceExtracter;
 
 public class WholeSourceSegmenterTest {
     private String source;

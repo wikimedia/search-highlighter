@@ -1,8 +1,8 @@
-package expiremental.highlighter.hit.weight;
+package com.github.nik9000.expiremental.highlighter.hit.weight;
 
-import expiremental.highlighter.SourceExtracter;
-import expiremental.highlighter.hit.HitWeigher;
-import expiremental.highlighter.hit.TermWeigher;
+import com.github.nik9000.expiremental.highlighter.SourceExtracter;
+import com.github.nik9000.expiremental.highlighter.hit.HitWeigher;
+import com.github.nik9000.expiremental.highlighter.hit.TermWeigher;
 
 /**
  *  Adapter from TermHitWeigher to HitWeigher. 

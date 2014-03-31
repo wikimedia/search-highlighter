@@ -1,13 +1,13 @@
-package expiremental.highlighter.source;
+package com.github.nik9000.expiremental.highlighter.source;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import com.carrotsearch.randomizedtesting.RandomizedRunner;
 import com.carrotsearch.randomizedtesting.RandomizedTest;
-
-import expiremental.highlighter.SourceExtracter;
-import expiremental.highlighter.source.AbstractMultiSourceExtracter.Builder;
+import com.github.nik9000.expiremental.highlighter.SourceExtracter;
+import com.github.nik9000.expiremental.highlighter.source.StringSourceExtracter;
+import com.github.nik9000.expiremental.highlighter.source.AbstractMultiSourceExtracter.Builder;
 
 /**
  * Base class for tests for extensions to AbstractMultiSourceExtracter that can

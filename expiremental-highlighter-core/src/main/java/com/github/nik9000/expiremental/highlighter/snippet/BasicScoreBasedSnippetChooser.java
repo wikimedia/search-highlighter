@@ -1,15 +1,15 @@
-package expiremental.highlighter.snippet;
+package com.github.nik9000.expiremental.highlighter.snippet;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
-import expiremental.highlighter.Segment;
-import expiremental.highlighter.Segmenter;
-import expiremental.highlighter.Snippet;
-import expiremental.highlighter.Snippet.Hit;
-import expiremental.highlighter.extern.PriorityQueue;
+import com.github.nik9000.expiremental.highlighter.Segment;
+import com.github.nik9000.expiremental.highlighter.Segmenter;
+import com.github.nik9000.expiremental.highlighter.Snippet;
+import com.github.nik9000.expiremental.highlighter.Snippet.Hit;
+import com.github.nik9000.expiremental.highlighter.extern.PriorityQueue;
 
 /**
  * Picks the top scoring snippets.

@@ -1,15 +1,19 @@
-package expiremental.highlighter.hit;
+package com.github.nik9000.expiremental.highlighter.hit;
 
-import static expiremental.highlighter.Matchers.advances;
-import static expiremental.highlighter.Matchers.atEndOffset;
-import static expiremental.highlighter.Matchers.atPosition;
-import static expiremental.highlighter.Matchers.atStartOffset;
-import static expiremental.highlighter.Matchers.atWeight;
-import static expiremental.highlighter.Matchers.isEmpty;
+import static com.github.nik9000.expiremental.highlighter.Matchers.advances;
+import static com.github.nik9000.expiremental.highlighter.Matchers.atEndOffset;
+import static com.github.nik9000.expiremental.highlighter.Matchers.atPosition;
+import static com.github.nik9000.expiremental.highlighter.Matchers.atStartOffset;
+import static com.github.nik9000.expiremental.highlighter.Matchers.atWeight;
+import static com.github.nik9000.expiremental.highlighter.Matchers.isEmpty;
 import static org.hamcrest.Matchers.allOf;
 import static org.junit.Assert.assertThat;
 
 import org.junit.Test;
+
+import com.github.nik9000.expiremental.highlighter.hit.EmptyHitEnum;
+import com.github.nik9000.expiremental.highlighter.hit.ReplayingHitEnum;
+import com.github.nik9000.expiremental.highlighter.hit.WeightFilteredHitEnumWrapper;
 
 public class WeightFilteredHitEnumWrapperTest {
     @Test

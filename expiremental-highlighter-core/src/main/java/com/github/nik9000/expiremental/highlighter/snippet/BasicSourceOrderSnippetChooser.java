@@ -1,12 +1,12 @@
-package expiremental.highlighter.snippet;
+package com.github.nik9000.expiremental.highlighter.snippet;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import expiremental.highlighter.Segment;
-import expiremental.highlighter.Segmenter;
-import expiremental.highlighter.Snippet;
-import expiremental.highlighter.Snippet.Hit;
+import com.github.nik9000.expiremental.highlighter.Segment;
+import com.github.nik9000.expiremental.highlighter.Segmenter;
+import com.github.nik9000.expiremental.highlighter.Snippet;
+import com.github.nik9000.expiremental.highlighter.Snippet.Hit;
 
 /**
  * Starts the first snippet on the first hit, the second on the next hit after

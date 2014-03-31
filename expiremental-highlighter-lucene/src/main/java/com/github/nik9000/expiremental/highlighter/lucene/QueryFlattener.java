@@ -1,4 +1,4 @@
-package expiremental.highlighter.lucene;
+package com.github.nik9000.expiremental.highlighter.lucene;
 
 import java.io.IOException;
 

@@ -1,7 +1,7 @@
-package expiremental.highlighter.elasticsearch;
+package com.github.nik9000.expiremental.highlighter.elasticsearch;
 
-import expiremental.highlighter.Segmenter;
-import expiremental.highlighter.snippet.WholeSourceSegmenter;
+import com.github.nik9000.expiremental.highlighter.Segmenter;
+import com.github.nik9000.expiremental.highlighter.snippet.WholeSourceSegmenter;
 
 public class WholeSourceSegmenterFactory implements SegmenterFactory {
     @Override

@@ -1,8 +1,9 @@
-package expiremental.highlighter.source;
+package com.github.nik9000.expiremental.highlighter.source;
 
 import org.junit.Test;
 
-import expiremental.highlighter.source.AbstractMultiSourceExtracter.Builder;
+import com.github.nik9000.expiremental.highlighter.source.NonMergingMultiSourceExtracter;
+import com.github.nik9000.expiremental.highlighter.source.AbstractMultiSourceExtracter.Builder;
 
 public class NonMergingMultiSourceExtracterTest extends AbstractMultiSourceExtracterTestBase {
     @Override
