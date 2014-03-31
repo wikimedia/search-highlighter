@@ -2,6 +2,10 @@ package expiremental.highlighter.hit;
 
 import expiremental.highlighter.HitEnum;
 
+/**
+ * Simple base class that can be extended to delegate all behavior to another
+ * HitEnum.
+ */
 public abstract class AbstractHitEnumWrapper implements HitEnum {
     private final HitEnum wrapped;
 

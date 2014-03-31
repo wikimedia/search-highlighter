@@ -1,7 +1,7 @@
 package expiremental.highlighter;
 
 /**
- * Simple, immuable implementation of Segment.
+ * Simple, immutable implementation of Segment.
  */
 public class SimpleSegment implements Segment {
     private final int startOffset;

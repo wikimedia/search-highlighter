@@ -29,9 +29,7 @@ package expiremental.highlighter.extern;
  * length <code>maxSize+1</code> if instantiated via the
  * {@link #PriorityQueue(int,boolean)} constructor with
  * <code>prepopulate</code> set to <code>true</code>.
- * 
- * @lucene.internal
-*/
+ */
 public abstract class PriorityQueue<T> {
   /** Maximum length for an array; we set this to "a
    *  bit" below Integer.MAX_VALUE because the exact max
@@ -270,8 +268,8 @@ public abstract class PriorityQueue<T> {
     heap[i] = node;            // install saved node
   }
   
-  /** This method returns the internal heap array as Object[].
-   * @lucene.internal
+  /**
+   * This method returns the internal heap array as Object[].
    */
   protected final Object[] getHeapArray() {
     return (Object[]) heap;

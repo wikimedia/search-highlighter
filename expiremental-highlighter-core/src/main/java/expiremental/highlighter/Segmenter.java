@@ -17,6 +17,10 @@ public interface Segmenter {
      */
     Memo memo(int maxStartOffset, int minEndOffset);
 
+    /**
+     * Any information available when determining if a segment is acceptable
+     * that is also useful to pick the bounds of the segment.
+     */
     interface Memo {
         /**
          * Find the start and end offset given a max and min that the segment

@@ -2,7 +2,10 @@ package expiremental.highlighter.hit;
 
 import expiremental.highlighter.HitEnum;
 
-
+/**
+ * Simple base class that can be extended to easily build HitEnums that wrap and
+ * filter another HitEnum.
+ */
 public abstract class AbstractFilteredHitEnumWrapper extends AbstractHitEnumWrapper {
     public AbstractFilteredHitEnumWrapper(HitEnum wrapped) {
         super(wrapped);

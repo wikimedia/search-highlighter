@@ -295,9 +295,10 @@ public class FieldWrapper {
                                 context.fieldName));
             }
         }
-        if (mightWeighTermsMultipleTimes && slowToWeighTermsMultipleTimes) {
-            weigher = new CachingTermWeigher<BytesRef>(weigher);
-        }
+        // TODO This can't have worked properly because it doesn't clone the BytesRef
+//        if (mightWeighTermsMultipleTimes && slowToWeighTermsMultipleTimes) {
+//            weigher = new CachingTermWeigher<BytesRef>(weigher);
+//        }
         return weigher;
     }
 }
