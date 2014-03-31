@@ -169,7 +169,11 @@ public class ExpirementalHighlighter implements Highlighter {
 
         private SnippetChooser buildChooser() {
             if (context.field.fieldOptions().scoreOrdered()) {
-                return new BasicScoreBasedSnippetChooser();
+                return new BasicScoreBasedSnippetChooser(true);
+            }
+            Boolean topScoring = (Boolean) getOption("top_scoring");
+            if (topScoring != null && topScoring) {
+                return new BasicScoreBasedSnippetChooser(false);
             }
             return new BasicSourceOrderSnippetChooser();
         }

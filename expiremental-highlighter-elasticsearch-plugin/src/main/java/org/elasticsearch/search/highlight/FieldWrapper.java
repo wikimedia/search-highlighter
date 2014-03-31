@@ -119,8 +119,6 @@ public class FieldWrapper {
     }
 
     public Segmenter buildSegmenter() throws IOException {
-        // TODO loading source is expensive if you don't need it. Delay
-        // this.
         List<String> fieldValues = getFieldValues();
         SegmenterFactory segmenterFactory = executionContext.getSegmenterFactory();
         switch (fieldValues.size()) {
@@ -288,13 +286,20 @@ public class FieldWrapper {
         TermWeigher<BytesRef> weigher = cacheEntry.queryWeigher.termWeigher();
         // No need to add fancy term weights if there is only one term or we
         // aren't using score order.
-        if (!cacheEntry.queryWeigher.singleTerm() && context.field.fieldOptions().scoreOrdered()) {
-            Boolean useDefaultSimilarity = (Boolean) executionContext.getOption("default_similarity");
-            if (useDefaultSimilarity == null || useDefaultSimilarity == true) {
-                slowToWeighTermsMultipleTimes = true;
-                weigher = new MultiplyingTermWeigher<BytesRef>(weigher,
-                        new DefaultSimilarityTermWeigher(context.hitContext.reader(),
-                                context.fieldName));
+        if (!cacheEntry.queryWeigher.singleTerm()) {
+            boolean scoreMatters = context.field.fieldOptions().scoreOrdered();
+            if (!scoreMatters) {
+                Boolean topScoring = (Boolean) executionContext.getOption("top_scoring");
+                scoreMatters = topScoring != null && topScoring;
+            }
+            if (scoreMatters) {
+                Boolean useDefaultSimilarity = (Boolean) executionContext.getOption("default_similarity");
+                if (useDefaultSimilarity == null || useDefaultSimilarity == true) {
+                    slowToWeighTermsMultipleTimes = true;
+                    weigher = new MultiplyingTermWeigher<BytesRef>(weigher,
+                            new DefaultSimilarityTermWeigher(context.hitContext.reader(),
+                                    context.fieldName));
+                }
             }
         }
         if (mightWeighTermsMultipleTimes && slowToWeighTermsMultipleTimes) {

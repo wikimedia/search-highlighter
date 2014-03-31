@@ -94,6 +94,26 @@ sentence rules with the ```locale``` option as above.
 Each fragmenter has different ```no_match_size``` strategies based on the
 spirit of the fragmenter.
 
+The ```top_scoring``` option can be set to true while sorting fragments by
+source to return only the top scoring fragmenter but leave them in source
+order.  Example:
+```js
+  "highlight": {
+    "fields": {
+      "text": {
+        "type": "expiremental",
+        "number_of_fragments": 2,
+        "fragmenter": "sentence",
+        "sort": "source",
+        "options": {
+           "locale": "en_us",
+           "top_scoring": true
+        }
+      }
+    }
+  }
+```
+
 The ```default_similarity``` option defaults to true for queries with more then
 one term.  It will weigh each matched term using Lucene's default similarity
 model similarly to how the Fast Vectory Highlighter weighs terms.  If can be
