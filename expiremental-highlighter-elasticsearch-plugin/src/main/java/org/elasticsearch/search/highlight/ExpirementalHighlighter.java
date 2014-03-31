@@ -25,7 +25,7 @@ import expiremental.highlighter.elasticsearch.WholeSourceSegmenterFactory;
 import expiremental.highlighter.hit.MergingHitEnum;
 import expiremental.highlighter.hit.OverlapMergingHitEnumWrapper;
 import expiremental.highlighter.lucene.hit.weight.BasicQueryWeigher;
-import expiremental.highlighter.snippet.BasicScoreOrderSnippetChooser;
+import expiremental.highlighter.snippet.BasicScoreBasedSnippetChooser;
 import expiremental.highlighter.snippet.BasicSourceOrderSnippetChooser;
 
 public class ExpirementalHighlighter implements Highlighter {
@@ -169,7 +169,7 @@ public class ExpirementalHighlighter implements Highlighter {
 
         private SnippetChooser buildChooser() {
             if (context.field.fieldOptions().scoreOrdered()) {
-                return new BasicScoreOrderSnippetChooser();
+                return new BasicScoreBasedSnippetChooser();
             }
             return new BasicSourceOrderSnippetChooser();
         }
