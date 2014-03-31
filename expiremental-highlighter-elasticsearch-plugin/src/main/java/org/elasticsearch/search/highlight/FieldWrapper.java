@@ -13,6 +13,7 @@ import org.apache.lucene.index.FieldInfo;
 import org.apache.lucene.util.BytesRef;
 import org.elasticsearch.common.base.Function;
 import org.elasticsearch.common.collect.Iterators;
+import org.elasticsearch.common.util.BigArrays;
 import org.elasticsearch.index.mapper.FieldMapper;
 import org.elasticsearch.index.mapper.core.StringFieldMapper;
 import org.elasticsearch.search.highlight.ExpirementalHighlighter.CacheEntry;
@@ -22,6 +23,7 @@ import org.elasticsearch.search.highlight.SearchContextHighlight.FieldOptions;
 import expiremental.highlighter.HitEnum;
 import expiremental.highlighter.Segmenter;
 import expiremental.highlighter.SourceExtracter;
+import expiremental.highlighter.elasticsearch.BytesRefTermWeigherCache;
 import expiremental.highlighter.elasticsearch.SegmenterFactory;
 import expiremental.highlighter.hit.ConcatHitEnum;
 import expiremental.highlighter.hit.PositionBoostingHitEnumWrapper;
@@ -295,10 +297,18 @@ public class FieldWrapper {
                                 context.fieldName));
             }
         }
-        // TODO This can't have worked properly because it doesn't clone the BytesRef
-//        if (mightWeighTermsMultipleTimes && slowToWeighTermsMultipleTimes) {
-//            weigher = new CachingTermWeigher<BytesRef>(weigher);
-//        }
+        if (mightWeighTermsMultipleTimes && slowToWeighTermsMultipleTimes) {
+            // The normal way to get here is because you have to reanalyze the
+            // source document to find hits. In that case weighing the document
+            // is unlikely to be a big performance bottleneck.  OTOH, this should
+            // reduce any IO that might come from this step which is worth it.
+
+            // TODO maybe switch to a recycling instance on the off chance that
+            // we find a ton of terms in the document. That'd require mpre work
+            // to make sure everything is properly Releasable.
+            weigher = new CachingTermWeigher<BytesRef>(new BytesRefTermWeigherCache(
+                    BigArrays.NON_RECYCLING_INSTANCE), weigher);
+        }
         return weigher;
     }
 }

@@ -23,6 +23,5 @@ public class CachingTermWeigherTest {
                     }
                 });
         assertEquals(6f, weigher.weigh(new Object()), .0001f);
-
     }
 }

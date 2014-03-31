@@ -550,7 +550,8 @@ public class ExpirementalHighlighterTest extends ElasticsearchIntegrationTest {
      */
     private SearchRequestBuilder testSearch(QueryBuilder builder) {
         return client().prepareSearch("test").setTypes("test").setQuery(builder)
-                .setHighlighterType("expiremental").addHighlightedField("test");
+                .setHighlighterType("expiremental").addHighlightedField("test")
+                .setSize(1);
     }
 
     private SearchRequestBuilder setHitSource(SearchRequestBuilder search, String hitSource) {
