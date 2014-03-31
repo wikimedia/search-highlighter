@@ -42,8 +42,9 @@ public class ExpirementalHighlighter implements Highlighter {
             CacheEntry entry = (CacheEntry) context.hitContext.cache().get(CACHE_KEY);
             if (entry == null) {
                 entry = new CacheEntry();
+                // Build the QueryWeigher with the top level reader to get all the frequency information
                 entry.queryWeigher = new BasicQueryWeigher(new ElasticsearchQueryFlattener(100),
-                        context.hitContext.reader(), context.query.originalQuery());
+                        context.hitContext.topLevelReader(), context.query.originalQuery());
                 context.hitContext.cache().put(CACHE_KEY, entry);
             }
             HighlightExecutionContext executionContext = new HighlightExecutionContext(context,

@@ -19,7 +19,8 @@ import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertFail
 import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertHighlight;
 import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertNoFailures;
 import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertNotHighlighted;
-import static org.hamcrest.Matchers.*;
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.equalTo;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -345,14 +346,15 @@ public class ExpirementalHighlighterTest extends ElasticsearchIntegrationTest {
     }
 
     @Test
-    public void useDefaultSimilarity() throws IOException {
-        buildIndex();
+    public void useDefaultSimilarity() throws IOException, InterruptedException, ExecutionException {
+        buildIndex(true, true, 1);
         client().prepareIndex("test", "test").setSource("test", new String[] {"test", "foo foo"}).get();
         // We need enough "foo" so that a whole bunch end up on the shard with the above entry.
-        for (int i = 0; i < 100; i++) {
-            client().prepareIndex("test", "test").setSource("test", "foo").get();    
+        List<IndexRequestBuilder> indexes = new ArrayList<IndexRequestBuilder>();
+        for (int i = 0; i < 1000; i++) {
+            indexes.add(client().prepareIndex("test", "test").setSource("test", "foo"));
         }
-        refresh();
+        indexRandom(true, indexes);
 
         SearchRequestBuilder search = testSearch(
                 boolQuery().should(termQuery("test", "test")).should(termQuery("test", "foo")))
@@ -445,7 +447,7 @@ public class ExpirementalHighlighterTest extends ElasticsearchIntegrationTest {
 
     @Test
     public void settingHitSourceWithoutDataIsAnError() throws IOException {
-        buildIndex(false, false);
+        buildIndex(false, false, between(1, 5));
         indexTestData();
 
         SearchRequestBuilder search = testSearch();
@@ -611,10 +613,10 @@ public class ExpirementalHighlighterTest extends ElasticsearchIntegrationTest {
     }
 
     private void buildIndex() throws IOException {
-        buildIndex(true, true);
+        buildIndex(true, true, between(1, 5));
     }
 
-    private void buildIndex(boolean offsetsInPostings, boolean fvhLikeTermVectors)
+    private void buildIndex(boolean offsetsInPostings, boolean fvhLikeTermVectors, int shards)
             throws IOException {
         XContentBuilder builder = jsonBuilder().startObject().startObject("test")
                 .startObject("properties").startObject("test").field("type", "string");
@@ -624,7 +626,9 @@ public class ExpirementalHighlighterTest extends ElasticsearchIntegrationTest {
         addField(builder, "english", "english", offsetsInPostings, fvhLikeTermVectors);
         addField(builder, "english2", "english", offsetsInPostings, fvhLikeTermVectors);
         builder.endObject().endObject().endObject().endObject();
-        assertAcked(prepareCreate("test").addMapping("test", builder));
+        assertAcked(prepareCreate("test").setSettings(
+                ImmutableMap.<String, Object> of("number_of_shards", shards)).addMapping("test",
+                builder));
         ensureYellow();
     }
 

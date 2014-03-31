@@ -296,8 +296,9 @@ public class FieldWrapper {
                 Boolean useDefaultSimilarity = (Boolean) executionContext.getOption("default_similarity");
                 if (useDefaultSimilarity == null || useDefaultSimilarity == true) {
                     slowToWeighTermsMultipleTimes = true;
+                    // Use a top level reader to fetch the frequency information
                     weigher = new MultiplyingTermWeigher<BytesRef>(weigher,
-                            new DefaultSimilarityTermWeigher(context.hitContext.reader(),
+                            new DefaultSimilarityTermWeigher(context.hitContext.topLevelReader(),
                                     context.fieldName));
                 }
             }
@@ -309,7 +310,7 @@ public class FieldWrapper {
             // reduce any IO that might come from this step which is worth it.
 
             // TODO maybe switch to a recycling instance on the off chance that
-            // we find a ton of terms in the document. That'd require mpre work
+            // we find a ton of terms in the document. That'd require more work
             // to make sure everything is properly Releasable.
             weigher = new CachingTermWeigher<BytesRef>(new BytesRefTermWeigherCache(
                     BigArrays.NON_RECYCLING_INSTANCE), weigher);
