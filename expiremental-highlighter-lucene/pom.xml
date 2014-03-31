@@ -3,7 +3,7 @@
                              http://maven.apache.org/maven-v4_0_0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <parent>
-    <groupId>nik9000</groupId>
+    <groupId>com.github.nik9000</groupId>
     <artifactId>expiremental-highlighter</artifactId>
     <version>0.0.1-SNAPSHOT</version>
   </parent>
