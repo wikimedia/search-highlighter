@@ -22,7 +22,7 @@ import org.apache.lucene.search.spans.SpanQuery;
 import org.apache.lucene.search.spans.SpanTermQuery;
 
 /**
- * Flattens {@link Query}s similarly to Lucene's {@link FieldQuery}.
+ * Flattens {@link Query}s similarly to Lucene's FieldQuery.
  */
 public class QueryFlattener {
     private final int maxMultiTermQueryTerms;
