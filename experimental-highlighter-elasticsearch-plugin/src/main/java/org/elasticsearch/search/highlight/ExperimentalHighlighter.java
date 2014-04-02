@@ -28,11 +28,11 @@ import org.wikimedia.search.highlighter.experimental.snippet.BasicScoreBasedSnip
 import org.wikimedia.search.highlighter.experimental.snippet.BasicSourceOrderSnippetChooser;
 
 public class ExperimentalHighlighter implements Highlighter {
-    private static final String CACHE_KEY = "highlight-expiremental";
+    private static final String CACHE_KEY = "highlight-experimental";
 
     @Override
     public String[] names() {
-        return new String[] { "expiremental" };
+        return new String[] { "experimental" };
     }
 
     @Override

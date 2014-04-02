@@ -55,13 +55,13 @@ function search() {
   ab -c 3 -n 50 -p /tmp/post 'http://localhost:9200/wikipedia/_search' 2>&1 | grep Total:
 }
 
-search expiremental 'Main Page'
+search experimental 'Main Page'
 search postings 'Main Page'
-search expiremental 'Main'
+search experimental 'Main'
 search postings 'Main'
-search expiremental 'Page'
+search experimental 'Page'
 search postings 'Page'
-search expiremental 'Marble Staircase'
+search experimental 'Marble Staircase'
 search postings 'Marble Staircase'
-search expiremental 'Lettuce Leaves'
+search experimental 'Lettuce Leaves'
 search postings 'Lettuce Leaves'

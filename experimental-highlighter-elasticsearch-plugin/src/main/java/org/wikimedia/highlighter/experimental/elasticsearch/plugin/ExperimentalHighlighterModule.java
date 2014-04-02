@@ -5,7 +5,7 @@ import org.elasticsearch.common.inject.multibindings.Multibinder;
 import org.elasticsearch.search.highlight.ExperimentalHighlighter;
 import org.elasticsearch.search.highlight.Highlighter;
 
-public class ExpirementalHighlighterModule extends AbstractModule {
+public class ExperimentalHighlighterModule extends AbstractModule {
     @Override
     protected void configure() {
         Multibinder.newSetBinder(binder(), Highlighter.class).addBinding().to(ExperimentalHighlighter.class);

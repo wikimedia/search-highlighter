@@ -52,7 +52,7 @@ function go() {
   count=200
   hit_source=""
   fragmenter=""
-  if [ "$highlighter" == "expiremental" ]; then
+  if [ "$highlighter" == "experimental" ]; then
     hit_source="$2"
     fragmenter="$3"
   fi
@@ -89,11 +89,11 @@ function each() {
   go plain
   go fvh
   go postings
-  go expiremental postings scan
-  go expiremental postings sentence
-  go expiremental postings none
-  go expiremental vectors scan
-  go expiremental analyze scan
+  go experimental postings scan
+  go experimental postings sentence
+  go experimental postings none
+  go experimental vectors scan
+  go experimental analyze scan
 }
 
 function suite() {

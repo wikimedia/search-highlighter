@@ -41,7 +41,7 @@ import org.elasticsearch.search.highlight.HighlightBuilder;
 import org.elasticsearch.test.ElasticsearchIntegrationTest;
 import org.junit.Test;
 
-public class ExpirementalHighlighterTest extends ElasticsearchIntegrationTest {
+public class ExperimentalHighlighterTest extends ElasticsearchIntegrationTest {
     private static final List<String> HIT_SOURCES = ImmutableList.of("postings", "vectors",
             "analyze");
 
@@ -603,7 +603,7 @@ public class ExpirementalHighlighterTest extends ElasticsearchIntegrationTest {
      */
     private SearchRequestBuilder testSearch(QueryBuilder builder) {
         return client().prepareSearch("test").setTypes("test").setQuery(builder)
-                .setHighlighterType("expiremental").addHighlightedField("test")
+                .setHighlighterType("experimental").addHighlightedField("test")
                 .setSize(1);
     }
 
