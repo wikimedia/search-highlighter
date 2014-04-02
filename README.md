@@ -1,8 +1,8 @@
-Expiremental Highlighter [![Build Status](https://travis-ci.org/nik9000/expiremental-highlighter.svg?branch=master)](https://travis-ci.org/nik9000/expiremental-highlighter)
+Experimental Highlighter [![Build Status](https://travis-ci.org/wikimedia/search-highlighter.svg?branch=master)](https://travis-ci.org/wikimedia/search-highlighter)
 ========================
 
 Text highlighter for Java designed to be pluggable enough for easy
-expirementation.  The idea being that it should be possible to play with how
+experimentation.  The idea being that it should be possible to play with how
 hits are weighed or how they are grouped into snippets without knowing about
 the guts of Lucene or Elasticsearch.
 
@@ -30,7 +30,7 @@ This highlighter does not (currently):
 Elasticsearch installation
 --------------------------
 
-| Expiremental Highlighter Plugin |  ElasticSearch  |
+| Experimental Highlighter Plugin |  ElasticSearch  |
 |---------------------------------|-----------------|
 | master                          | 1.1.0 -> master |
 
@@ -43,7 +43,7 @@ export ABSOLUTE_PATH_OF_CLONED_DIRECTORY=$(pwd)
 ```
 then install by going to the root of the Elasticsearch installation and
 ```bash
-./bin/plugin --url file:///$ABSOLUTE_PATH_OF_CLONED_DIRECTORY/expiremental-highlighter-elasticsearch-plugin/target/releases/expiremental-highlighter-elasticsearch-plugin-0.0.1-SNAPSHOT.zip  --install expiremental-highlighter-elasticsearch-plugin 
+./bin/plugin --url file:///$ABSOLUTE_PATH_OF_CLONED_DIRECTORY/experimental-highlighter-elasticsearch-plugin/target/releases/experimental-highlighter-elasticsearch-plugin-0.0.1-SNAPSHOT.zip  --install experimental-highlighter-elasticsearch-plugin 
 ```
 
 Then you can use it by searching like so:
@@ -60,7 +60,7 @@ Then you can use it by searching like so:
     "fields": {
       "title": {
         "number_of_fragments": 1,
-        "type": "expiremental"
+        "type": "experimental"
       }
     }
   }
@@ -79,7 +79,7 @@ fragment between each value, even on ```none```.  Example:
   "highlight": {
     "fields": {
       "title": {
-        "type": "expiremental",
+        "type": "experimental",
         "fragmenter": "sentence",
         "options": {
           "locale": "en_us"
@@ -101,7 +101,7 @@ order.  Example:
   "highlight": {
     "fields": {
       "text": {
-        "type": "expiremental",
+        "type": "experimental",
         "number_of_fragments": 2,
         "fragmenter": "sentence",
         "sort": "source",
@@ -123,7 +123,7 @@ query it will never be used.
   "highlight": {
     "fields": {
       "title": {
-        "type": "expiremental",
+        "type": "experimental",
         "options": {
           "default_similarity": false
         }
@@ -142,7 +142,7 @@ to using the first option that wouldn't throw an error.
   "highlight": {
     "fields": {
       "title": {
-        "type": "expiremental",
+        "type": "experimental",
         "options": {
           "hit_source": "analyze"
         }
@@ -158,7 +158,7 @@ example, this will multiply the weight of matches before the 20th position by
   "highlight": {
     "fields": {
       "title": {
-        "type": "expiremental",
+        "type": "experimental",
         "options": {
           "boost_before": {
             "20": 5,

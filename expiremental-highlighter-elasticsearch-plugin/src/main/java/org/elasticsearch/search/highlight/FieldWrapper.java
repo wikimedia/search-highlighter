@@ -19,12 +19,12 @@ import org.elasticsearch.index.mapper.core.StringFieldMapper;
 import org.elasticsearch.search.highlight.ExpirementalHighlighter.CacheEntry;
 import org.elasticsearch.search.highlight.ExpirementalHighlighter.HighlightExecutionContext;
 import org.elasticsearch.search.highlight.SearchContextHighlight.FieldOptions;
+import org.wikimedia.highlighter.expiremental.elasticsearch.BytesRefTermWeigherCache;
+import org.wikimedia.highlighter.expiremental.elasticsearch.SegmenterFactory;
 
 import com.github.nik9000.expiremental.highlighter.HitEnum;
 import com.github.nik9000.expiremental.highlighter.Segmenter;
 import com.github.nik9000.expiremental.highlighter.SourceExtracter;
-import com.github.nik9000.expiremental.highlighter.elasticsearch.BytesRefTermWeigherCache;
-import com.github.nik9000.expiremental.highlighter.elasticsearch.SegmenterFactory;
 import com.github.nik9000.expiremental.highlighter.hit.ConcatHitEnum;
 import com.github.nik9000.expiremental.highlighter.hit.PositionBoostingHitEnumWrapper;
 import com.github.nik9000.expiremental.highlighter.hit.TermWeigher;
