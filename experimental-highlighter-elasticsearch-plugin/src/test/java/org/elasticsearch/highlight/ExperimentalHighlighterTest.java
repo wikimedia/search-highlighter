@@ -328,10 +328,9 @@ public class ExperimentalHighlighterTest extends ElasticsearchIntegrationTest {
         indexTestData("The quick brown fox jumped over the lazy test.  And some other test.  " +
                 "Junk junk junk junk junk junk junk junk junk junk junk test test test.");
 
-
         SearchRequestBuilder search = testSearch(
                 boolQuery().should(termQuery("test", "test")).should(termQuery("test", "foo")))
-                .addHighlightedField(new HighlightBuilder.Field("test").fragmenter("sentence").numOfFragments(3))
+                .addHighlightedField(new HighlightBuilder.Field("test").fragmenter("sentence").numOfFragments(2))
                 .setHighlighterOrder("score");
         Map<String, Object> options = new HashMap<String, Object>();
         options.put("boost_before", ImmutableMap.of("10", 4, "20", 2f));
@@ -341,7 +340,17 @@ public class ExperimentalHighlighterTest extends ElasticsearchIntegrationTest {
             assertHighlight(response, 0, "test", 0, equalTo("The quick brown fox jumped over the lazy <em>test</em>.  "));
             assertHighlight(response, 0, "test", 1, equalTo("Junk junk junk junk junk junk junk " +
                     "junk junk junk junk <em>test</em> <em>test</em> <em>test</em>."));
-            assertHighlight(response, 0, "test", 2, equalTo("And some other <em>test</em>.  "));
+        }
+
+        // Should also apply when sorting by source using top_scoring
+        search.setHighlighterOrder("source");
+        options.put("top_scoring", true);
+        for (String hitSource : HIT_SOURCES) {
+            options.put("hit_source", hitSource);
+            SearchResponse response = search.setHighlighterOptions(options).get();
+            assertHighlight(response, 0, "test", 0, equalTo("The quick brown fox jumped over the lazy <em>test</em>.  "));
+            assertHighlight(response, 0, "test", 1, equalTo("Junk junk junk junk junk junk junk " +
+                    "junk junk junk junk <em>test</em> <em>test</em> <em>test</em>."));
         }
     }
 

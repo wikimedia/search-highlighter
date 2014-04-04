@@ -140,9 +140,12 @@ public class FieldWrapper {
         HitEnum e = buildHitEnumForSource();
         FieldOptions options = context.field.fieldOptions();
         if (!options.scoreOrdered()) {
-            // If we're not score ordered then there isn't any point in changing
-            // the enum's weights.
-            return e;
+            Boolean topScoring = (Boolean)executionContext.getOption("top_scoring");
+            if (topScoring == null || !topScoring) {
+                // If we don't pay attention to scoring then there is no point
+                // is messing with the weights.
+                return e;
+            }
         }
         // TODO move this up so we don't have to redo it per matched_field
         @SuppressWarnings("unchecked")
