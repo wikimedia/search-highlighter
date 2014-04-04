@@ -152,6 +152,7 @@ example, this will multiply the weight of matches before the 20th position by
     "fields": {
       "title": {
         "type": "experimental",
+        "order": "score",
         "options": {
           "boost_before": {
             "20": 5,
@@ -164,6 +165,7 @@ example, this will multiply the weight of matches before the 20th position by
 ```
 Note that the position is not reset between multiple values of the same field
 but is handled independently for each of the ```matched_fields```.
+Note also that ```boost_before``` works with ```top_scoring```.
 
 The ```matched_fields``` field turns on combining matches from multiple fields,
 just like the Fast Vector Highlighter.  See the [Elasticsearch documentation](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/search-request-highlighting.html#matched-fields)
