@@ -34,16 +34,9 @@ Elasticsearch installation
 |---------------------------------|-----------------|
 | master                          | 1.1.0 -> master |
 
-At this point nothing has been pushed to Elasticsearch's plugin repository so
-you have to clone the plugin locally, build it by going to the cloned directory
-and
+Install it like so:
 ```bash
-mvn clean package
-export ABSOLUTE_PATH_OF_CLONED_DIRECTORY=$(pwd)
-```
-then install by going to the root of the Elasticsearch installation and
-```bash
-./bin/plugin --url file:///$ABSOLUTE_PATH_OF_CLONED_DIRECTORY/experimental-highlighter-elasticsearch-plugin/target/releases/experimental-highlighter-elasticsearch-plugin-0.0.1-SNAPSHOT.zip  --install experimental-highlighter-elasticsearch-plugin 
+./bin/plugin --install org.wikimedia.search.highlighter/experimental-highlighter-elasticsearch-plugin/0.0.1
 ```
 
 Then you can use it by searching like so:
