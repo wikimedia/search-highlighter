@@ -15,7 +15,7 @@ public abstract class AbstractBasicSnippetChooser<S> implements SnippetChooser {
     protected abstract void snippet(S state,  int startOffset, int endOffset, List<Hit> hits);
     protected abstract List<Snippet> results(S state);
     protected abstract boolean mustKeepGoing(S state);
-    
+
     @Override
     public List<Snippet> choose(Segmenter segmenter, HitEnum e, int max) {
         if (!e.next()) {
