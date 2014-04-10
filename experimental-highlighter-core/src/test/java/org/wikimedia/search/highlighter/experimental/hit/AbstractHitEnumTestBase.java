@@ -40,4 +40,34 @@ public abstract class AbstractHitEnumTestBase {
         assertThat(e, hit(2, extracter, equalTo("legend")));
         assertThat(e, isEmpty());
     }
+
+    @Test
+    public void threeSentences() {
+        String sentence = "The quick brown fox jumped over the lazy dog.  ";
+        String source = sentence + sentence + sentence;
+        SourceExtracter<String> extracter = new StringSourceExtracter(source);
+        HitEnum e = buildEnum(source);
+        int pos = 0;
+        for (int i = 0; i < 3; i++) {
+            assertThat(e, advances());
+            assertThat(e, hit(pos++, extracter, equalTo("The")));
+            assertThat(e, advances());
+            assertThat(e, hit(pos++, extracter, equalTo("quick")));
+            assertThat(e, advances());
+            assertThat(e, hit(pos++, extracter, equalTo("brown")));
+            assertThat(e, advances());
+            assertThat(e, hit(pos++, extracter, equalTo("fox")));
+            assertThat(e, advances());
+            assertThat(e, hit(pos++, extracter, equalTo("jumped")));
+            assertThat(e, advances());
+            assertThat(e, hit(pos++, extracter, equalTo("over")));
+            assertThat(e, advances());
+            assertThat(e, hit(pos++, extracter, equalTo("the")));
+            assertThat(e, advances());
+            assertThat(e, hit(pos++, extracter, equalTo("lazy")));
+            assertThat(e, advances());
+            assertThat(e, hit(pos++, extracter, equalTo("dog")));
+        }
+        assertThat(e, isEmpty());
+    }
 }

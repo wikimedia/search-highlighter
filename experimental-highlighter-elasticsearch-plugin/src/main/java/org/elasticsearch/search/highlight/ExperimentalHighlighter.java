@@ -169,13 +169,21 @@ public class ExperimentalHighlighter implements Highlighter {
 
         private SnippetChooser buildChooser() {
             if (context.field.fieldOptions().scoreOrdered()) {
-                return new BasicScoreBasedSnippetChooser(true);
+                return buildScoreBasedSnippetChooser(true);
             }
             Boolean topScoring = (Boolean) getOption("top_scoring");
             if (topScoring != null && topScoring) {
-                return new BasicScoreBasedSnippetChooser(false);
+                return buildScoreBasedSnippetChooser(false);
             }
             return new BasicSourceOrderSnippetChooser();
+        }
+
+        private SnippetChooser buildScoreBasedSnippetChooser(boolean scoreOrdered) {
+            Integer maxFragmentsScored = (Integer) getOption("max_fragments_scored");
+            if (maxFragmentsScored == null) {
+                return new BasicScoreBasedSnippetChooser(scoreOrdered);
+            }
+            return new BasicScoreBasedSnippetChooser(scoreOrdered, maxFragmentsScored);
         }
 
         private Text[] formatSnippets(List<Snippet> snippets) throws IOException {

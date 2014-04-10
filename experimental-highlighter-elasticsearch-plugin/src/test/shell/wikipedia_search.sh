@@ -15,7 +15,7 @@ function search() {
     "type": "'$highlighter'",
     "fields": {
       "text": {
-        "fragmenter": "sentence",
+        "fragmenter": "scan",
         "order": "score",
         "options": {
           "hit_source": "postings",
@@ -23,7 +23,8 @@ function search() {
             "20": 5,
             "100": 3,
             "500": 1.5
-          }
+          },
+          "max_fragments_scored": 30
         }
       },
       "title": {
@@ -65,3 +66,5 @@ search experimental 'Marble Staircase'
 search postings 'Marble Staircase'
 search experimental 'Lettuce Leaves'
 search postings 'Lettuce Leaves'
+search experimental 'd d d d d d d d'
+search postings 'd d d d d d d d'

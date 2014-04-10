@@ -597,6 +597,37 @@ public class ExperimentalHighlighterTest extends ElasticsearchIntegrationTest {
                 + "long enough to demonstrate that we switched to the whole field segmenter."));
     }
 
+    @Test
+    public void maxFragmentsScored() throws IOException {
+        buildIndex();
+        indexTestData("The quick brown fox jumped over the lazy test.  And some other test.  " +
+                "Junk junk junk junk junk junk junk junk junk junk junk test test test.");
+
+        SearchRequestBuilder search = testSearch(termQuery("test", "test"))
+                .addHighlightedField(new HighlightBuilder.Field("test").fragmenter("sentence").numOfFragments(2))
+                .setHighlighterOrder("score");
+        Map<String, Object> options = new HashMap<String, Object>();
+
+        // We find the top scoring fragment if it is within max_fragments_scored
+        options.put("max_fragments_scored", 10);
+        for (String hitSource : HIT_SOURCES) {
+            options.put("hit_source", hitSource);
+            SearchResponse response = search.setHighlighterOptions(options).get();
+            assertHighlight(response, 0, "test", 0, equalTo("Junk junk junk junk junk junk junk " +
+                    "junk junk junk junk <em>test</em> <em>test</em> <em>test</em>."));
+            assertHighlight(response, 0, "test", 1, equalTo("And some other <em>test</em>.  "));
+        }
+
+        // We don't if it isn't
+        options.put("max_fragments_scored", 2);
+        for (String hitSource : HIT_SOURCES) {
+            options.put("hit_source", hitSource);
+            SearchResponse response = search.setHighlighterOptions(options).get();
+            assertHighlight(response, 0, "test", 0, equalTo("The quick brown fox jumped over the lazy <em>test</em>.  "));
+            assertHighlight(response, 0, "test", 1, equalTo("And some other <em>test</em>.  "));
+        }
+    }
+
     // TODO matched_fields with different hit source
     // TODO infer proper hit source
     

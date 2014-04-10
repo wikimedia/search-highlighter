@@ -16,13 +16,24 @@ import org.wikimedia.search.highlighter.experimental.extern.PriorityQueue;
  */
 public class BasicScoreBasedSnippetChooser extends AbstractBasicSnippetChooser<BasicScoreBasedSnippetChooser.State> {
     private final boolean scoreOrdered;
+    private final int maxSnippetsChecked;
 
     /**
      * Build the snippet chooser.
      * @param scoreOrdered should the results come back in score order (true) or source order (false)
+     * @param maxSnippetsChecked never check more then this many snippets
+     */
+    public BasicScoreBasedSnippetChooser(boolean scoreOrdered, int maxSnippetsChecked) {
+        this.scoreOrdered = scoreOrdered;
+        this.maxSnippetsChecked = maxSnippetsChecked;
+    }
+
+    /**
+     * Build the snippet chooser with maxSnippetsChecked defaulted to Integer.MAX_VALUE.
+     * @param scoreOrdered should the results come back in score order (true) or source order (false)
      */
     public BasicScoreBasedSnippetChooser(boolean scoreOrdered) {
-        this.scoreOrdered = scoreOrdered;
+        this(scoreOrdered, Integer.MAX_VALUE);
     }
 
     @Override
@@ -31,10 +42,12 @@ public class BasicScoreBasedSnippetChooser extends AbstractBasicSnippetChooser<B
         s.segmenter = segmenter;
         s.results  = new ProtoSnippetQueue(max);
         s.max = max;
+        s.checkedSnippets = 0;
         return s;
     }
     @Override
     protected void snippet(State state, int startOffset, int endOffset, List<Hit> hits) {
+        state.checkedSnippets++;
         float weight = 0;
         for (Hit hit: hits) {
             weight += hit.weight();
@@ -82,13 +95,14 @@ public class BasicScoreBasedSnippetChooser extends AbstractBasicSnippetChooser<B
     }
     @Override
     protected boolean mustKeepGoing(State state) {
-        return true;
+        return state.checkedSnippets < maxSnippetsChecked;
     }
 
     static class State {
         int max;
         Segmenter segmenter;
         ProtoSnippetQueue results;
+        int checkedSnippets;
     }
 
     static class ProtoSnippet {

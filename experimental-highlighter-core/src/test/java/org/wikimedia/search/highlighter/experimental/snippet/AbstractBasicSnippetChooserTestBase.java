@@ -53,7 +53,7 @@ public abstract class AbstractBasicSnippetChooserTestBase {
         extracter = new StringSourceExtracter(source);
         BreakIterator itr = BreakIterator.getWordInstance(Locale.ENGLISH);
         itr.setText(source);
-        hitEnum = new BreakIteratorHitEnum(itr, weigher);
+        hitEnum = BreakIteratorHitEnum.repair(new BreakIteratorHitEnum(itr, weigher), source);
     }
 
     @Before

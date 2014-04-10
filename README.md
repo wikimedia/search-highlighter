@@ -167,6 +167,12 @@ Note that the position is not reset between multiple values of the same field
 but is handled independently for each of the ```matched_fields```.
 Note also that ```boost_before``` works with ```top_scoring```.
 
+The ```max_fragments_scored``` option lets you limit the number of fragments
+scored.  The default is Integer.MAX_VALUE so you'll score them all.  This can
+be used to limit the CPU cost of scoring many matches when it is likely that
+the first few matches will have the highest score.  This is quite likely the
+configuration also contains ```boost_before```.
+
 The ```matched_fields``` field turns on combining matches from multiple fields,
 just like the Fast Vector Highlighter.  See the [Elasticsearch documentation](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/search-request-highlighting.html#matched-fields)
 for more on it.  The only real difference is that if ```hit_source``` is left

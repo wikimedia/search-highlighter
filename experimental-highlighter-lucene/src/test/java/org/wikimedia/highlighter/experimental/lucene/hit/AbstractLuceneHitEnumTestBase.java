@@ -7,8 +7,9 @@ import java.util.Random;
 
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.MockAnalyzer;
-import org.apache.lucene.analysis.MockTokenizer;
 import org.apache.lucene.analysis.TokenStream;
+import org.apache.lucene.util.automaton.CharacterRunAutomaton;
+import org.apache.lucene.util.automaton.RegExp;
 import org.junit.After;
 import org.wikimedia.highlighter.experimental.lucene.WrappedExceptionFromLucene;
 import org.wikimedia.search.highlighter.experimental.hit.AbstractHitEnumTestBase;
@@ -21,7 +22,10 @@ public abstract class AbstractLuceneHitEnumTestBase extends AbstractHitEnumTestB
     private final List<Analyzer> builtAnalyzers = new ArrayList<Analyzer>();
     
     protected Analyzer mockAnalyzer() {
-        return trackAnalyzer(new MockAnalyzer(new Random(), MockTokenizer.WHITESPACE, true));
+        // Pretty much MockTokenizer.WHITESPACE with a "." added in to make sentences a bit more sane.
+        CharacterRunAutomaton tokenizer = new CharacterRunAutomaton(
+                new RegExp("[^ \t\r\n\\.]+").toAutomaton());
+        return trackAnalyzer(new MockAnalyzer(new Random(), tokenizer, true));
     }
     
     protected Analyzer trackAnalyzer(Analyzer analyzer) {

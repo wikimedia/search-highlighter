@@ -83,4 +83,57 @@ public class BasicScoreBasedSnippetChooserTest extends AbstractBasicSnippetChoos
         assertThat(snippets.get(0).hits(), contains(extracted(extracter, "fox")));
         assertThat(snippets.get(1).hits(), contains(extracted(extracter, "lazy")));
     }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    public void maxSnippetsChecked() {
+        setup("The quick brown fox jumped over the lazy dog.  The quick brown fox jumped over the lazy dog." +
+                "  The quick brown fox jumped over the lazy lazy dog.",
+                ImmutableMap.of("lazy", 10f, "fox", 1f));
+        chooser = new BasicScoreBasedSnippetChooser(true, 2);
+        List<Snippet> snippets = chooser.choose(segmenter, hitEnum, 2);
+        assertThat(
+                snippets,
+                contains(extracted(extracter, "over the lazy dog.  The"),
+                        extracted(extracter, "quick brown fox jumped over")));
+        assertThat(snippets.get(0).hits(), contains(extracted(extracter, "lazy")));
+        assertThat(snippets.get(1).hits(), contains(extracted(extracter, "fox")));
+
+        setup("The quick brown fox jumped over the lazy dog.  The quick brown fox jumped over the lazy dog." +
+                "  The quick brown fox jumped over the lazy lazy dog.",
+                ImmutableMap.of("lazy", 10f, "fox", 1f));
+        chooser = new BasicScoreBasedSnippetChooser(false, 2);
+        snippets = chooser.choose(segmenter, hitEnum, 2);
+        assertThat(
+                snippets,
+                contains(extracted(extracter, "quick brown fox jumped over"),
+                        extracted(extracter, "over the lazy dog.  The")));
+        assertThat(snippets.get(0).hits(), contains(extracted(extracter, "fox")));
+        assertThat(snippets.get(1).hits(), contains(extracted(extracter, "lazy")));
+
+        // Now we scan everything
+        setup("The quick brown fox jumped over the lazy dog.  The quick brown fox jumped over the lazy dog." +
+                "  The quick brown fox jumped over the lazy lazy dog.",
+                ImmutableMap.of("lazy", 10f, "fox", 1f));
+        chooser = new BasicScoreBasedSnippetChooser(true, 200);
+        snippets = chooser.choose(segmenter, hitEnum, 2);
+        assertThat(
+                snippets,
+                contains(extracted(extracter, "the lazy lazy dog."),
+                        extracted(extracter, "over the lazy dog.  The")));
+        assertThat(snippets.get(0).hits(), contains(extracted(extracter, "lazy"), extracted(extracter, "lazy")));
+        assertThat(snippets.get(1).hits(), contains(extracted(extracter, "lazy")));
+
+        setup("The quick brown fox jumped over the lazy dog.  The quick brown fox jumped over the lazy dog." +
+                "  The quick brown fox jumped over the lazy lazy dog.",
+                ImmutableMap.of("lazy", 10f, "fox", 1f));
+        chooser = new BasicScoreBasedSnippetChooser(false, 200);
+        snippets = chooser.choose(segmenter, hitEnum, 2);
+        assertThat(
+                snippets,
+                contains(extracted(extracter, "over the lazy dog.  The"),
+                        extracted(extracter, "the lazy lazy dog.")));
+        assertThat(snippets.get(0).hits(), contains(extracted(extracter, "lazy")));
+        assertThat(snippets.get(1).hits(), contains(extracted(extracter, "lazy"), extracted(extracter, "lazy")));
+    }
 }
