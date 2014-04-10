@@ -566,6 +566,7 @@ public class ExperimentalHighlighterTest extends ElasticsearchIntegrationTest {
                 .setSource("test", longString, "find_me", "longstring").get();
         refresh();
 
+        // No match on a short string
         HighlightBuilder.Field field = new HighlightBuilder.Field("test").noMatchSize(10);
         SearchRequestBuilder search = testSearch(termQuery("find_me", "shortstring")).addHighlightedField(
                 field);
@@ -576,6 +577,7 @@ public class ExperimentalHighlighterTest extends ElasticsearchIntegrationTest {
         field.fragmenter("none");
         assertHighlight(search.get(), 0, "test", 0, equalTo(shortString));
 
+        // No match on a longer one
         search = testSearch(termQuery("find_me", "longstring")).addHighlightedField(
                 field);
         field.fragmenter("scan");
@@ -584,6 +586,28 @@ public class ExperimentalHighlighterTest extends ElasticsearchIntegrationTest {
         assertHighlight(search.get(), 0, "test", 0, equalTo("Lets segment a much longer "));
         field.fragmenter("none");
         assertHighlight(search.get(), 0, "test", 0, equalTo(longString));
+
+        // No match size > string size
+        field.noMatchSize(1000);
+        search = testSearch(termQuery("find_me", "shortstring")).addHighlightedField(
+                field);
+        field.fragmenter("scan");
+        assertHighlight(search.get(), 0, "test", 0, equalTo(shortString));
+        field.fragmenter("sentence");
+        assertHighlight(search.get(), 0, "test", 0, equalTo(shortString));
+        field.fragmenter("none");
+        assertHighlight(search.get(), 0, "test", 0, equalTo(shortString));
+
+        // boundaryMaxScan + size > string size but size < string size
+        field.noMatchSize(10).boundaryMaxScan(10000);
+        search = testSearch(termQuery("find_me", "shortstring")).addHighlightedField(
+                field);
+        field.fragmenter("scan");
+        assertHighlight(search.get(), 0, "test", 0, equalTo("Lets segment"));
+        field.fragmenter("sentence");
+        assertHighlight(search.get(), 0, "test", 0, equalTo("Lets segment this thing.  "));
+        field.fragmenter("none");
+        assertHighlight(search.get(), 0, "test", 0, equalTo(shortString));
     }
 
     @Test

@@ -28,14 +28,17 @@ public class SentenceIteratorSegmenterFactory implements SegmenterFactory {
         // spirit of the Segmenter, even if it doesn't use it.
         BreakIterator breakIterator = BreakIterator.getSentenceInstance(locale);
         breakIterator.setText(value);
-        int end = breakIterator.preceding(size + boundaryMaxScan);
+        if (value.length() <= size) {
+            return value;
+        }
+        int end = breakIterator.preceding(Math.min(value.length(), size + boundaryMaxScan));
         if (end > 0) {
             return value.substring(0, end);
         }
         // If the sentence is too far away, try a word
         breakIterator = BreakIterator.getWordInstance(locale);
         breakIterator.setText(value);
-        end = breakIterator.preceding(size + boundaryMaxScan);
+        end = breakIterator.preceding(Math.min(value.length(), size + boundaryMaxScan));
         if (end > 0) {
             return value.substring(0, end);
         }
