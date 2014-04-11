@@ -183,6 +183,10 @@ for ```term_vector```s.
 A limitation in ```matched_fields```: if the highlighlighter has to analyze the
 field value to find hits then you can't reuse analyzers in each matched field.
 
+The ```fetch_fields``` option can be used to return fields next to the
+highlighted field.  It is designed for use with object fields but has a number
+of limitations.  Read more about it [here](docs/fetched_fields.md).
+
 If you aren't using Elasticsearch, you can combine hits from multiple sources
 using:
 ```java

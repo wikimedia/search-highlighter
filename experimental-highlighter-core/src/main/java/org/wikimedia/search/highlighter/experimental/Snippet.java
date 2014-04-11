@@ -33,6 +33,11 @@ public class Snippet implements Segment {
         return hits;
     }
 
+    @Override
+    public String toString() {
+        return String.format("[%s:%s]", startOffset, endOffset);
+    }
+
     /**
      * Matched term within a snippet.
      */
@@ -64,6 +69,11 @@ public class Snippet implements Segment {
          */
         public float weight() {
             return weight;
+        }
+
+        @Override
+        public String toString() {
+            return String.format("[%s:%s]", startOffset, endOffset);
         }
     }
 }

@@ -234,8 +234,11 @@ public class ExperimentalHighlighterTest extends ElasticsearchIntegrationTest {
     public void multiValued() throws IOException {
         buildIndex();
         indexTestData(new String[] { "tests very simple test", "with two fields to test" });
+        client().prepareIndex("test", "test", "2")
+            .setSource("test", new String[] {"no match here", "this one"}, "fetched", new Integer[] {0, 1}).get();
+        refresh();
 
-        SearchRequestBuilder search = testSearch().addHighlightedField("test", 100, 100);
+        SearchRequestBuilder search = testSearch();
         for (String hitSource : HIT_SOURCES) {
             SearchResponse response = setHitSource(search, hitSource).get();
             assertHighlight(response, 0, "test", 0, equalTo("tests very simple <em>test</em>"));
@@ -249,6 +252,18 @@ public class ExperimentalHighlighterTest extends ElasticsearchIntegrationTest {
             assertHighlight(response, 0, "test", 0,
                     equalTo("<em>tests</em> very simple <em>test</em>"));
             assertHighlight(response, 0, "test", 1, equalTo("with two fields to <em>test</em>"));
+        }
+
+        search = testSearch(termQuery("test", "one"));
+        for (String hitSource : HIT_SOURCES) {
+            SearchResponse response = setHitSource(search, hitSource).get();
+            assertHighlight(response, 0, "test", 0, equalTo("this <em>one</em>"));
+        }
+
+        search = testSearch(termQuery("test", "this"));
+        for (String hitSource : HIT_SOURCES) {
+            SearchResponse response = setHitSource(search, hitSource).get();
+            assertHighlight(response, 0, "test", 0, equalTo("<em>this</em> one"));
         }
     }
 
@@ -652,6 +667,101 @@ public class ExperimentalHighlighterTest extends ElasticsearchIntegrationTest {
         }
     }
 
+    @Test
+    public void fetchedFields() throws IOException, InterruptedException,
+            ExecutionException {
+        buildIndex();
+        // This is the doc we're looking for and it doesn't have a match in the
+        // column we're highlighting
+        client().prepareIndex("test", "test", "1")
+                .setSource("test", new String[] {"no match here", "this one"}, "fetched", new Integer[] {0, 1}).get();
+        client().prepareIndex("test", "test", "2")
+                .setSource("test", new String[] {"firstplace", "no match here"}, "fetched", new Integer[] {0, 1, 2}).get();
+        client().prepareIndex("test", "test", "3")
+                .setSource("test", new String[] {"no match here", "nobuddy"}, "fetched", new Integer[] {0}).get();
+        XContentBuilder nested = jsonBuilder().startObject().startArray("foo");
+        for (int i = 0 ; i < 200; i++) {
+            nested.startObject().field("test").value("nested" + Integer.toString(i));
+            if (i < 100) {
+                nested.field("fetched").value(Integer.toString(i));
+                nested.field("fetched2").value(Integer.toString(1000+i));
+            }
+            nested.endObject();
+        }
+        nested.endArray().endObject();
+        client().prepareIndex("test", "test", "4").setSource(nested).get();
+        refresh();
+
+        SearchRequestBuilder search = testSearch(termQuery("test", "one"));
+        Map<String, Object> options = new HashMap<String, Object>();
+        options.put("fetch_fields", new String[] {"fetched"});
+        for (String hitSource : HIT_SOURCES) {
+            options.put("hit_source", hitSource);
+            SearchResponse response = search.setHighlighterOptions(options).get();
+            assertHighlight(response, 0, "test", 0, equalTo("this <em>one</em>"));
+            assertHighlight(response, 0, "test", 1, equalTo("1"));
+        }
+
+        search = testSearch(termQuery("test", "firstplace"));
+        for (String hitSource : HIT_SOURCES) {
+            options.put("hit_source", hitSource);
+            SearchResponse response = search.setHighlighterOptions(options).get();
+            assertHighlight(response, 0, "test", 0, equalTo("<em>firstplace</em>"));
+            assertHighlight(response, 0, "test", 1, equalTo("0"));
+        }
+
+        search = testSearch(termQuery("test", "nobuddy"));
+        for (String hitSource : HIT_SOURCES) {
+            options.put("hit_source", hitSource);
+            SearchResponse response = search.setHighlighterOptions(options).get();
+            assertHighlight(response, 0, "test", 0, equalTo("<em>nobuddy</em>"));
+            assertHighlight(response, 0, "test", 1, equalTo(""));
+        }
+
+        search = testSearch(termQuery("foo.test", "nested99")).addHighlightedField("foo.test");
+        options.put("fetch_fields", new String[] {"foo.fetched"});
+        for (String hitSource : HIT_SOURCES) {
+            options.put("hit_source", hitSource);
+            SearchResponse response = search.setHighlighterOptions(options).get();
+            assertHighlight(response, 0, "foo.test", 0, equalTo("<em>nested99</em>"));
+            assertHighlight(response, 0, "foo.test", 1, equalTo("99"));
+        }
+
+        search = testSearch(boolQuery().should(termQuery("foo.test", "nested99"))
+                .should(termQuery("foo.test", "nested54"))).addHighlightedField("foo.test");
+        for (String hitSource : HIT_SOURCES) {
+            options.put("hit_source", hitSource);
+            SearchResponse response = search.setHighlighterOptions(options).get();
+            // Score Ordered
+            assertHighlight(response, 0, "foo.test", 0, equalTo("<em>nested54</em>"));
+            assertHighlight(response, 0, "foo.test", 1, equalTo("54"));
+            assertHighlight(response, 0, "foo.test", 2, equalTo("<em>nested99</em>"));
+            assertHighlight(response, 0, "foo.test", 3, equalTo("99"));
+        }
+
+        search = testSearch(boolQuery().should(termQuery("foo.test", "nested54"))
+                .should(termQuery("foo.test", "nested123"))).addHighlightedField("foo.test");
+        for (String hitSource : HIT_SOURCES) {
+            options.put("hit_source", hitSource);
+            SearchResponse response = search.setHighlighterOptions(options).get();
+            // Score Ordered
+            assertHighlight(response, 0, "foo.test", 0, equalTo("<em>nested54</em>"));
+            assertHighlight(response, 0, "foo.test", 1, equalTo("54"));
+            assertHighlight(response, 0, "foo.test", 2, equalTo("<em>nested123</em>"));
+            assertHighlight(response, 0, "foo.test", 3, equalTo(""));
+        }
+
+        search = testSearch(termQuery("foo.test", "nested99")).addHighlightedField("foo.test");
+        options.put("fetch_fields", new String[] {"foo.fetched", "foo.fetched2"});
+        for (String hitSource : HIT_SOURCES) {
+            options.put("hit_source", hitSource);
+            SearchResponse response = search.setHighlighterOptions(options).get();
+            assertHighlight(response, 0, "foo.test", 0, equalTo("<em>nested99</em>"));
+            assertHighlight(response, 0, "foo.test", 1, equalTo("99"));
+            assertHighlight(response, 0, "foo.test", 2, equalTo("1099"));
+        }
+    }
+
     // TODO matched_fields with different hit source
     // TODO infer proper hit source
     
@@ -682,13 +792,12 @@ public class ExperimentalHighlighterTest extends ElasticsearchIntegrationTest {
 
     private void buildIndex(boolean offsetsInPostings, boolean fvhLikeTermVectors, int shards)
             throws IOException {
-        XContentBuilder builder = jsonBuilder().startObject().startObject("test")
-                .startObject("properties").startObject("test").field("type", "string");
-        addProperties(builder, offsetsInPostings, fvhLikeTermVectors);
-        builder.startObject("fields");
-        addField(builder, "whitespace", "whitespace", offsetsInPostings, fvhLikeTermVectors);
-        addField(builder, "english", "english", offsetsInPostings, fvhLikeTermVectors);
-        addField(builder, "english2", "english", offsetsInPostings, fvhLikeTermVectors);
+        XContentBuilder builder = jsonBuilder().startObject();
+        builder.startObject("test").startObject("properties");
+        addField(builder, "test", offsetsInPostings, fvhLikeTermVectors);
+        builder.endObject().startObject("foo").field("type").value("object");
+        builder.startObject("properties");
+        addField(builder, "test", offsetsInPostings, fvhLikeTermVectors);
         builder.endObject().endObject().endObject().endObject();
         assertAcked(prepareCreate("test").setSettings(
                 ImmutableMap.<String, Object> of("number_of_shards", shards)).addMapping("test",
@@ -696,7 +805,18 @@ public class ExperimentalHighlighterTest extends ElasticsearchIntegrationTest {
         ensureYellow();
     }
 
-    private void addField(XContentBuilder builder, String name, String analyzer,
+    private void addField(XContentBuilder builder, String name, boolean offsetsInPostings,
+            boolean fvhLikeTermVectors) throws IOException {
+        builder.startObject(name).field("type", "string");
+        addProperties(builder, offsetsInPostings, fvhLikeTermVectors);
+        builder.startObject("fields");
+        addSubField(builder, "whitespace", "whitespace", offsetsInPostings, fvhLikeTermVectors);
+        addSubField(builder, "english", "english", offsetsInPostings, fvhLikeTermVectors);
+        addSubField(builder, "english2", "english", offsetsInPostings, fvhLikeTermVectors);
+        builder.endObject();
+    }
+
+    private void addSubField(XContentBuilder builder, String name, String analyzer,
             boolean offsetsInPostings, boolean fvhLikeTermVectors) throws IOException {
         builder.startObject(name);
         builder.field("type", "string");

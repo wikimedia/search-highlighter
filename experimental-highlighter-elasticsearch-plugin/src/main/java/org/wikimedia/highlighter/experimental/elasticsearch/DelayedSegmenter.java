@@ -5,6 +5,7 @@ import java.io.IOException;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.search.highlight.FieldWrapper;
 import org.wikimedia.search.highlighter.experimental.Segmenter;
+import org.wikimedia.search.highlighter.experimental.snippet.MultiSegmenter;
 
 /**
  * Segmenter that delays the construction of a real segmenter until it is first
@@ -21,10 +22,25 @@ public class DelayedSegmenter implements Segmenter {
 
     @Override
     public boolean acceptable(int maxStartOffset, int minEndOffset) {
-        return ensureSegmenter().acceptable(maxStartOffset, minEndOffset);
+        return getSegmenter().acceptable(maxStartOffset, minEndOffset);
     }
 
-    private Segmenter ensureSegmenter() {
+    @Override
+    public Memo memo(int maxStartOffset, int minEndOffset) {
+        return getSegmenter().memo(maxStartOffset, minEndOffset);
+    }
+
+    public FetchedFieldIndexPicker buildFetchedFieldIndexPicker() throws IOException {
+        if (fieldWrapper.isMultValued()) {
+            return new MultiValuedFetchedFieldIndexPicker((MultiSegmenter) getSegmenter());
+        }
+        return new SingleValuedFetchedFieldIndexPicker();
+    }
+
+    /**
+     * Return the real segmenter, creating it if required.
+     */
+    private Segmenter getSegmenter() {
         if (segmenter == null) {
             try {
                 segmenter = fieldWrapper.buildSegmenter();
@@ -33,10 +49,5 @@ public class DelayedSegmenter implements Segmenter {
             }
         }
         return segmenter;
-    }
-
-    @Override
-    public Memo memo(int maxStartOffset, int minEndOffset) {
-        return ensureSegmenter().memo(maxStartOffset, minEndOffset);
     }
 }

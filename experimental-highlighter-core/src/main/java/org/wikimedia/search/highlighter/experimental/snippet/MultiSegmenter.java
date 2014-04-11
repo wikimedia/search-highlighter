@@ -117,6 +117,23 @@ public final class MultiSegmenter implements Segmenter {
         return segmenter.segmenter.acceptable(maxStartOffset, minEndOffset);
     }
 
+    /**
+     * Fetch the index of the segmenter for the offsets or -1 if the offsets
+     * don't fit within any segmenter.
+     */
+    public int segmenterIndex(int startOffset, int endOffset) {
+        if (!updateSegmenter(startOffset)) {
+            return -1;
+        }
+        endOffset -= lastStartOffset;
+        // inSegmenterStartOffset is only going to be 0 if we ask for a hit
+        // _between_ segments.
+        if (endOffset > segmenter.length || inSegmenterStartOffset < 0) {
+            return -1;
+        }
+        return segmenterIndex;
+    }
+
     @Override
     public Memo memo(int maxStartOffset, int minEndOffset) {
         if (!updateSegmenter(maxStartOffset)) {

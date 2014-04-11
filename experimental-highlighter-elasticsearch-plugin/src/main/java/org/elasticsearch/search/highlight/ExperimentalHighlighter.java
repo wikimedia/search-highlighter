@@ -7,6 +7,7 @@ import java.util.Locale;
 import java.util.Set;
 
 import org.elasticsearch.common.Strings;
+import org.elasticsearch.common.text.StringAndBytesText;
 import org.elasticsearch.common.text.StringText;
 import org.elasticsearch.common.text.Text;
 import org.elasticsearch.search.fetch.FetchPhaseExecutionException;
@@ -14,6 +15,7 @@ import org.elasticsearch.search.highlight.SearchContextHighlight.FieldOptions;
 import org.wikimedia.highlighter.experimental.elasticsearch.CharScanningSegmenterFactory;
 import org.wikimedia.highlighter.experimental.elasticsearch.DelayedSegmenter;
 import org.wikimedia.highlighter.experimental.elasticsearch.ElasticsearchQueryFlattener;
+import org.wikimedia.highlighter.experimental.elasticsearch.FetchedFieldIndexPicker;
 import org.wikimedia.highlighter.experimental.elasticsearch.SegmenterFactory;
 import org.wikimedia.highlighter.experimental.elasticsearch.SentenceIteratorSegmenterFactory;
 import org.wikimedia.highlighter.experimental.elasticsearch.WholeSourceSegmenterFactory;
@@ -29,6 +31,7 @@ import org.wikimedia.search.highlighter.experimental.snippet.BasicSourceOrderSni
 
 public class ExperimentalHighlighter implements Highlighter {
     private static final String CACHE_KEY = "highlight-experimental";
+    private static final Text EMPTY_STRING = new StringAndBytesText("");
 
     @Override
     public String[] names() {
@@ -54,6 +57,7 @@ public class ExperimentalHighlighter implements Highlighter {
                 executionContext.cleanup();
             }
         } catch (Exception e) {
+            e.printStackTrace();
             throw new FetchPhaseExecutionException(context.context, "Failed to highlight field ["
                     + context.fieldName + "]", e);
         }
@@ -69,6 +73,7 @@ public class ExperimentalHighlighter implements Highlighter {
         private FieldWrapper defaultField;
         private List<FieldWrapper> extraFields;
         private SegmenterFactory segmenterFactory;
+        private DelayedSegmenter segmenter;
 
         HighlightExecutionContext(HighlighterContext context, CacheEntry cacheEntry) {
             this.context = context;
@@ -81,21 +86,23 @@ public class ExperimentalHighlighter implements Highlighter {
             if (numberOfSnippets == 0) {
                 numberOfSnippets = 1;
             }
-            List<Snippet> snippets = buildChooser().choose(new DelayedSegmenter(defaultField),
-                    buildHitEnum(), numberOfSnippets);
-            if (snippets.size() == 0) {
-                int noMatchSize = context.field.fieldOptions().noMatchSize();
-                if (noMatchSize > 0) {
-                    List<String> fieldValues = defaultField.getFieldValues();
-                    if (fieldValues.size() > 0) {
-                        Text fragment = new StringText(getSegmenterFactory()
-                                .extractNoMatchFragment(fieldValues.get(0), noMatchSize));
-                        return new HighlightField(context.fieldName, new Text[] {fragment});
-                    }
-                }
+            segmenter = new DelayedSegmenter(defaultField);
+            List<Snippet> snippets = buildChooser().choose(segmenter, buildHitEnum(),
+                    numberOfSnippets);
+            if (snippets.size() != 0) {
+                return new HighlightField(context.fieldName, formatSnippets(snippets));
+            }
+            int noMatchSize = context.field.fieldOptions().noMatchSize();
+            if (noMatchSize <= 0) {
                 return null;
             }
-            return new HighlightField(context.fieldName, formatSnippets(snippets));
+            List<String> fieldValues = defaultField.getFieldValues();
+            if (fieldValues.isEmpty()) {
+                return null;
+            }
+            Text fragment = new StringText(getSegmenterFactory()
+                    .extractNoMatchFragment(fieldValues.get(0), noMatchSize));
+            return new HighlightField(context.fieldName, new Text[] {fragment});
         }
 
         void cleanup() throws Exception {
@@ -190,12 +197,74 @@ public class ExperimentalHighlighter implements Highlighter {
             SnippetFormatter formatter = new SnippetFormatter(defaultField.buildSourceExtracter(),
                     context.field.fieldOptions().preTags()[0], context.field.fieldOptions()
                             .postTags()[0]);
-            Text[] result = new Text[snippets.size()];
+
+            List<FieldWrapper> fetchFields = buildFetchFields();
+            if (fetchFields == null) {
+                Text[] result = new Text[snippets.size()];
+                int i = 0;
+                for (Snippet snippet : snippets) {
+                    result[i++] = new StringText(formatter.format(snippet));
+                }
+                return result;
+            }
+
+            int fieldsPerSnippet = 1 + fetchFields.size();
+            Text[] result = new Text[snippets.size() * fieldsPerSnippet];
+            FetchedFieldIndexPicker picker = segmenter.buildFetchedFieldIndexPicker();
             int i = 0;
             for (Snippet snippet : snippets) {
                 result[i++] = new StringText(formatter.format(snippet));
+                int index = picker.index(snippet);
+                for (FieldWrapper fetchField: fetchFields) {
+                    List<String> values = fetchField.getFieldValues();
+                    if (index >= 0 && index < values.size()) {
+                        result[i++] = new StringText(values.get(index));
+                    } else {
+                        result[i++] = EMPTY_STRING;
+                    }
+                }
             }
             return result;
+        }
+
+        /**
+         * Return FieldWrappers for all fetch_fields or null if there aren't any.
+         */
+        private List<FieldWrapper> buildFetchFields() {
+            @SuppressWarnings("unchecked")
+            List<String> fetchFields = (List<String>) getOption("fetch_fields");
+            if (fetchFields == null) {
+                return null;
+            }
+            List<FieldWrapper> fetchFieldWrappers = new ArrayList<FieldWrapper>(fetchFields.size());
+            List<FieldWrapper> newExtraFields = new ArrayList<FieldWrapper>();
+            try {
+                for (String fetchField : fetchFields) {
+                    boolean found = false;
+                    if (extraFields != null) {
+                        for (FieldWrapper extraField : extraFields) {
+                            if (extraField.fieldName().equals(fetchField)) {
+                                fetchFieldWrappers.add(extraField);
+                                found = true;
+                                break;
+                            }
+                        }
+                    }
+                    if (!found) {
+                        FieldWrapper fieldWrapper = new FieldWrapper(this, context, cacheEntry,
+                                fetchField);
+                        newExtraFields.add(fieldWrapper);
+                        fetchFieldWrappers.add(fieldWrapper);
+                    }
+                }
+            } finally {
+                if (extraFields == null) {
+                    extraFields = newExtraFields;
+                } else {
+                    extraFields.addAll(newExtraFields);
+                }
+            }
+            return fetchFieldWrappers;
         }
 
         private SegmenterFactory buildSegmenterFactory() {

@@ -72,6 +72,18 @@ public class FieldWrapper {
     }
 
     /**
+     * Name of the wrapped field.
+     */
+    public String fieldName() {
+        return context.fieldName;
+    }
+
+    @Override
+    public String toString() {
+        return context.fieldName;
+    }
+
+    /**
      * Cleanup any resources we still have open.
      */
     public void cleanup() throws IOException {
@@ -115,6 +127,13 @@ public class FieldWrapper {
             }
             return builder.build();
         }
+    }
+
+    /**
+     * Does this field have more then one value?
+     */
+    public boolean isMultValued() throws IOException {
+        return getFieldValues().size() > 1;
     }
 
     public Segmenter buildSegmenter() throws IOException {
@@ -211,13 +230,13 @@ public class FieldWrapper {
 
     private HitEnum buildPostingsHitEnum() throws IOException {
         return DocsAndPositionsHitEnum.fromPostings(context.hitContext.reader(),
-                context.hitContext.docId(), context.fieldName,
+                context.hitContext.docId(), context.mapper.names().indexName(),
                 cacheEntry.queryWeigher.acceptableTerms(), getTermWeigher(false));
     }
 
     private HitEnum buildTermVectorsHitEnum() throws IOException {
         return DocsAndPositionsHitEnum.fromTermVectors(context.hitContext.reader(),
-                context.hitContext.docId(), context.fieldName,
+                context.hitContext.docId(), context.mapper.names().indexName(),
                 cacheEntry.queryWeigher.acceptableTerms(), getTermWeigher(false));
     }
 
@@ -226,7 +245,7 @@ public class FieldWrapper {
         if (analyzer == null) {
             analyzer = context.context.analysisService().defaultIndexAnalyzer();
         }
-        return buildTokenStreamHitEnum(analyzer);
+        return new WeightFilteredHitEnumWrapper(buildTokenStreamHitEnum(analyzer), 0);
     }
 
     private HitEnum buildTokenStreamHitEnum(final Analyzer analyzer) throws IOException {
@@ -251,11 +270,7 @@ public class FieldWrapper {
                         public HitEnum apply(String fieldValue) {
                             try {
                                 if (tokenStream != null) {
-                                    try {
-                                        tokenStream.end();
-                                    } finally {
-                                        tokenStream.close();
-                                    }
+                                    tokenStream.close();
                                 }
                                 return buildTokenStreamHitEnum(analyzer, fieldValue);
                             } catch (IOException e) {
@@ -279,8 +294,8 @@ public class FieldWrapper {
                     "If analyzing to find hits each matched field must have a unique analyzer.", e);
         }
         this.tokenStream = tokenStream;
-        return new WeightFilteredHitEnumWrapper(new TokenStreamHitEnum(tokenStream,
-                getTermWeigher(false)), 0);
+        return new TokenStreamHitEnum(tokenStream,
+                getTermWeigher(false));
     }
 
     private TermWeigher<BytesRef> getTermWeigher(boolean mightWeighTermsMultipleTimes) {
