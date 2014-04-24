@@ -10,7 +10,7 @@
 
   <groupId>org.wikimedia.search.highlighter</groupId>
   <artifactId>experimental</artifactId>
-  <version>0.0.5-SNAPSHOT</version>
+  <version>0.0.5</version>
   <packaging>pom</packaging>
 
   <modules>
@@ -189,7 +189,7 @@
                     </goals>
                   </pluginExecutionFilter>
                   <action>
-                    <ignore></ignore>
+                    <ignore />
                   </action>
                 </pluginExecution>
               </pluginExecutions>
