@@ -935,5 +935,13 @@ public class ExperimentalHighlighterTest extends ElasticsearchIntegrationTest {
             SearchResponse response = search.setHighlighterOptions(options).get();
             assertHighlight(response, 0, "test", 0, equalTo(exponentialMatch));
         }
+
+        // Adding a type doesn't break it.
+        search.setTypes("test");
+        for (String hitSource : HIT_SOURCES) {
+            options.put("hit_source", hitSource);
+            SearchResponse response = search.setHighlighterOptions(options).get();
+            assertHighlight(response, 0, "test", 0, equalTo(exponentialMatch));
+        }
     }
 }

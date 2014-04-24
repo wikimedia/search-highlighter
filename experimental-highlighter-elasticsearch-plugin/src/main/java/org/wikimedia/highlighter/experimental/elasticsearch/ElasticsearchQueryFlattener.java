@@ -15,6 +15,7 @@ public class ElasticsearchQueryFlattener extends QueryFlattener {
             Callback callback) {
         if (query instanceof XFilteredQuery) {
             flattenQuery((XFilteredQuery)query, pathBoost, rewritten, reader, callback);
+            return true;
         }
         return false;
     }
