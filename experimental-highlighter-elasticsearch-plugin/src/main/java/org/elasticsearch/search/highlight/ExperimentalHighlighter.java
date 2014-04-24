@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
 
 import org.elasticsearch.common.Strings;
@@ -24,10 +25,13 @@ import org.wikimedia.search.highlighter.experimental.HitEnum;
 import org.wikimedia.search.highlighter.experimental.Snippet;
 import org.wikimedia.search.highlighter.experimental.SnippetChooser;
 import org.wikimedia.search.highlighter.experimental.SnippetFormatter;
+import org.wikimedia.search.highlighter.experimental.SnippetWeigher;
 import org.wikimedia.search.highlighter.experimental.hit.MergingHitEnum;
 import org.wikimedia.search.highlighter.experimental.hit.OverlapMergingHitEnumWrapper;
 import org.wikimedia.search.highlighter.experimental.snippet.BasicScoreBasedSnippetChooser;
 import org.wikimedia.search.highlighter.experimental.snippet.BasicSourceOrderSnippetChooser;
+import org.wikimedia.search.highlighter.experimental.snippet.ExponentialSnippetWeigher;
+import org.wikimedia.search.highlighter.experimental.snippet.SumSnippetWeigher;
 
 public class ExperimentalHighlighter implements Highlighter {
     private static final String CACHE_KEY = "highlight-experimental";
@@ -188,9 +192,43 @@ public class ExperimentalHighlighter implements Highlighter {
         private SnippetChooser buildScoreBasedSnippetChooser(boolean scoreOrdered) {
             Integer maxFragmentsScored = (Integer) getOption("max_fragments_scored");
             if (maxFragmentsScored == null) {
-                return new BasicScoreBasedSnippetChooser(scoreOrdered);
+                maxFragmentsScored = Integer.MAX_VALUE;
             }
-            return new BasicScoreBasedSnippetChooser(scoreOrdered, maxFragmentsScored);
+            return new BasicScoreBasedSnippetChooser(scoreOrdered, buildSnippetWeigher(), maxFragmentsScored);
+        }
+
+        private SnippetWeigher buildSnippetWeigher() {
+            float defaultBase = 1.1f;
+            Object config = getOption("fragment_weigher");
+            if (config == null) {
+                return new ExponentialSnippetWeigher(defaultBase);
+            }
+            if (config.equals("sum")) {
+                return new SumSnippetWeigher();
+            }
+            if (config.equals("exponential")) {
+                return new ExponentialSnippetWeigher(defaultBase);
+            }
+            try {
+                @SuppressWarnings("unchecked")
+                Map<String, Object> map = (Map<String, Object>) config;
+                if (map.containsKey("sum")) {
+                    return new SumSnippetWeigher();
+                }
+                Object exponentialConfig = map.get("exponential");
+                if (exponentialConfig != null) {
+                    @SuppressWarnings("unchecked")
+                    Map<String, Object> exponentialConfigMap = (Map<String, Object>) exponentialConfig;
+                    Number base = (Number) exponentialConfigMap.get("base");
+                    if (base == null) {
+                        return new ExponentialSnippetWeigher(defaultBase);
+                    }
+                    return new ExponentialSnippetWeigher(base.floatValue());
+                }
+            } catch (ClassCastException e) {
+                throw new IllegalArgumentException("Invalid snippet weigher config:  " + config, e);
+            }
+            throw new IllegalArgumentException("Invalid snippet weigher config:  " + config);
         }
 
         private Text[] formatSnippets(List<Snippet> snippets) throws IOException {

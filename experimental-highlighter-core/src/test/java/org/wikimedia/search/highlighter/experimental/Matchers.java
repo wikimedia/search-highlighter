@@ -7,9 +7,6 @@ import static org.hamcrest.Matchers.equalTo;
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
 import org.hamcrest.TypeSafeMatcher;
-import org.wikimedia.search.highlighter.experimental.HitEnum;
-import org.wikimedia.search.highlighter.experimental.Segment;
-import org.wikimedia.search.highlighter.experimental.SourceExtracter;
 
 public class Matchers {
     public static <T> Matcher<Segment> extracted(SourceExtracter<T> extracter, T t) {
@@ -48,6 +45,10 @@ public class Matchers {
 
     public static Matcher<HitEnum> atWeight(float score) {
         return new WeightMatcher(closeTo(score, 0.0001));
+    }
+
+    public static Matcher<HitEnum> atSource(int source) {
+        return new SourceMatcher(source);
     }
 
     private static class AdvancesMatcher extends TypeSafeMatcher<HitEnum> {
@@ -148,6 +149,29 @@ public class Matchers {
         @Override
         protected boolean matchesSafely(HitEnum e) {
             return e.endOffset() == endOffset;
+        }
+    }
+
+    private static class SourceMatcher extends TypeSafeMatcher<HitEnum> {
+        private final int source;
+
+        public SourceMatcher(int source) {
+            this.source = source;
+        }
+
+        @Override
+        public void describeTo(Description description) {
+            description.appendText("is at source ").appendValue(source);
+        }
+
+        @Override
+        protected void describeMismatchSafely(HitEnum e, Description description) {
+            description.appendText("but was at ").appendValue(e.source());
+        }
+
+        @Override
+        protected boolean matchesSafely(HitEnum e) {
+            return e.source() == source;
         }
     }
 

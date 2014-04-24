@@ -8,7 +8,7 @@ import org.wikimedia.search.highlighter.experimental.HitEnum;
 
 /**
  * Implements a HitEnum with a BreakIterator and returns terms in the order they
- * are in the text. Note: this doesn't just enumerate word - it'll enumerate the
+ * are in the text. Note: this doesn't just enumerate words - it'll enumerate the
  * space between the words too. This is required because there is no way to tell
  * from BreakIterator if a particular break is the start or the end of a
  * word/sentence/line/whatever. See BreakIteratorHitEnum.repair which attempts
@@ -71,6 +71,13 @@ public final class BreakIteratorHitEnum implements HitEnum {
     @Override
     public float weight() {
         return weight;
+    }
+
+    @Override
+    public int source() {
+        // We punt here and hope someone will override this behavior
+        // because we really can't trace the hit to a useful source.
+        return 0;
     }
 
     private static class RepairedHitEnum extends AbstractFilteredHitEnumWrapper {

@@ -19,9 +19,10 @@ This highlighter
 either to speed itself up.
 * Can fragment like the Postings Highlighter, the Fast Vector Highlighter,
 or it can highlight the entire field.
-* Combine hits using multiple different fields (aka ```matched_fields```
+* Can combine hits using multiple different fields (aka ```matched_fields```
 support).
-* Boost matches that appear early in the document.
+* Can boost matches that appear early in the document.
+* By default boosts matches on unique query terms per fragment
 
 This highlighter does not (currently):
 * Respect phrase matches at all (all phrases are reduced to terms)
@@ -81,11 +82,28 @@ fragment between each value, even on ```none```.  Example:
     }
   }
 ```
-If using the ```sentence``` fragmenter you can specify the locale used for
+If using the ```sentence``` fragmenter you should specify the locale used for
 sentence rules with the ```locale``` option as above.
 
 Each fragmenter has different ```no_match_size``` strategies based on the
 spirit of the fragmenter.
+
+By default fragments are weighed such that additional matches for the same
+query term are worth less then unique matched query terms.  This can be
+customized with the ```fragment_weigher``` option.  Setting it to ```sum```
+will weight a fragment as the sum of all its matches, just like the FVH.  The
+default settings, ```exponential``` weighs fragments as the sum of:
+ (base ^ match_count) * average_score
+where match_count is the number of matches for that query term, average_score
+is the average of the score of each of those matches, and base is a free
+parameter that defaults to ```1.1```.  The default value of base is what
+provides the discount on duplicate terms.  It can be changed by setting
+```fragment_weigher``` like this: ```{"exponential": {"base": 1.01}}```.
+Setting the ```base``` closer to ```1``` will make duplicate matches worth
+less.   Setting the ```base``` between ```0``` and ```1``` will make duplicate
+matches worth less then single matches which doesn't make much sense (but is
+possible.)  Similarly, setting ```base``` to a negative number or a number
+greater then ```sqrt(2)``` will do other probably less then desireable things.
 
 The ```top_scoring``` option can be set to true while sorting fragments by
 source to return only the top scoring fragmenter but leave them in source

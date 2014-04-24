@@ -8,14 +8,18 @@ import org.apache.lucene.util.automaton.CompiledAutomaton;
 import org.wikimedia.highlighter.experimental.lucene.WrappedExceptionFromLucene;
 import org.wikimedia.search.highlighter.experimental.HitEnum;
 import org.wikimedia.search.highlighter.experimental.hit.weight.ConstantTermWeigher;
+import org.wikimedia.search.highlighter.experimental.hit.weight.NoSourceTermSourceFinder;
 
 /**
  * Tests DocsAndPositionsHitEnum using term vectors.
  */
-public class DocsAndPositionsHitEnumFromTermVectorsTest extends AbstractDocsAndPositionsHitEnumTestBase {
+public class DocsAndPositionsHitEnumFromTermVectorsTest extends
+        AbstractDocsAndPositionsHitEnumTestBase {
     protected HitEnum buildEnum(String source, Analyzer analyzer, CompiledAutomaton acceptable) {
         try {
-            return DocsAndPositionsHitEnum.fromTermVectors(buildIndexReader(source, analyzer), 0, "field", acceptable, new ConstantTermWeigher<BytesRef>());
+            return DocsAndPositionsHitEnum.fromTermVectors(buildIndexReader(source, analyzer), 0,
+                    "field", acceptable, new ConstantTermWeigher<BytesRef>(),
+                    new NoSourceTermSourceFinder<BytesRef>());
         } catch (IOException e) {
             throw new WrappedExceptionFromLucene(e);
         }

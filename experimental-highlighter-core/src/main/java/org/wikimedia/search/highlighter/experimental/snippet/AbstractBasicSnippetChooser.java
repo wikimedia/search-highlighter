@@ -33,7 +33,7 @@ public abstract class AbstractBasicSnippetChooser<S> implements SnippetChooser {
                 continue;
             }
             List<Hit> hits = new ArrayList<Hit>();
-            hits.add(new Hit(e.startOffset(), e.endOffset(), e.weight()));
+            hits.add(new Hit(e.startOffset(), e.endOffset(), e.weight(), e.source()));
             while (true) {
                 boolean done = !e.next();
                 if (done) {
@@ -46,7 +46,7 @@ public abstract class AbstractBasicSnippetChooser<S> implements SnippetChooser {
                     // e is now positioned on the hit that should start the next snippet
                     break;
                 }
-                hits.add(new Hit(e.startOffset(), e.endOffset(), e.weight()));
+                hits.add(new Hit(e.startOffset(), e.endOffset(), e.weight(), e.source()));
                 lastEndOffset = thisEndOffset;
             }
         }

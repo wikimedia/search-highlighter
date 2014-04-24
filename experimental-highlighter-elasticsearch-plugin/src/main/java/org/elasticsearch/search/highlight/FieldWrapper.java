@@ -29,6 +29,7 @@ import org.wikimedia.search.highlighter.experimental.Segmenter;
 import org.wikimedia.search.highlighter.experimental.SourceExtracter;
 import org.wikimedia.search.highlighter.experimental.hit.ConcatHitEnum;
 import org.wikimedia.search.highlighter.experimental.hit.PositionBoostingHitEnumWrapper;
+import org.wikimedia.search.highlighter.experimental.hit.ReplayingHitEnum.HitEnumAndLength;
 import org.wikimedia.search.highlighter.experimental.hit.TermWeigher;
 import org.wikimedia.search.highlighter.experimental.hit.WeightFilteredHitEnumWrapper;
 import org.wikimedia.search.highlighter.experimental.hit.weight.CachingTermWeigher;
@@ -231,13 +232,15 @@ public class FieldWrapper {
     private HitEnum buildPostingsHitEnum() throws IOException {
         return DocsAndPositionsHitEnum.fromPostings(context.hitContext.reader(),
                 context.hitContext.docId(), context.mapper.names().indexName(),
-                cacheEntry.queryWeigher.acceptableTerms(), getTermWeigher(false));
+                cacheEntry.queryWeigher.acceptableTerms(), getTermWeigher(false),
+                cacheEntry.queryWeigher);
     }
 
     private HitEnum buildTermVectorsHitEnum() throws IOException {
         return DocsAndPositionsHitEnum.fromTermVectors(context.hitContext.reader(),
                 context.hitContext.docId(), context.mapper.names().indexName(),
-                cacheEntry.queryWeigher.acceptableTerms(), getTermWeigher(false));
+                cacheEntry.queryWeigher.acceptableTerms(), getTermWeigher(false),
+                cacheEntry.queryWeigher);
     }
 
     private HitEnum buildTokenStreamHitEnum() throws IOException {
@@ -264,15 +267,16 @@ public class FieldWrapper {
              * Note that it is super important that this process is _lazy_
              * because we can't have multiple TokenStreams open per analyzer.
              */
-            Iterator<HitEnum> hitEnumsFromStreams = Iterators.transform(fieldValues.iterator(),
-                    new Function<String, HitEnum>() {
+            Iterator<HitEnumAndLength> hitEnumsFromStreams = Iterators.transform(
+                    fieldValues.iterator(), new Function<String, HitEnumAndLength>() {
                         @Override
-                        public HitEnum apply(String fieldValue) {
+                        public HitEnumAndLength apply(String fieldValue) {
                             try {
                                 if (tokenStream != null) {
                                     tokenStream.close();
                                 }
-                                return buildTokenStreamHitEnum(analyzer, fieldValue);
+                                return new HitEnumAndLength(buildTokenStreamHitEnum(analyzer,
+                                        fieldValue), fieldValue.length());
                             } catch (IOException e) {
                                 throw new RuntimeException(e);
                             }
@@ -294,13 +298,12 @@ public class FieldWrapper {
                     "If analyzing to find hits each matched field must have a unique analyzer.", e);
         }
         this.tokenStream = tokenStream;
-        return new TokenStreamHitEnum(tokenStream,
-                getTermWeigher(false));
+        return new TokenStreamHitEnum(tokenStream, getTermWeigher(false), cacheEntry.queryWeigher);
     }
 
     private TermWeigher<BytesRef> getTermWeigher(boolean mightWeighTermsMultipleTimes) {
         boolean slowToWeighTermsMultipleTimes = false;
-        TermWeigher<BytesRef> weigher = cacheEntry.queryWeigher.termWeigher();
+        TermWeigher<BytesRef> weigher = cacheEntry.queryWeigher;
         // No need to add fancy term weights if there is only one term or we
         // aren't using score order.
         if (!cacheEntry.queryWeigher.singleTerm()) {

@@ -18,6 +18,7 @@ public class OverlapMergingHitEnumWrapper implements HitEnum {
     private int startOffset;
     private int endOffset;
     private float weight;
+    private int source;
 
     public OverlapMergingHitEnumWrapper(HitEnum delegate) {
         if (delegate.next()) {
@@ -35,6 +36,7 @@ public class OverlapMergingHitEnumWrapper implements HitEnum {
         endOffset = delegate.endOffset();
         assert startOffset <= endOffset;
         weight = delegate.weight();
+        source = delegate.source();
         while (true) {
             if (!delegate.next()) {
                 // Null delegate to flag that it has no more hits.
@@ -54,6 +56,14 @@ public class OverlapMergingHitEnumWrapper implements HitEnum {
             assert delegate.startOffset() <= delegate.endOffset();
             assert startOffset <= endOffset;
             weight = Math.max(weight, delegate.weight());
+            /*
+             * If both hits can't be traced back to the same source we declare
+             * that they are from a new source by merging the hashes. This might
+             * not be ideal, but it has the advantage of being consistent.
+             */
+            if (source != delegate.source()) {
+                source = 31 * source + delegate.source();
+            }
         }
         return true;
     }
@@ -78,4 +88,8 @@ public class OverlapMergingHitEnumWrapper implements HitEnum {
         return weight;
     }
 
+    @Override
+    public int source() {
+        return source;
+    }
 }

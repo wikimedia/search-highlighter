@@ -16,10 +16,10 @@ import org.apache.lucene.search.DocIdSetIterator;
 import org.apache.lucene.util.BytesRef;
 import org.apache.lucene.util.automaton.CompiledAutomaton;
 import org.wikimedia.highlighter.experimental.lucene.WrappedExceptionFromLucene;
-
 import org.wikimedia.search.highlighter.experimental.HitEnum;
 import org.wikimedia.search.highlighter.experimental.hit.EmptyHitEnum;
 import org.wikimedia.search.highlighter.experimental.hit.MergingHitEnum;
+import org.wikimedia.search.highlighter.experimental.hit.TermSourceFinder;
 import org.wikimedia.search.highlighter.experimental.hit.TermWeigher;
 
 /**
@@ -29,28 +29,31 @@ import org.wikimedia.search.highlighter.experimental.hit.TermWeigher;
  */
 public class DocsAndPositionsHitEnum implements HitEnum {
     public static HitEnum fromTermVectors(IndexReader reader, int docId, String fieldName,
-            CompiledAutomaton acceptable, TermWeigher<BytesRef> weigher) throws IOException {
+            CompiledAutomaton acceptable, TermWeigher<BytesRef> weigher,
+            TermSourceFinder<BytesRef> sourceFinder) throws IOException {
         Fields vectors = reader.getTermVectors(docId);
         if (vectors == null) {
             // No term vectors so no hits
             return EmptyHitEnum.INSTANCE;
         }
-        return fromTerms(vectors.terms(fieldName), acceptable, reader, -1, weigher);
+        return fromTerms(vectors.terms(fieldName), acceptable, reader, -1, weigher, sourceFinder);
     }
 
     public static HitEnum fromPostings(IndexReader reader, int docId, String fieldName,
-            CompiledAutomaton acceptable, TermWeigher<BytesRef> weigher) throws IOException {
+            CompiledAutomaton acceptable, TermWeigher<BytesRef> weigher,
+            TermSourceFinder<BytesRef> sourceFinder) throws IOException {
         List<AtomicReaderContext> leaves = reader.getContext().leaves();
         int leaf = ReaderUtil.subIndex(docId, leaves);
         AtomicReaderContext subcontext = leaves.get(leaf);
         AtomicReader atomicReader = subcontext.reader();
         docId -= subcontext.docBase;
         return fromTerms(atomicReader.terms(fieldName), acceptable, reader, docId,
-                weigher);
+                weigher, sourceFinder);
     }
 
     private static HitEnum fromTerms(Terms terms, CompiledAutomaton acceptable, IndexReader reader,
-            int docId, TermWeigher<BytesRef> weigher) throws IOException {
+            int docId, TermWeigher<BytesRef> weigher, TermSourceFinder<BytesRef> sourceFinder)
+            throws IOException {
         if (terms == null) {
             // No term vectors on field so no hits
             return EmptyHitEnum.INSTANCE;
@@ -72,7 +75,7 @@ public class DocsAndPositionsHitEnum implements HitEnum {
                     continue;
                 }
             }
-            HitEnum e = new DocsAndPositionsHitEnum(dp, weigher.weigh(term));
+            HitEnum e = new DocsAndPositionsHitEnum(dp, weigher.weigh(term), sourceFinder.source(term));
             enums.add(e);
         }
         return new MergingHitEnum(enums, HitEnum.LessThans.POSITION);
@@ -81,12 +84,14 @@ public class DocsAndPositionsHitEnum implements HitEnum {
     private final DocsAndPositionsEnum dp;
     private final int freq;
     private final float weight;
+    private final int source;
     private int current;
     private int position;
 
-    public DocsAndPositionsHitEnum(DocsAndPositionsEnum dp, float weight) {
+    public DocsAndPositionsHitEnum(DocsAndPositionsEnum dp, float weight, int source) {
         this.dp = dp;
         this.weight = weight;
+        this.source = source;
         try {
             freq = dp.freq();
         } catch (IOException e) {
@@ -135,5 +140,10 @@ public class DocsAndPositionsHitEnum implements HitEnum {
     @Override
     public float weight() {
         return weight;
+    }
+
+    @Override
+    public int source() {
+        return source;
     }
 }

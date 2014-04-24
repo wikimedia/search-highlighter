@@ -8,9 +8,10 @@ import org.apache.lucene.analysis.tokenattributes.PositionIncrementAttribute;
 import org.apache.lucene.analysis.tokenattributes.TermToBytesRefAttribute;
 import org.apache.lucene.util.BytesRef;
 import org.wikimedia.highlighter.experimental.lucene.WrappedExceptionFromLucene;
-
 import org.wikimedia.search.highlighter.experimental.HitEnum;
+import org.wikimedia.search.highlighter.experimental.hit.TermSourceFinder;
 import org.wikimedia.search.highlighter.experimental.hit.TermWeigher;
+import org.wikimedia.search.highlighter.experimental.hit.WeightFilteredHitEnumWrapper;
 
 /**
  * Enumerate hits by pumping a TokenStream.  Similar to how the "plain" highlighter works in Lucene.  Note that this will enumerate all hits, even those
@@ -19,21 +20,24 @@ import org.wikimedia.search.highlighter.experimental.hit.TermWeigher;
 public class TokenStreamHitEnum implements HitEnum {
     private final TokenStream tokenStream;
     private final TermWeigher<BytesRef> weigher;
+    private final TermSourceFinder<BytesRef> sourceFinder;
     private final PositionIncrementAttribute positionIncr;
     private final OffsetAttribute offsets;
     private final TermToBytesRefAttribute termRef;
     private final BytesRef term;
     private int position = -1;
     private float weight;
+    private int source;
 
     /**
      * 
      * @param tokenStream
      * @param weigher
      */
-    public TokenStreamHitEnum(TokenStream tokenStream, TermWeigher<BytesRef> weigher) {
+    public TokenStreamHitEnum(TokenStream tokenStream, TermWeigher<BytesRef> weigher, TermSourceFinder<BytesRef> sourceFinder) {
         this.tokenStream = tokenStream;
         this.weigher = weigher;
+        this.sourceFinder = sourceFinder;
         positionIncr = tokenStream.addAttribute(PositionIncrementAttribute.class);
         offsets = tokenStream.addAttribute(OffsetAttribute.class);
         termRef = tokenStream.addAttribute(TermToBytesRefAttribute.class);
@@ -54,6 +58,7 @@ public class TokenStreamHitEnum implements HitEnum {
             termRef.fillBytesRef();
             position += positionIncr.getPositionIncrement();
             weight = weigher.weigh(term);
+            source = sourceFinder.source(term);
             return true;
         } catch (IOException e) {
             throw new WrappedExceptionFromLucene(e);
@@ -78,5 +83,10 @@ public class TokenStreamHitEnum implements HitEnum {
     @Override
     public float weight() {
         return weight;
+    }
+
+    @Override
+    public int source() {
+        return source;
     }
 }

@@ -32,6 +32,12 @@ public interface HitEnum extends Segment {
      * Weight of the hit.  Only positive numbers are valid.
      */
     float weight();
+
+    /**
+     * Hashcode of source of this hit. We use the hashcode here because the loss
+     * of precision is worth the comparison efficiency.
+     */
+    int source();
     
     public static enum LessThans implements LessThan<HitEnum> {
         /**

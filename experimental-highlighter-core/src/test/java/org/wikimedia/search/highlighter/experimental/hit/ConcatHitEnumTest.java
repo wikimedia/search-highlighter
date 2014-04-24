@@ -4,6 +4,7 @@ import static org.hamcrest.Matchers.allOf;
 import static org.wikimedia.search.highlighter.experimental.Matchers.advances;
 import static org.wikimedia.search.highlighter.experimental.Matchers.atEndOffset;
 import static org.wikimedia.search.highlighter.experimental.Matchers.atPosition;
+import static org.wikimedia.search.highlighter.experimental.Matchers.atSource;
 import static org.wikimedia.search.highlighter.experimental.Matchers.atStartOffset;
 import static org.wikimedia.search.highlighter.experimental.Matchers.atWeight;
 import static org.wikimedia.search.highlighter.experimental.Matchers.isEmpty;
@@ -14,8 +15,7 @@ import java.util.List;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.wikimedia.search.highlighter.experimental.HitEnum;
-import org.wikimedia.search.highlighter.experimental.hit.ConcatHitEnum;
-import org.wikimedia.search.highlighter.experimental.hit.ReplayingHitEnum;
+import org.wikimedia.search.highlighter.experimental.hit.ReplayingHitEnum.HitEnumAndLength;
 
 import com.carrotsearch.randomizedtesting.RandomizedRunner;
 import com.carrotsearch.randomizedtesting.RandomizedTest;
@@ -24,8 +24,8 @@ import com.carrotsearch.randomizedtesting.RandomizedTest;
 public class ConcatHitEnumTest extends RandomizedTest {
     @Test
     public void compareToReplaying() {
-        List<HitEnum> allEnumsForReplaying = new ArrayList<HitEnum>();
-        List<HitEnum> allEnumsForConcat = new ArrayList<HitEnum>();
+        List<HitEnumAndLength> allEnumsForReplaying = new ArrayList<HitEnumAndLength>();
+        List<HitEnumAndLength> allEnumsForConcat = new ArrayList<HitEnumAndLength>();
         for (int i = 0; i < 100; i++) {
             ReplayingHitEnum inputForReplaying = new ReplayingHitEnum();
             ReplayingHitEnum inputForConcat = new ReplayingHitEnum();
@@ -34,11 +34,12 @@ public class ConcatHitEnumTest extends RandomizedTest {
                 int startOffset = randomInt();
                 int endOffset = randomInt();
                 float weight = randomFloat();
-                inputForReplaying.record(position, startOffset, endOffset, weight);
-                inputForConcat.record(position, startOffset, endOffset, weight);
+                int source = randomInt();
+                inputForReplaying.record(position, startOffset, endOffset, weight, source);
+                inputForConcat.record(position, startOffset, endOffset, weight, source);
             }
-            allEnumsForReplaying.add(inputForReplaying);
-            allEnumsForConcat.add(inputForConcat);
+            allEnumsForReplaying.add(new HitEnumAndLength(inputForReplaying, 99));
+            allEnumsForConcat.add(new HitEnumAndLength(inputForConcat, 99));
         }
         ReplayingHitEnum replaying = new ReplayingHitEnum();
         replaying.record(allEnumsForReplaying.iterator(), 1, 1);
@@ -48,7 +49,8 @@ public class ConcatHitEnumTest extends RandomizedTest {
             assertThat(
                     concat,
                     allOf(atPosition(replaying.position()), atStartOffset(replaying.startOffset()),
-                            atEndOffset(replaying.endOffset()), atWeight(replaying.weight())));
+                            atEndOffset(replaying.endOffset()), atWeight(replaying.weight()),
+                            atSource(replaying.source())));
         }
         assertThat(concat, isEmpty());
     }

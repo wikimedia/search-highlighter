@@ -10,18 +10,19 @@ public class ElasticsearchQueryFlattener extends QueryFlattener {
         super(maxMultiTermQueryTerms);
     }
 
-    protected boolean flattenUnknown(Query query, float pathBoost, IndexReader reader,
+    @Override
+    protected boolean flattenUnknown(Query query, float pathBoost, Query rewritten, IndexReader reader,
             Callback callback) {
         if (query instanceof XFilteredQuery) {
-            flattenQuery((XFilteredQuery)query, pathBoost, reader, callback);
+            flattenQuery((XFilteredQuery)query, pathBoost, rewritten, reader, callback);
         }
         return false;
     }
     
-    protected void flattenQuery(XFilteredQuery query, float pathBoost, IndexReader reader,
+    protected void flattenQuery(XFilteredQuery query, float pathBoost, Query rewritten, IndexReader reader,
             Callback callback) {
         if (query.getQuery() != null) {
-            flatten(query.getQuery(), pathBoost * query.getBoost(), reader, callback);
+            flatten(query.getQuery(), pathBoost * query.getBoost(), rewritten, reader, callback);
         }
         // TODO maybe flatten filter like Elasticsearch does
     }

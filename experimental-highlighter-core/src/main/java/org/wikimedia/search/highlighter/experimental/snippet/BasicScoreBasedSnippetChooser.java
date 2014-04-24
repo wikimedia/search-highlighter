@@ -9,6 +9,7 @@ import org.wikimedia.search.highlighter.experimental.Segment;
 import org.wikimedia.search.highlighter.experimental.Segmenter;
 import org.wikimedia.search.highlighter.experimental.Snippet;
 import org.wikimedia.search.highlighter.experimental.Snippet.Hit;
+import org.wikimedia.search.highlighter.experimental.SnippetWeigher;
 import org.wikimedia.search.highlighter.experimental.extern.PriorityQueue;
 
 /**
@@ -17,23 +18,27 @@ import org.wikimedia.search.highlighter.experimental.extern.PriorityQueue;
 public class BasicScoreBasedSnippetChooser extends AbstractBasicSnippetChooser<BasicScoreBasedSnippetChooser.State> {
     private final boolean scoreOrdered;
     private final int maxSnippetsChecked;
+    private final SnippetWeigher snippetWeigher;
 
     /**
      * Build the snippet chooser.
      * @param scoreOrdered should the results come back in score order (true) or source order (false)
+     * @param snippetWeigher figures the weights of the snippets
      * @param maxSnippetsChecked never check more then this many snippets
      */
-    public BasicScoreBasedSnippetChooser(boolean scoreOrdered, int maxSnippetsChecked) {
+    public BasicScoreBasedSnippetChooser(boolean scoreOrdered, SnippetWeigher snippetWeigher, int maxSnippetsChecked) {
         this.scoreOrdered = scoreOrdered;
         this.maxSnippetsChecked = maxSnippetsChecked;
+        this.snippetWeigher = snippetWeigher;
     }
 
     /**
      * Build the snippet chooser with maxSnippetsChecked defaulted to Integer.MAX_VALUE.
      * @param scoreOrdered should the results come back in score order (true) or source order (false)
+     * @param snippetWeigher figures the weights of the snippets
      */
-    public BasicScoreBasedSnippetChooser(boolean scoreOrdered) {
-        this(scoreOrdered, Integer.MAX_VALUE);
+    public BasicScoreBasedSnippetChooser(boolean scoreOrdered, SnippetWeigher snippetWeigher) {
+        this(scoreOrdered, snippetWeigher, Integer.MAX_VALUE);
     }
 
     @Override
@@ -48,10 +53,7 @@ public class BasicScoreBasedSnippetChooser extends AbstractBasicSnippetChooser<B
     @Override
     protected void snippet(State state, int startOffset, int endOffset, List<Hit> hits) {
         state.checkedSnippets++;
-        float weight = 0;
-        for (Hit hit: hits) {
-            weight += hit.weight();
-        }
+        float weight = snippetWeigher.weigh(hits);
         if (state.results.size() < state.max) {
             ProtoSnippet snippet = new ProtoSnippet();
             snippet.memo = state.segmenter.memo(startOffset, endOffset);

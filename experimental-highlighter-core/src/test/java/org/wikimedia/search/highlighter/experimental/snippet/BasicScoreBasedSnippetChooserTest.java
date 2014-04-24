@@ -16,13 +16,13 @@ import com.google.common.collect.ImmutableMap;
 public class BasicScoreBasedSnippetChooserTest extends AbstractBasicSnippetChooserTestBase {
     @Override
     protected SnippetChooser build() {
-        return new BasicScoreBasedSnippetChooser(true);
+        return new BasicScoreBasedSnippetChooser(true, new SumSnippetWeigher());
     }
 
     @Test
     public void basic() {
         for (boolean scoreOrdered : new boolean[] { true, false }) {
-            chooser = new BasicScoreBasedSnippetChooser(scoreOrdered);
+            chooser = new BasicScoreBasedSnippetChooser(scoreOrdered, new SumSnippetWeigher());
             setup("The quick brown fox jumped over the lazy dog.", ImmutableMap.of("lazy", 1f));
             List<Snippet> snippets = chooser.choose(segmenter, hitEnum, 1);
             assertThat(snippets, contains(extracted(extracter, "over the lazy dog.")));
@@ -43,7 +43,7 @@ public class BasicScoreBasedSnippetChooserTest extends AbstractBasicSnippetChoos
         assertThat(snippets.get(0).hits(), contains(extracted(extracter, "lazy")));
         assertThat(snippets.get(1).hits(), contains(extracted(extracter, "brown")));
 
-        chooser = new BasicScoreBasedSnippetChooser(false);
+        chooser = new BasicScoreBasedSnippetChooser(false, new SumSnippetWeigher());
         setup("The quick brown fox jumped over the lazy dog.",
                 ImmutableMap.of("lazy", 10f, "brown", 1f));
         snippets = chooser.choose(segmenter, hitEnum, 2);
@@ -72,7 +72,7 @@ public class BasicScoreBasedSnippetChooserTest extends AbstractBasicSnippetChoos
         assertThat(snippets.get(0).hits(), contains(extracted(extracter, "lazy")));
         assertThat(snippets.get(1).hits(), contains(extracted(extracter, "fox")));
 
-        chooser = new BasicScoreBasedSnippetChooser(false);
+        chooser = new BasicScoreBasedSnippetChooser(false, new SumSnippetWeigher());
         setup("The quick brown fox jumped over the lazy dog.",
                 ImmutableMap.of("lazy", 10f, "fox", 1f));
         snippets = chooser.choose(segmenter, hitEnum, 2);
@@ -90,7 +90,7 @@ public class BasicScoreBasedSnippetChooserTest extends AbstractBasicSnippetChoos
         setup("The quick brown fox jumped over the lazy dog.  The quick brown fox jumped over the lazy dog." +
                 "  The quick brown fox jumped over the lazy lazy dog.",
                 ImmutableMap.of("lazy", 10f, "fox", 1f));
-        chooser = new BasicScoreBasedSnippetChooser(true, 2);
+        chooser = new BasicScoreBasedSnippetChooser(true, new SumSnippetWeigher(), 2);
         List<Snippet> snippets = chooser.choose(segmenter, hitEnum, 2);
         assertThat(
                 snippets,
@@ -102,7 +102,7 @@ public class BasicScoreBasedSnippetChooserTest extends AbstractBasicSnippetChoos
         setup("The quick brown fox jumped over the lazy dog.  The quick brown fox jumped over the lazy dog." +
                 "  The quick brown fox jumped over the lazy lazy dog.",
                 ImmutableMap.of("lazy", 10f, "fox", 1f));
-        chooser = new BasicScoreBasedSnippetChooser(false, 2);
+        chooser = new BasicScoreBasedSnippetChooser(false, new SumSnippetWeigher(), 2);
         snippets = chooser.choose(segmenter, hitEnum, 2);
         assertThat(
                 snippets,
@@ -115,7 +115,7 @@ public class BasicScoreBasedSnippetChooserTest extends AbstractBasicSnippetChoos
         setup("The quick brown fox jumped over the lazy dog.  The quick brown fox jumped over the lazy dog." +
                 "  The quick brown fox jumped over the lazy lazy dog.",
                 ImmutableMap.of("lazy", 10f, "fox", 1f));
-        chooser = new BasicScoreBasedSnippetChooser(true, 200);
+        chooser = new BasicScoreBasedSnippetChooser(true, new SumSnippetWeigher(), 200);
         snippets = chooser.choose(segmenter, hitEnum, 2);
         assertThat(
                 snippets,
@@ -127,7 +127,7 @@ public class BasicScoreBasedSnippetChooserTest extends AbstractBasicSnippetChoos
         setup("The quick brown fox jumped over the lazy dog.  The quick brown fox jumped over the lazy dog." +
                 "  The quick brown fox jumped over the lazy lazy dog.",
                 ImmutableMap.of("lazy", 10f, "fox", 1f));
-        chooser = new BasicScoreBasedSnippetChooser(false, 200);
+        chooser = new BasicScoreBasedSnippetChooser(false, new SumSnippetWeigher(), 200);
         snippets = chooser.choose(segmenter, hitEnum, 2);
         assertThat(
                 snippets,

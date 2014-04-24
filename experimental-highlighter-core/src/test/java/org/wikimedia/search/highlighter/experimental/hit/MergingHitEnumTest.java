@@ -4,6 +4,7 @@ import static org.hamcrest.Matchers.allOf;
 import static org.wikimedia.search.highlighter.experimental.Matchers.advances;
 import static org.wikimedia.search.highlighter.experimental.Matchers.atEndOffset;
 import static org.wikimedia.search.highlighter.experimental.Matchers.atPosition;
+import static org.wikimedia.search.highlighter.experimental.Matchers.atSource;
 import static org.wikimedia.search.highlighter.experimental.Matchers.atStartOffset;
 import static org.wikimedia.search.highlighter.experimental.Matchers.isEmpty;
 
@@ -16,9 +17,6 @@ import java.util.List;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.wikimedia.search.highlighter.experimental.HitEnum;
-import org.wikimedia.search.highlighter.experimental.hit.EmptyHitEnum;
-import org.wikimedia.search.highlighter.experimental.hit.MergingHitEnum;
-import org.wikimedia.search.highlighter.experimental.hit.ReplayingHitEnum;
 
 import com.carrotsearch.randomizedtesting.RandomizedRunner;
 import com.carrotsearch.randomizedtesting.RandomizedTest;
@@ -50,14 +48,14 @@ public class MergingHitEnumTest extends RandomizedTest {
         Collections.sort(expectedPositions);
         ReplayingHitEnum e = new ReplayingHitEnum();
         for (Integer position : expectedPositions) {
-            e.record(position, 0, 0, 0);
+            e.record(position, 0, 0, 0, 0);
         }
 
         MergingHitEnum merged = new MergingHitEnum(Collections.singletonList(e),
                 HitEnum.LessThans.POSITION);
         for (int position : expectedPositions) {
             assertThat(merged, advances());
-            assertThat(merged, allOf(atPosition(position), atStartOffset(0), atEndOffset(0)));
+            assertThat(merged, allOf(atPosition(position), atStartOffset(0), atEndOffset(0), atSource(0)));
         }
         assertThat(merged, isEmpty());
     }
@@ -79,7 +77,7 @@ public class MergingHitEnumTest extends RandomizedTest {
             ReplayingHitEnum e = new ReplayingHitEnum();
             enums.add(e);
             for (Integer position : expectedPositions) {
-                e.record(position, 0, 0, 0);
+                e.record(position, 0, 0, 0, 0);
             }
         }
         
@@ -87,7 +85,7 @@ public class MergingHitEnumTest extends RandomizedTest {
         MergingHitEnum merged = new MergingHitEnum(enums, HitEnum.LessThans.POSITION);
         for (int position: allExpectedPositions) {
             assertThat(merged, advances());
-            assertThat(merged, allOf(atPosition(position), atStartOffset(0), atEndOffset(0)));
+            assertThat(merged, allOf(atPosition(position), atStartOffset(0), atEndOffset(0), atSource(0)));
         }
         assertThat(merged, isEmpty());
     }

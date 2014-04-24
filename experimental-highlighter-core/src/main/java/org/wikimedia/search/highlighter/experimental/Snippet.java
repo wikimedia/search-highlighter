@@ -45,11 +45,13 @@ public class Snippet implements Segment {
         private final int startOffset;
         private final int endOffset;
         private final float weight;
+        private final int source;
 
-        public Hit(int startOffset, int endOffset, float weight) {
+        public Hit(int startOffset, int endOffset, float weight, int source) {
             this.startOffset = startOffset;
             this.endOffset = endOffset;
             this.weight = weight;
+            this.source = source;
             assert startOffset <= endOffset;
         }
 
@@ -69,6 +71,14 @@ public class Snippet implements Segment {
          */
         public float weight() {
             return weight;
+        }
+
+        /**
+         * Hashcode of source of this hit. We use the hashcode here because the
+         * loss of precision is worth the comparison efficiency.
+         */
+        public int source() {
+            return source;
         }
 
         @Override

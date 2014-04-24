@@ -52,6 +52,11 @@ public class MergingHitEnum implements HitEnum {
     public float weight() {
         return top.weight();
     }
+
+    @Override
+    public int source() {
+        return top.source();
+    }
     
     private static class HitEnumPriorityQueue extends PriorityQueue<HitEnum> {
         private final LessThan<HitEnum> lessThan;

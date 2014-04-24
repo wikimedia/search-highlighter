@@ -5,6 +5,7 @@ import static org.elasticsearch.index.query.QueryBuilders.boolQuery;
 import static org.elasticsearch.index.query.QueryBuilders.fuzzyQuery;
 import static org.elasticsearch.index.query.QueryBuilders.matchPhrasePrefixQuery;
 import static org.elasticsearch.index.query.QueryBuilders.matchPhraseQuery;
+import static org.elasticsearch.index.query.QueryBuilders.prefixQuery;
 import static org.elasticsearch.index.query.QueryBuilders.rangeQuery;
 import static org.elasticsearch.index.query.QueryBuilders.regexpQuery;
 import static org.elasticsearch.index.query.QueryBuilders.spanFirstQuery;
@@ -236,6 +237,8 @@ public class ExperimentalHighlighterTest extends ElasticsearchIntegrationTest {
         indexTestData(new String[] { "tests very simple test", "with two fields to test" });
         client().prepareIndex("test", "test", "2")
             .setSource("test", new String[] {"no match here", "this one"}, "fetched", new Integer[] {0, 1}).get();
+        client().prepareIndex("test", "test", "3")
+            .setSource("test", new String[] {"sentences.", "two sentences."}, "fetched", new Integer[] {0, 1}).get();
         refresh();
 
         SearchRequestBuilder search = testSearch();
@@ -254,6 +257,15 @@ public class ExperimentalHighlighterTest extends ElasticsearchIntegrationTest {
             assertHighlight(response, 0, "test", 1, equalTo("with two fields to <em>test</em>"));
         }
 
+        search = testSearch().addHighlightedField(
+                new HighlightBuilder.Field("test").matchedFields("test.english").order("score"));
+        for (String hitSource : HIT_SOURCES) {
+            SearchResponse response = setHitSource(search, hitSource).get();
+            assertHighlight(response, 0, "test", 0,
+                    equalTo("<em>tests</em> very simple <em>test</em>"));
+            assertHighlight(response, 0, "test", 1, equalTo("with two fields to <em>test</em>"));
+        }
+
         search = testSearch(termQuery("test", "one"));
         for (String hitSource : HIT_SOURCES) {
             SearchResponse response = setHitSource(search, hitSource).get();
@@ -264,6 +276,13 @@ public class ExperimentalHighlighterTest extends ElasticsearchIntegrationTest {
         for (String hitSource : HIT_SOURCES) {
             SearchResponse response = setHitSource(search, hitSource).get();
             assertHighlight(response, 0, "test", 0, equalTo("<em>this</em> one"));
+        }
+
+        search = testSearch(termQuery("test", "sentences"));
+        for (String hitSource : HIT_SOURCES) {
+            SearchResponse response = setHitSource(search, hitSource).get();
+            assertHighlight(response, 0, "test", 0, equalTo("<em>sentences</em>."));
+            assertHighlight(response, 0, "test", 1, equalTo("two <em>sentences</em>."));
         }
     }
 
@@ -349,6 +368,7 @@ public class ExperimentalHighlighterTest extends ElasticsearchIntegrationTest {
                 .setHighlighterOrder("score");
         Map<String, Object> options = new HashMap<String, Object>();
         options.put("boost_before", ImmutableMap.of("10", 4, "20", 2f));
+        options.put("fragment_weigher", "sum");
         for (String hitSource : HIT_SOURCES) {
             options.put("hit_source", hitSource);
             SearchResponse response = search.setHighlighterOptions(options).get();
@@ -762,6 +782,27 @@ public class ExperimentalHighlighterTest extends ElasticsearchIntegrationTest {
         }
     }
 
+    @Test
+    public void fragmentWeigherTermQuery() throws IOException {
+        checkFragmentWeigher(boolQuery().should(termQuery("test", "fee")).should(termQuery("test", "phi")),
+                "<em>Fee</em>-<em>fee</em>-<em>fee</em>-<em>fee</em>.",
+                "<em>Fee</em> <em>phi</em>.");
+    }
+
+    @Test
+    public void fragmentWeigherPhraseQuery() throws IOException {
+        checkFragmentWeigher(matchPhraseQuery("test", "fee phi"),
+                "<em>Fee</em>-<em>fee</em>-<em>fee</em>-<em>fee</em>.",
+                "<em>Fee</em> <em>phi</em>.");
+    }
+
+    @Test
+    public void fragmentWeigherPrefixQuery() throws IOException {
+        checkFragmentWeigher(boolQuery().should(prefixQuery("test", "f")).should(termQuery("test", "phi")),
+                "<em>Fee</em>-<em>fi</em>-<em>fo</em>-<em>fum</em>.",
+                "<em>Fee</em> <em>phi</em>.");
+    }
+
     // TODO matched_fields with different hit source
     // TODO infer proper hit source
     
@@ -842,5 +883,43 @@ public class ExperimentalHighlighterTest extends ElasticsearchIntegrationTest {
     private void indexTestData(Object contents) {
         client().prepareIndex("test", "test", "1").setSource("test", contents).get();
         refresh();
+    }
+
+    private void checkFragmentWeigher(QueryBuilder query, String sumMatch, String exponentialMatch) throws IOException {
+        buildIndex();
+        indexTestData(new String[] {
+                sumMatch.replaceAll("<em>", "").replaceAll("</em>", ""),
+                exponentialMatch.replaceAll("<em>", "").replaceAll("</em>", ""),
+        });
+
+        SearchRequestBuilder search = testSearch(query)
+                .addHighlightedField(new HighlightBuilder.Field("test").numOfFragments(2))
+                .setHighlighterOrder("score");
+        Map<String, Object> options = new HashMap<String, Object>();
+
+        options.put("fragment_weigher", "sum");
+        for (String hitSource : HIT_SOURCES) {
+            System.err.println(hitSource);
+            options.put("hit_source", hitSource);
+            SearchResponse response = search.setHighlighterOptions(options).get();
+            assertHighlight(response, 0, "test", 0, equalTo(sumMatch));
+            assertHighlight(response, 0, "test", 1, equalTo(exponentialMatch));
+        }
+
+        options.put("fragment_weigher", "exponential");
+        for (String hitSource : HIT_SOURCES) {
+            System.err.println(hitSource);
+            options.put("hit_source", hitSource);
+            SearchResponse response = search.setHighlighterOptions(options).get();
+            assertHighlight(response, 0, "test", 0, equalTo(exponentialMatch));
+        }
+
+        // Exponential is the default
+        options.remove("fragment_weigher");
+        for (String hitSource : HIT_SOURCES) {
+            options.put("hit_source", hitSource);
+            SearchResponse response = search.setHighlighterOptions(options).get();
+            assertHighlight(response, 0, "test", 0, equalTo(exponentialMatch));
+        }
     }
 }

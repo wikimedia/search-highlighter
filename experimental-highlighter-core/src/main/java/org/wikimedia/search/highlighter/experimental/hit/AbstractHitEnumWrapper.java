@@ -41,4 +41,9 @@ public abstract class AbstractHitEnumWrapper implements HitEnum {
     public float weight() {
         return wrapped.weight();
     }
+
+    @Override
+    public int source() {
+        return wrapped.source();
+    }
 }
