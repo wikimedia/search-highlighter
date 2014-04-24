@@ -16,13 +16,13 @@ import org.elasticsearch.common.collect.Iterators;
 import org.elasticsearch.common.util.BigArrays;
 import org.elasticsearch.index.mapper.FieldMapper;
 import org.elasticsearch.index.mapper.core.StringFieldMapper;
-import org.elasticsearch.search.highlight.ExperimentalHighlighter.CacheEntry;
 import org.elasticsearch.search.highlight.ExperimentalHighlighter.HighlightExecutionContext;
 import org.elasticsearch.search.highlight.SearchContextHighlight.FieldOptions;
 import org.wikimedia.highlighter.experimental.elasticsearch.BytesRefTermWeigherCache;
 import org.wikimedia.highlighter.experimental.elasticsearch.SegmenterFactory;
 import org.wikimedia.highlighter.experimental.lucene.hit.DocsAndPositionsHitEnum;
 import org.wikimedia.highlighter.experimental.lucene.hit.TokenStreamHitEnum;
+import org.wikimedia.highlighter.experimental.lucene.hit.weight.BasicQueryWeigher;
 import org.wikimedia.highlighter.experimental.lucene.hit.weight.DefaultSimilarityTermWeigher;
 import org.wikimedia.search.highlighter.experimental.HitEnum;
 import org.wikimedia.search.highlighter.experimental.Segmenter;
@@ -41,7 +41,7 @@ import org.wikimedia.search.highlighter.experimental.source.StringSourceExtracte
 public class FieldWrapper {
     private final HighlightExecutionContext executionContext;
     private final HighlighterContext context;
-    private final CacheEntry cacheEntry;
+    private final BasicQueryWeigher weigher;
     private List<String> values;
     /**
      * If there is a TokenStream still open during the highlighting.
@@ -52,10 +52,10 @@ public class FieldWrapper {
      * Build a wrapper around the default field in the context.
      */
     public FieldWrapper(HighlightExecutionContext executionContext, HighlighterContext context, 
-            CacheEntry cacheEntry) {
+            BasicQueryWeigher weigher) {
         this.executionContext = executionContext;
         this.context = context;
-        this.cacheEntry = cacheEntry;
+        this.weigher = weigher;
     }
 
     /**
@@ -63,13 +63,13 @@ public class FieldWrapper {
      * context.
      */
     public FieldWrapper(HighlightExecutionContext executionContext, HighlighterContext context,
-            CacheEntry cacheEntry, String fieldName) {
+            BasicQueryWeigher weigher, String fieldName) {
         assert !context.fieldName.equals(fieldName);
         FieldMapper<?> mapper = context.context.smartNameFieldMapper(fieldName);
         this.executionContext = executionContext;
         this.context = new HighlighterContext(fieldName, context.field, mapper, context.context,
                 context.hitContext, context.query);
-        this.cacheEntry = cacheEntry;
+        this.weigher = weigher;
     }
 
     /**
@@ -232,15 +232,13 @@ public class FieldWrapper {
     private HitEnum buildPostingsHitEnum() throws IOException {
         return DocsAndPositionsHitEnum.fromPostings(context.hitContext.reader(),
                 context.hitContext.docId(), context.mapper.names().indexName(),
-                cacheEntry.queryWeigher.acceptableTerms(), getTermWeigher(false),
-                cacheEntry.queryWeigher);
+                weigher.acceptableTerms(), getTermWeigher(false), weigher);
     }
 
     private HitEnum buildTermVectorsHitEnum() throws IOException {
         return DocsAndPositionsHitEnum.fromTermVectors(context.hitContext.reader(),
                 context.hitContext.docId(), context.mapper.names().indexName(),
-                cacheEntry.queryWeigher.acceptableTerms(), getTermWeigher(false),
-                cacheEntry.queryWeigher);
+                weigher.acceptableTerms(), getTermWeigher(false), weigher);
     }
 
     private HitEnum buildTokenStreamHitEnum() throws IOException {
@@ -298,15 +296,15 @@ public class FieldWrapper {
                     "If analyzing to find hits each matched field must have a unique analyzer.", e);
         }
         this.tokenStream = tokenStream;
-        return new TokenStreamHitEnum(tokenStream, getTermWeigher(false), cacheEntry.queryWeigher);
+        return new TokenStreamHitEnum(tokenStream, getTermWeigher(false), weigher);
     }
 
     private TermWeigher<BytesRef> getTermWeigher(boolean mightWeighTermsMultipleTimes) {
         boolean slowToWeighTermsMultipleTimes = false;
-        TermWeigher<BytesRef> weigher = cacheEntry.queryWeigher;
+        TermWeigher<BytesRef> termWeigher = weigher;
         // No need to add fancy term weights if there is only one term or we
         // aren't using score order.
-        if (!cacheEntry.queryWeigher.singleTerm()) {
+        if (!weigher.singleTerm()) {
             boolean scoreMatters = context.field.fieldOptions().scoreOrdered();
             if (!scoreMatters) {
                 Boolean topScoring = (Boolean) executionContext.getOption("top_scoring");
@@ -317,7 +315,7 @@ public class FieldWrapper {
                 if (useDefaultSimilarity == null || useDefaultSimilarity == true) {
                     slowToWeighTermsMultipleTimes = true;
                     // Use a top level reader to fetch the frequency information
-                    weigher = new MultiplyingTermWeigher<BytesRef>(weigher,
+                    termWeigher = new MultiplyingTermWeigher<BytesRef>(weigher,
                             new DefaultSimilarityTermWeigher(context.hitContext.topLevelReader(),
                                     context.fieldName));
                 }
@@ -332,9 +330,9 @@ public class FieldWrapper {
             // TODO maybe switch to a recycling instance on the off chance that
             // we find a ton of terms in the document. That'd require more work
             // to make sure everything is properly Releasable.
-            weigher = new CachingTermWeigher<BytesRef>(new BytesRefTermWeigherCache(
+            termWeigher = new CachingTermWeigher<BytesRef>(new BytesRefTermWeigherCache(
                     BigArrays.NON_RECYCLING_INSTANCE), weigher);
         }
-        return weigher;
+        return termWeigher;
     }
 }

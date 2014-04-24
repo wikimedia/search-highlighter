@@ -803,6 +803,22 @@ public class ExperimentalHighlighterTest extends ElasticsearchIntegrationTest {
                 "<em>Fee</em> <em>phi</em>.");
     }
 
+    @Test
+    public void highlightQuery() throws IOException {
+        buildIndex();
+        client().prepareIndex("test", "test").setSource("test", "foo", "test2", "bar").get();
+        refresh();
+
+        SearchRequestBuilder search = testSearch(termQuery("test", "foo")).addHighlightedField(
+                new HighlightBuilder.Field("test2").highlightQuery(termQuery("test2", "bar")));
+
+        for (String hitSource : HIT_SOURCES) {
+            SearchResponse response = setHitSource(search, hitSource).get();
+            assertHighlight(response, 0, "test", 0, equalTo("<em>foo</em>"));
+            assertHighlight(response, 0, "test2", 0, equalTo("<em>bar</em>"));
+        }
+    }
+
     // TODO matched_fields with different hit source
     // TODO infer proper hit source
     
@@ -836,8 +852,8 @@ public class ExperimentalHighlighterTest extends ElasticsearchIntegrationTest {
         XContentBuilder builder = jsonBuilder().startObject();
         builder.startObject("test").startObject("properties");
         addField(builder, "test", offsetsInPostings, fvhLikeTermVectors);
-        builder.endObject().startObject("foo").field("type").value("object");
-        builder.startObject("properties");
+        addField(builder, "test2", offsetsInPostings, fvhLikeTermVectors);
+        builder.startObject("foo").field("type").value("object").startObject("properties");
         addField(builder, "test", offsetsInPostings, fvhLikeTermVectors);
         builder.endObject().endObject().endObject().endObject();
         assertAcked(prepareCreate("test").setSettings(
@@ -854,7 +870,7 @@ public class ExperimentalHighlighterTest extends ElasticsearchIntegrationTest {
         addSubField(builder, "whitespace", "whitespace", offsetsInPostings, fvhLikeTermVectors);
         addSubField(builder, "english", "english", offsetsInPostings, fvhLikeTermVectors);
         addSubField(builder, "english2", "english", offsetsInPostings, fvhLikeTermVectors);
-        builder.endObject();
+        builder.endObject().endObject();
     }
 
     private void addSubField(XContentBuilder builder, String name, String analyzer,

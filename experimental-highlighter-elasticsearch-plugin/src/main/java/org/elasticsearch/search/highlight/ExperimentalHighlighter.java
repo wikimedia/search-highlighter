@@ -2,11 +2,13 @@ package org.elasticsearch.search.highlight;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.lucene.search.Query;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.text.StringAndBytesText;
 import org.elasticsearch.common.text.StringText;
@@ -48,13 +50,17 @@ public class ExperimentalHighlighter implements Highlighter {
             CacheEntry entry = (CacheEntry) context.hitContext.cache().get(CACHE_KEY);
             if (entry == null) {
                 entry = new CacheEntry();
-                // Build the QueryWeigher with the top level reader to get all the frequency information
-                entry.queryWeigher = new BasicQueryWeigher(new ElasticsearchQueryFlattener(100),
+            }
+            BasicQueryWeigher weigher = entry.queryWeighers.get(context.query.originalQuery());
+            if (weigher == null) {
+                // Build the QueryWeigher with the top level reader to get all
+                // the frequency information
+                weigher = new BasicQueryWeigher(new ElasticsearchQueryFlattener(100),
                         context.hitContext.topLevelReader(), context.query.originalQuery());
-                context.hitContext.cache().put(CACHE_KEY, entry);
+                entry.queryWeighers.put(context.query.originalQuery(), weigher);
             }
             HighlightExecutionContext executionContext = new HighlightExecutionContext(context,
-                    entry);
+                    weigher);
             try {
                 return executionContext.highlight();
             } finally {
@@ -68,21 +74,21 @@ public class ExperimentalHighlighter implements Highlighter {
     }
 
     static class CacheEntry {
-        BasicQueryWeigher queryWeigher;
+        private final Map<Query, BasicQueryWeigher> queryWeighers = new HashMap<Query, BasicQueryWeigher>();
     }
 
     static class HighlightExecutionContext {
         private final HighlighterContext context;
-        private final CacheEntry cacheEntry;
+        private final BasicQueryWeigher weigher;
         private FieldWrapper defaultField;
         private List<FieldWrapper> extraFields;
         private SegmenterFactory segmenterFactory;
         private DelayedSegmenter segmenter;
 
-        HighlightExecutionContext(HighlighterContext context, CacheEntry cacheEntry) {
+        HighlightExecutionContext(HighlighterContext context, BasicQueryWeigher weigher) {
             this.context = context;
-            this.cacheEntry = cacheEntry;
-            defaultField = new FieldWrapper(this, context, cacheEntry);
+            this.weigher = weigher;
+            defaultField = new FieldWrapper(this, context, weigher);
         }
 
         HighlightField highlight() throws IOException {
@@ -170,7 +176,7 @@ public class ExperimentalHighlighter implements Highlighter {
                 if (context.fieldName.equals(field)) {
                     wrapper = defaultField;
                 } else {
-                    wrapper = new FieldWrapper(this, context, cacheEntry, field);
+                    wrapper = new FieldWrapper(this, context, weigher, field);
                 }
                 toMerge.add(wrapper.buildHitEnum());
                 extraFields.add(wrapper);
@@ -289,7 +295,7 @@ public class ExperimentalHighlighter implements Highlighter {
                         }
                     }
                     if (!found) {
-                        FieldWrapper fieldWrapper = new FieldWrapper(this, context, cacheEntry,
+                        FieldWrapper fieldWrapper = new FieldWrapper(this, context, weigher,
                                 fetchField);
                         newExtraFields.add(fieldWrapper);
                         fetchFieldWrappers.add(fieldWrapper);
