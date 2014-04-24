@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
   <parent>
@@ -184,6 +185,53 @@
         </plugin>
       </plugins>
     </pluginManagement>
+    <plugins>
+      <plugin>
+        <groupId>de.thetaphi</groupId>
+        <artifactId>forbiddenapis</artifactId>
+        <version>1.5</version>
+        <configuration>
+          <targetVersion>1.7</targetVersion>
+          <failOnMissingClasses>false</failOnMissingClasses> <!-- this is a bug in forbidden APIs since 1.5 looks also at annotations -->
+          <!-- disallow undocumented classes like sun.misc.Unsafe: -->
+          <internalRuntimeForbidden>true</internalRuntimeForbidden>
+          <!-- if the used Java version is too new, don't fail, just do nothing: -->
+          <failOnUnsupportedJava>false</failOnUnsupportedJava>
+          <bundledSignatures>
+            <!-- This will automatically choose the right signatures based on 'maven.compiler.target': -->
+            <bundledSignature>jdk-unsafe</bundledSignature>
+            <bundledSignature>jdk-deprecated</bundledSignature>
+            <bundledSignaure>jdk-system-out</bundledSignaure>
+          </bundledSignatures>
+        </configuration>
+        <executions>
+          <execution>
+            <id>check-forbidden-apis</id>
+            <phase>compile</phase>
+            <goals>
+              <goal>check</goal>
+            </goals>
+            <configuration>
+              <signaturesFiles>
+                <signaturesFile>forbidden-signatures.txt</signaturesFile>
+              </signaturesFiles>
+            </configuration>
+          </execution>
+          <execution>
+            <id>check-forbidden-test-apis</id>
+            <phase>test-compile</phase>
+            <goals>
+              <goal>testCheck</goal>
+            </goals>
+            <configuration>
+              <signaturesFiles>
+                <signaturesFile>../forbidden-test-signatures.txt</signaturesFile>
+              </signaturesFiles>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
   </build>
 
   <dependencies>

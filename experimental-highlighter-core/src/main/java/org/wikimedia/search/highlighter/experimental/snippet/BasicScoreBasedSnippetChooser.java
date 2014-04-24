@@ -1,7 +1,7 @@
 package org.wikimedia.search.highlighter.experimental.snippet;
 
 import java.util.ArrayList;
-import java.util.Collections;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 
@@ -77,19 +77,22 @@ public class BasicScoreBasedSnippetChooser extends AbstractBasicSnippetChooser<B
     }
     @Override
     protected List<Snippet> results(State state) {
-        List<ProtoSnippet> protos = state.results.contents();
+        // Dump to an array because Collections.sort would do it anyway, and
+        // this prevents dumping, rebuilding, dumping, and rebuilding again.
+        ProtoSnippet[] protos = state.results.contents().toArray(
+                new ProtoSnippet[state.results.contents().size()]);
 
         // Sort in source order, pick bounds ensuring no overlaps
-        Collections.sort(protos, ProtoSnippetComparators.OFFSETS);
+        Arrays.sort(protos, ProtoSnippetComparators.OFFSETS);
         int lastSnippetEnd = 0;
         for (ProtoSnippet proto: protos) {
             proto.pickedBounds = proto.memo.pickBounds(lastSnippetEnd, Integer.MAX_VALUE);
         }
 
         if (scoreOrdered) {
-            Collections.sort(protos, ProtoSnippetComparators.WEIGHT);
+            Arrays.sort(protos, ProtoSnippetComparators.WEIGHT);
         }
-        List<Snippet> results = new ArrayList<Snippet>(protos.size());
+        List<Snippet> results = new ArrayList<Snippet>(protos.length);
         for (ProtoSnippet proto: protos) {
             results.add(new Snippet(proto.pickedBounds.startOffset(), proto.pickedBounds.endOffset(), proto.hits));
         }

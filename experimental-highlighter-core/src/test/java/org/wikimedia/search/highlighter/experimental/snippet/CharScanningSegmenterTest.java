@@ -126,14 +126,12 @@ public class CharScanningSegmenterTest extends RandomizedTest {
             }
         }
         long end = System.currentTimeMillis();
-        System.err.println(end - start);
         assertThat("CharScanningSegmenter#acceptable too slow", end - start, lessThan(10000L));
         start = end;
         for (Memo memo: memos) {
             memo.pickBounds(0, source.length());
         }
         end = System.currentTimeMillis();
-        System.err.println(end - start);
         assertThat("CharScanningSegmenter#pickBounds too slow", end - start, lessThan(10000L));
     }
 }

@@ -915,7 +915,6 @@ public class ExperimentalHighlighterTest extends ElasticsearchIntegrationTest {
 
         options.put("fragment_weigher", "sum");
         for (String hitSource : HIT_SOURCES) {
-            System.err.println(hitSource);
             options.put("hit_source", hitSource);
             SearchResponse response = search.setHighlighterOptions(options).get();
             assertHighlight(response, 0, "test", 0, equalTo(sumMatch));
@@ -924,7 +923,6 @@ public class ExperimentalHighlighterTest extends ElasticsearchIntegrationTest {
 
         options.put("fragment_weigher", "exponential");
         for (String hitSource : HIT_SOURCES) {
-            System.err.println(hitSource);
             options.put("hit_source", hitSource);
             SearchResponse response = search.setHighlighterOptions(options).get();
             assertHighlight(response, 0, "test", 0, equalTo(exponentialMatch));

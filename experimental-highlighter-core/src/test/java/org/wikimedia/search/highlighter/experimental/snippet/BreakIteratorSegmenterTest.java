@@ -105,14 +105,12 @@ public class BreakIteratorSegmenterTest extends RandomizedTest {
             }
         }
         long end = System.currentTimeMillis();
-        System.err.println(end-start);
         assertThat("BreakIteratorSegmenter#acceptable too slow", end - start, lessThan(10000L));
         start = end;
         for (Memo memo: memos) {
             memo.pickBounds(0, b.length());
         }
         end = System.currentTimeMillis();
-        System.err.println(end-start);
         assertThat("BreakIteratorSegmenter#pickBounds too slow", end - start, lessThan(10000L));
     }
 }

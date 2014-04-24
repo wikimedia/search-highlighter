@@ -1,6 +1,7 @@
 package org.wikimedia.search.highlighter.experimental;
 
 import java.util.List;
+import java.util.Locale;
 
 /**
  * A segment of the source containing hits.
@@ -35,7 +36,7 @@ public class Snippet implements Segment {
 
     @Override
     public String toString() {
-        return String.format("[%s:%s]", startOffset, endOffset);
+        return String.format(Locale.ENGLISH, "[%s:%s]", startOffset, endOffset);
     }
 
     /**
@@ -83,7 +84,7 @@ public class Snippet implements Segment {
 
         @Override
         public String toString() {
-            return String.format("[%s:%s]", startOffset, endOffset);
+            return String.format(Locale.ENGLISH, "[%s:%s]", startOffset, endOffset);
         }
     }
 }

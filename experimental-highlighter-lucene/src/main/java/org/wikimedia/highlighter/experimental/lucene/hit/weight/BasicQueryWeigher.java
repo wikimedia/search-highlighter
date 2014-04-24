@@ -1,7 +1,6 @@
 package org.wikimedia.highlighter.experimental.lucene.hit.weight;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -10,6 +9,7 @@ import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.util.BytesRef;
+import org.apache.lucene.util.CollectionUtil;
 import org.apache.lucene.util.automaton.BasicAutomata;
 import org.apache.lucene.util.automaton.CompiledAutomaton;
 import org.wikimedia.highlighter.experimental.lucene.QueryFlattener;
@@ -81,7 +81,7 @@ public class BasicQueryWeigher implements TermWeigher<BytesRef>, TermSourceFinde
             // Sort the terms in UTF-8 order.
             List<BytesRef> terms = new ArrayList<BytesRef>(sourceInfos.size());
             terms.addAll(sourceInfos.keySet());
-            Collections.sort(terms);
+            CollectionUtil.timSort(terms);
             // TODO acceptable should grab the queries that can become
             // automatons and merge them rather then blow them out.
             acceptable = new CompiledAutomaton(BasicAutomata.makeStringUnion(terms));
