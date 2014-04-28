@@ -1,4 +1,4 @@
-package org.elasticsearch.highlight;
+package org.wikimedia.highlighter.experimental.elasticsearch;
 
 import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
 import static org.elasticsearch.index.query.QueryBuilders.boolQuery;
@@ -15,11 +15,13 @@ import static org.elasticsearch.index.query.QueryBuilders.spanOrQuery;
 import static org.elasticsearch.index.query.QueryBuilders.spanTermQuery;
 import static org.elasticsearch.index.query.QueryBuilders.termQuery;
 import static org.elasticsearch.index.query.QueryBuilders.wildcardQuery;
+import static org.elasticsearch.index.query.QueryBuilders.wrapperQuery;
 import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertAcked;
 import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertFailures;
 import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertHighlight;
 import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertNoFailures;
 import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertNotHighlighted;
+import static org.hamcrest.Matchers.both;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 
@@ -27,15 +29,21 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
+import org.elasticsearch.action.admin.indices.optimize.OptimizeResponse;
+import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.index.IndexRequestBuilder;
 import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.common.StopWatch;
 import org.elasticsearch.common.collect.ImmutableList;
 import org.elasticsearch.common.collect.ImmutableMap;
 import org.elasticsearch.common.xcontent.XContentBuilder;
+import org.elasticsearch.common.xcontent.json.JsonXContent;
+import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.rest.RestStatus;
 import org.elasticsearch.search.highlight.HighlightBuilder;
@@ -110,6 +118,36 @@ public class ExperimentalHighlighterTest extends ElasticsearchIntegrationTest {
             SearchResponse response = setHitSource(search, hitSource).get();
             assertHighlight(response, 0, "test", 0,
                     equalTo("<em>tests</em> very simple <em>test</em>"));
+        }
+    }
+
+    @Test
+    public void mixOfAutomataAndNotQueries() throws IOException {
+        buildIndex();
+        indexTestData();
+
+        SearchRequestBuilder search = testSearch(boolQuery().should(fuzzyQuery("test", "test"))
+                .should(fuzzyQuery("test", "simpl")));
+        for (String hitSource : HIT_SOURCES) {
+            SearchResponse response = setHitSource(search, hitSource).get();
+            assertHighlight(response, 0, "test", 0,
+                    equalTo("<em>tests</em> very <em>simple</em> <em>test</em>"));
+        }
+
+        search = testSearch(boolQuery().should(fuzzyQuery("test", "test"))
+                .should(termQuery("test", "simple")));
+        for (String hitSource : HIT_SOURCES) {
+            SearchResponse response = setHitSource(search, hitSource).get();
+            assertHighlight(response, 0, "test", 0,
+                    equalTo("<em>tests</em> very <em>simple</em> <em>test</em>"));
+        }
+
+        search = testSearch(boolQuery().should(fuzzyQuery("test", "test"))
+                .should(termQuery("test", "simple")).should(termQuery("test", "very")));
+        for (String hitSource : HIT_SOURCES) {
+            SearchResponse response = setHitSource(search, hitSource).get();
+            assertHighlight(response, 0, "test", 0,
+                    equalTo("<em>tests</em> <em>very</em> <em>simple</em> <em>test</em>"));
         }
     }
 
@@ -817,6 +855,130 @@ public class ExperimentalHighlighterTest extends ElasticsearchIntegrationTest {
             assertHighlight(response, 0, "test", 0, equalTo("<em>foo</em>"));
             assertHighlight(response, 0, "test2", 0, equalTo("<em>bar</em>"));
         }
+    }
+
+    @Test
+    public void manyTerms() throws IOException {
+        buildIndex();
+        indexTestData("a b c d e f g h i j");
+
+        assertNoFailures(testSearch(
+                boolQuery().should(termQuery("test", "a")).should(termQuery("test", "b"))
+                        .should(termQuery("test", "c")).should(termQuery("test", "d"))
+                        .should(termQuery("test", "e")).should(termQuery("test", "f"))
+                        .should(termQuery("test", "g")).should(termQuery("test", "h"))
+                        .should(termQuery("test", "i"))).get());
+    }
+
+    /**
+     * Skipped until we have a way to verify something. It is useful for
+     * spitting out performance information though.
+     */
+//    @Test
+    public void lotsOfTerms() throws IOException, InterruptedException, ExecutionException {
+        StopWatch watch = new StopWatch();
+        watch.start("load");
+        buildIndex(true, true, 1);
+        for (char l1 = 'a'; l1 <= 'z'; l1++) {
+            BulkRequestBuilder request = client().prepareBulk();
+            for (char l2 = 'a'; l2 <= 'z'; l2++) {
+                for (char l3 = 'a'; l3 <= 'z'; l3++) {
+                    StringBuilder b = new StringBuilder();
+                    for (char l4 = 'a'; l4 <= 'z'; l4++) {
+                        b.append('z').append(l1).append(l2).append(l3).append(l4).append(' ');
+                    }
+                    request.add(client().prepareIndex("test", "test").setSource("test", b.toString()));
+                }
+            }
+            request.get();
+            logger.info("Sending for {}", l1);
+        }
+        refresh();
+        // Optimizing to one segment makes the timing more consistent
+        waitForRelocation();
+        OptimizeResponse actionGet = client().admin().indices().prepareOptimize().setMaxNumSegments(1).execute().actionGet();
+        assertNoFailures(actionGet);
+        watch.stop();
+
+        lotsOfTermsTestCase(watch, "warmup", fuzzyQuery("test", "zooom"));
+        lotsOfTermsTestCase(watch, "single fuzzy", fuzzyQuery("test", "zooom"));
+        lotsOfTermsTestCase(watch, "multiple fuzzy", boolQuery().should(fuzzyQuery("test", "zooom"))
+                .should(fuzzyQuery("test", "zats")).should(fuzzyQuery("test", "zouni")));
+        lotsOfTermsTestCase(watch, "multiple term", boolQuery().should(termQuery("test", "zooma"))
+                .should(termQuery("test", "zats")).should(termQuery("test", "zouna")));
+        lotsOfTermsTestCase(watch, "single term", termQuery("test", "zooma"));
+        lotsOfTermsTestCase(watch, "fuzzy and term", boolQuery().should(fuzzyQuery("test", "zooma"))
+                .should(termQuery("test", "zouna")));
+        lotsOfTermsTestCase(watch, "two and two",
+                boolQuery().should(fuzzyQuery("test", "zooms")).should(fuzzyQuery("test", "zaums"))
+                        .should(termQuery("test", "zeesa")).should(termQuery("test", "zouqn")));
+        lotsOfTermsTestCase(watch, "regexp", regexpQuery("test", "zo[om]mt"));
+        lotsOfTermsTestCase(watch, "regexp and term", boolQuery().should(regexpQuery("test", "zo[azxo]my"))
+                .should(termQuery("test", "zouny")));
+        // Postings are really slow for stuff like "z*"
+        lotsOfTermsTestCase(watch, "wildcard", wildcardQuery("test", "zap*"));
+        lotsOfTermsTestCase(watch, "wildcard and term", boolQuery().should(wildcardQuery("test", "zap*"))
+                .should(termQuery("test", "zouny")));
+        lotsOfTermsTestCase(watch, "wildcard", prefixQuery("test", "zap"));
+        lotsOfTermsTestCase(watch, "wildcard and term", boolQuery().should(prefixQuery("test", "zap"))
+                .should(termQuery("test", "zouny")));
+        // The boolQuery here is required because the test data doesn't contain
+        // a single document that'll match the phrasePrefix
+        lotsOfTermsTestCase(watch, "phrase prefix and term", boolQuery()
+                .should(matchPhrasePrefixQuery("test", "zooma zoomb zoo"))
+                .should(termQuery("test", "zooma")));
+
+        logger.info(watch.prettyPrint());
+    }
+    
+    private void lotsOfTermsTestCase(StopWatch watch, String name, QueryBuilder query) throws IOException {
+        logger.info("starting {}", name);
+        watch.start(name);
+        SearchRequestBuilder search = testSearch(query);
+        for (String hitSource : HIT_SOURCES) {
+            setHitSource(search, hitSource);
+            for (int i = 0; i < 10; i++) {
+                SearchResponse response = search.get();
+                assertHighlight(response, 0, "test", 0,
+                        both(containsString("<em>z")).and(containsString("</em>")));
+            }
+        }
+        watch.stop();
+
+        logger.info("starting {} many highlighted fields", name);
+        watch.start(String.format(Locale.ENGLISH, "%s many highlighted fields", name));
+        search.addHighlightedField("test.english").addHighlightedField("test.english2").addHighlightedField("test2");
+        for (String hitSource : HIT_SOURCES) {
+            setHitSource(search, hitSource);
+            for (int i = 0; i < 10; i++) {
+                SearchResponse response = search.get();
+                assertHighlight(response, 0, "test", 0,
+                        both(containsString("<em>z")).and(containsString("</em>")));
+            }
+        }
+        watch.stop();
+
+        logger.info("starting {} many queried fields", name);
+        BoolQueryBuilder many = boolQuery();
+        many.should(query);
+        for(String field: new String[] {"test.english", "test.english2", "test2", "test2.english"}) {
+            XContentBuilder builder = XContentBuilder.builder(JsonXContent.jsonXContent);
+            query.toXContent(builder, null);
+            many.should(wrapperQuery(
+                    builder.string().replaceAll("test", field)));
+        }
+        search.setQuery(many);
+
+        watch.start(String.format(Locale.ENGLISH, "%s many queried fields", name));
+        for (String hitSource : HIT_SOURCES) {
+            setHitSource(search, hitSource);
+            for (int i = 0; i < 10; i++) {
+                SearchResponse response = search.get();
+                assertHighlight(response, 0, "test", 0,
+                        both(containsString("<em>z")).and(containsString("</em>")));
+            }
+        }
+        watch.stop();
     }
 
     // TODO matched_fields with different hit source

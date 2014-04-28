@@ -61,8 +61,11 @@ public class DocsAndPositionsHitEnum implements HitEnum {
         TermsEnum termsEnum = acceptable.getTermsEnum(terms);
         BytesRef term;
         List<HitEnum> enums = new ArrayList<HitEnum>();
+        
+        // Last enum that didn't find anything.  We can reuse it.
+        DocsAndPositionsEnum dp = null;
         while ((term = termsEnum.next()) != null) {
-            DocsAndPositionsEnum dp = termsEnum.docsAndPositions(null, null, DocsAndPositionsEnum.FLAG_OFFSETS);
+            dp = termsEnum.docsAndPositions(null, dp, DocsAndPositionsEnum.FLAG_OFFSETS);
             if (dp == null) {
                 continue;
             }
@@ -77,6 +80,7 @@ public class DocsAndPositionsHitEnum implements HitEnum {
             }
             HitEnum e = new DocsAndPositionsHitEnum(dp, weigher.weigh(term), sourceFinder.source(term));
             enums.add(e);
+            dp = null;
         }
         return new MergingHitEnum(enums, HitEnum.LessThans.POSITION);
     }

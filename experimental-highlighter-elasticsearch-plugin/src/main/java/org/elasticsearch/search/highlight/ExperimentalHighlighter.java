@@ -13,8 +13,10 @@ import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.text.StringAndBytesText;
 import org.elasticsearch.common.text.StringText;
 import org.elasticsearch.common.text.Text;
+import org.elasticsearch.common.util.BigArrays;
 import org.elasticsearch.search.fetch.FetchPhaseExecutionException;
 import org.elasticsearch.search.highlight.SearchContextHighlight.FieldOptions;
+import org.wikimedia.highlighter.experimental.elasticsearch.BytesRefHashTermInfos;
 import org.wikimedia.highlighter.experimental.elasticsearch.CharScanningSegmenterFactory;
 import org.wikimedia.highlighter.experimental.elasticsearch.DelayedSegmenter;
 import org.wikimedia.highlighter.experimental.elasticsearch.ElasticsearchQueryFlattener;
@@ -50,13 +52,19 @@ public class ExperimentalHighlighter implements Highlighter {
             CacheEntry entry = (CacheEntry) context.hitContext.cache().get(CACHE_KEY);
             if (entry == null) {
                 entry = new CacheEntry();
+                context.hitContext.cache().put(CACHE_KEY, entry);
             }
             BasicQueryWeigher weigher = entry.queryWeighers.get(context.query.originalQuery());
             if (weigher == null) {
+                // TODO recycle. But addReleasble doesn't seem to close it
+                // properly later. I believe this is fixed in later
+                // Elasticsearch versions.
+                BytesRefHashTermInfos infos = new BytesRefHashTermInfos(BigArrays.NON_RECYCLING_INSTANCE);
+//                context.context.addReleasable(infos);
+                weigher = new BasicQueryWeigher(new ElasticsearchQueryFlattener(100), infos,
+                        context.hitContext.topLevelReader(), context.query.originalQuery());
                 // Build the QueryWeigher with the top level reader to get all
                 // the frequency information
-                weigher = new BasicQueryWeigher(new ElasticsearchQueryFlattener(100),
-                        context.hitContext.topLevelReader(), context.query.originalQuery());
                 entry.queryWeighers.put(context.query.originalQuery(), weigher);
             }
             HighlightExecutionContext executionContext = new HighlightExecutionContext(context,
