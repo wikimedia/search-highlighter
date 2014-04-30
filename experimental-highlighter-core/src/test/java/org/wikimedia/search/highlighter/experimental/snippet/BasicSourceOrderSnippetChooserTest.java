@@ -42,7 +42,7 @@ public class BasicSourceOrderSnippetChooserTest extends AbstractBasicSnippetChoo
         assertThat(
                 snippets,
                 contains(extracted(extracter, "The quick brown fox"),
-                        extracted(extracter, "jumped over the lazy")));
+                        extracted(extracter, " jumped over the lazy")));
         assertThat(
                 snippets.get(0).hits(),
                 contains(extracted(extracter, "The"), extracted(extracter, "quick"),

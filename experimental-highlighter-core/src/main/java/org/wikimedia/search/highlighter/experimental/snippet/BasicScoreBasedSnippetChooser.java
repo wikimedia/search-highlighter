@@ -87,6 +87,7 @@ public class BasicScoreBasedSnippetChooser extends AbstractBasicSnippetChooser<B
         int lastSnippetEnd = 0;
         for (ProtoSnippet proto: protos) {
             proto.pickedBounds = proto.memo.pickBounds(lastSnippetEnd, Integer.MAX_VALUE);
+            lastSnippetEnd = proto.pickedBounds.endOffset();
         }
 
         if (scoreOrdered) {

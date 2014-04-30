@@ -25,7 +25,7 @@ public class BasicScoreBasedSnippetChooserTest extends AbstractBasicSnippetChoos
             chooser = new BasicScoreBasedSnippetChooser(scoreOrdered, new SumSnippetWeigher());
             setup("The quick brown fox jumped over the lazy dog.", ImmutableMap.of("lazy", 1f));
             List<Snippet> snippets = chooser.choose(segmenter, hitEnum, 1);
-            assertThat(snippets, contains(extracted(extracter, "over the lazy dog.")));
+            assertThat(snippets, contains(extracted(extracter, "jumped over the lazy dog.")));
             assertThat(snippets.get(0).hits(), contains(extracted(extracter, "lazy")));
         }
     }
@@ -38,7 +38,7 @@ public class BasicScoreBasedSnippetChooserTest extends AbstractBasicSnippetChoos
         List<Snippet> snippets = chooser.choose(segmenter, hitEnum, 2);
         assertThat(
                 snippets,
-                contains(extracted(extracter, "over the lazy dog."),
+                contains(extracted(extracter, " over the lazy dog."),
                         extracted(extracter, "quick brown fox jumped")));
         assertThat(snippets.get(0).hits(), contains(extracted(extracter, "lazy")));
         assertThat(snippets.get(1).hits(), contains(extracted(extracter, "brown")));
@@ -50,7 +50,7 @@ public class BasicScoreBasedSnippetChooserTest extends AbstractBasicSnippetChoos
         assertThat(
                 snippets,
                 contains(extracted(extracter, "quick brown fox jumped"),
-                        extracted(extracter, "over the lazy dog.")));
+                        extracted(extracter, " over the lazy dog.")));
         assertThat(snippets.get(0).hits(), contains(extracted(extracter, "brown")));
         assertThat(snippets.get(1).hits(), contains(extracted(extracter, "lazy")));
     }
@@ -67,7 +67,7 @@ public class BasicScoreBasedSnippetChooserTest extends AbstractBasicSnippetChoos
         List<Snippet> snippets = chooser.choose(segmenter, hitEnum, 2);
         assertThat(
                 snippets,
-                contains(extracted(extracter, "over the lazy dog."),
+                contains(extracted(extracter, " the lazy dog."),
                         extracted(extracter, "quick brown fox jumped over")));
         assertThat(snippets.get(0).hits(), contains(extracted(extracter, "lazy")));
         assertThat(snippets.get(1).hits(), contains(extracted(extracter, "fox")));
@@ -79,7 +79,7 @@ public class BasicScoreBasedSnippetChooserTest extends AbstractBasicSnippetChoos
         assertThat(
                 snippets,
                 contains(extracted(extracter, "quick brown fox jumped over"),
-                        extracted(extracter, "over the lazy dog.")));
+                        extracted(extracter, " the lazy dog.")));
         assertThat(snippets.get(0).hits(), contains(extracted(extracter, "fox")));
         assertThat(snippets.get(1).hits(), contains(extracted(extracter, "lazy")));
     }
@@ -94,7 +94,7 @@ public class BasicScoreBasedSnippetChooserTest extends AbstractBasicSnippetChoos
         List<Snippet> snippets = chooser.choose(segmenter, hitEnum, 2);
         assertThat(
                 snippets,
-                contains(extracted(extracter, "over the lazy dog.  The"),
+                contains(extracted(extracter, " the lazy dog.  The quick"),
                         extracted(extracter, "quick brown fox jumped over")));
         assertThat(snippets.get(0).hits(), contains(extracted(extracter, "lazy")));
         assertThat(snippets.get(1).hits(), contains(extracted(extracter, "fox")));
@@ -107,7 +107,7 @@ public class BasicScoreBasedSnippetChooserTest extends AbstractBasicSnippetChoos
         assertThat(
                 snippets,
                 contains(extracted(extracter, "quick brown fox jumped over"),
-                        extracted(extracter, "over the lazy dog.  The")));
+                        extracted(extracter, " the lazy dog.  The quick")));
         assertThat(snippets.get(0).hits(), contains(extracted(extracter, "fox")));
         assertThat(snippets.get(1).hits(), contains(extracted(extracter, "lazy")));
 

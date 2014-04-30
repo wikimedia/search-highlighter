@@ -6,6 +6,7 @@ import static org.elasticsearch.index.query.QueryBuilders.fuzzyQuery;
 import static org.elasticsearch.index.query.QueryBuilders.matchPhrasePrefixQuery;
 import static org.elasticsearch.index.query.QueryBuilders.matchPhraseQuery;
 import static org.elasticsearch.index.query.QueryBuilders.prefixQuery;
+import static org.elasticsearch.index.query.QueryBuilders.queryString;
 import static org.elasticsearch.index.query.QueryBuilders.rangeQuery;
 import static org.elasticsearch.index.query.QueryBuilders.regexpQuery;
 import static org.elasticsearch.index.query.QueryBuilders.spanFirstQuery;
@@ -49,6 +50,10 @@ import org.elasticsearch.rest.RestStatus;
 import org.elasticsearch.search.highlight.HighlightBuilder;
 import org.elasticsearch.test.ElasticsearchIntegrationTest;
 import org.junit.Test;
+
+import com.carrotsearch.ant.tasks.junit4.dependencies.com.google.common.base.Charsets;
+import com.google.common.io.Resources;
+
 
 public class ExperimentalHighlighterTest extends ElasticsearchIntegrationTest {
     private static final List<String> HIT_SOURCES = ImmutableList.of("postings", "vectors",
@@ -870,6 +875,21 @@ public class ExperimentalHighlighterTest extends ElasticsearchIntegrationTest {
                         .should(termQuery("test", "i"))).get());
     }
 
+    @Test
+    public void largeText() throws IOException {
+        buildIndex();
+        indexTestData(Resources.toString(Resources.getResource(this.getClass(), "large_text.txt"), Charsets.UTF_8));
+
+        SearchRequestBuilder search = testSearch(termQuery("test", "browser")).addHighlightedField(
+                "test", 100).setHighlighterOrder("score");
+
+        for (String hitSource : HIT_SOURCES) {
+            SearchResponse response = setHitSource(search, hitSource).get();
+            assertHighlight(response, 0, "test", 0, equalTo("json (bug 61659) git #4d2209e " +
+                    "- [<em>Browser</em> test] Headless <em>browser</em> test(s) (bug 53691) git #6a238d2 -"));
+        }
+    }
+
     /**
      * Skipped until we have a way to verify something. It is useful for
      * spitting out performance information though.
@@ -927,10 +947,11 @@ public class ExperimentalHighlighterTest extends ElasticsearchIntegrationTest {
         lotsOfTermsTestCase(watch, "phrase prefix and term", boolQuery()
                 .should(matchPhrasePrefixQuery("test", "zooma zoomb zoo"))
                 .should(termQuery("test", "zooma")));
+        lotsOfTermsTestCase(watch, "phrase prefix and term", queryString("test:\"zoooo\" OR test2:\"zaaap\""));
 
         logger.info(watch.prettyPrint());
     }
-    
+
     private void lotsOfTermsTestCase(StopWatch watch, String name, QueryBuilder query) throws IOException {
         logger.info("starting {}", name);
         watch.start(name);

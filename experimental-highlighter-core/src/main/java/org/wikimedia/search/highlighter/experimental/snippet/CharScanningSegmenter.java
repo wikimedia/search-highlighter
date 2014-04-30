@@ -37,17 +37,6 @@ public class CharScanningSegmenter implements Segmenter {
         this.maxScan = maxScan;
     }
 
-    private int findBreakAfter(int start, int max) {
-        max = Math.min(source.length(), Math.min(start + maxScan, max));
-        int scanPos;
-        for (scanPos = start; scanPos < max; scanPos++) {
-            if (Arrays.binarySearch(boundaryCharacters, source.charAt(scanPos)) >= 0) {
-                return scanPos;
-            }
-        }
-        return -100;
-    }
-
     @Override
     public boolean acceptable(int maxStartOffset, int minEndOffset) {
         return minEndOffset - maxStartOffset < maxSnippetSize;
@@ -69,64 +58,137 @@ public class CharScanningSegmenter implements Segmenter {
 
         @Override
         public Segment pickBounds(int minStartOffset, int maxEndOffset) {
+            // Sanity
+            minStartOffset = Math.max(0, minStartOffset);
+            maxEndOffset = Math.min(source.length(), maxEndOffset);
+
             // Expand the minimum length segment (from maxStart to minEnd) to
             // maxSnippetSize
             int requestedSize = minEndOffset - maxStartOffset;
             int margin = Math.max(0, maxSnippetSize - requestedSize) / 2;
             int expandedStartOffset = maxStartOffset - margin;
             int expandedEndOffset = minEndOffset + margin;
-            int startOffset = -1;
-            int endOffset = -1;
-
-            // For each of start and end:
-            // If the expanded segment fits inside the clamp (minStart for
-            // start,
-            // maxEnd for end) then walk towards the clamp looking for a
-            // boundary
-            if (expandedStartOffset > minStartOffset) {
-                startOffset = findBreakBefore(expandedStartOffset, minStartOffset) + 1;
+            if (expandedStartOffset < minStartOffset) {
+                expandedEndOffset += minStartOffset - expandedStartOffset;
+                // No need to modify expandedStartOffset here, pickStartOffset
+                // will clamp for us
             }
-            if (expandedEndOffset < maxEndOffset) {
-                endOffset = findBreakAfter(expandedEndOffset, maxEndOffset);
+            if (maxEndOffset < expandedEndOffset) {
+                expandedStartOffset -= expandedEndOffset - maxEndOffset;
             }
 
-            // If that didn't find a boundary or we didn't try:
-            // Either declare the boundary to be the beginning or end of the
-            // string or scan backwards from the max to a boundary.
-            if (startOffset < 0) {
-                if (minStartOffset <= 0) {
-                    startOffset = 0;
-                } else {
-                    startOffset = findBreakAfter(minStartOffset, maxStartOffset) + 1;
-                    if (startOffset < 0) {
-                        // No breaks either way!
-                        startOffset = maxStartOffset;
-                    }
-                }
-            }
-            if (endOffset < 0) {
-                if (maxEndOffset >= source.length()) {
-                    endOffset = source.length();
-                } else {
-                    endOffset = findBreakBefore(maxEndOffset, minEndOffset);
-                    if (endOffset < 0) {
-                        // No breaks either way!
-                        endOffset = minEndOffset;
-                    }
-                }
-            }
-            return new SimpleSegment(startOffset, endOffset);
+            // Now we have to pick a start and end offset, but there are
+            // actually four cases that can happen given the above for start
+            // offset and four for end. I'll show the start offset here
+            // because the end is just the mirror image:
+            //
+            // Case 1:
+            // --------+------[-------+-------]--+----------------------
+            //        min          expand       max
+            // Case 2:
+            // ----[---+-------+--------+-------------------------------
+            //        min   expand     max
+            // Case 3:
+            // --------+---[----+-------+---]---------------------------
+            //        min    expand    max
+            // Case 4:
+            // --------+-------+---------+------------------------------
+            //      expand    min       max
+            //
+            // Case 1 is "normal", there are no obstructions and we pick
+            // the boundary by looking from expand to [, the max scan, and if
+            // that doesn't find anything looking from expand to the ], and if
+            // that doesn't find anything defaulting to expand.
+            //
+            // Case 2 is almost normal. We look from expand to min but if that
+            // doesn't find anything we deem min a valid boundary. Min is
+            // generally the beginning of the source or the end of the last
+            // segment and therefore a valid boundary. The case where expand
+            // is right on top of min is pretty much a variant of this case.
+            //
+            // Case 3 is like case 2 but in reverse. We look to [ as in case
+            // 1 and if we don't find anything we look to max. If that doesn't
+            // find anything then we declare max a valid boundary. Max is
+            // generally the beginning of the first hit, so very likely a valid
+            // boundary.
+            //
+            // Case 4 is different. We'd like to expand past min which isn't
+            // allowed so instead we deem min the boundary and try to shift the
+            // whole segment forward some to make up for it.
+            return new SimpleSegment(pickStartOffset(expandedStartOffset, minStartOffset),
+                    pickEndOffset(expandedEndOffset, maxEndOffset));
         }
 
-        private int findBreakBefore(int start, int min) {
-            min = Math.max(0, Math.max(min, start - maxScan));
-            int scanPos;
-            for (scanPos = start; scanPos >= min; scanPos--) {
+        private int pickStartOffset(int expandedStartOffset, int minStartOffset) {
+            if (expandedStartOffset <= minStartOffset) {
+                // Case 4
+                return minStartOffset;
+            }
+            int scanEnd = Math.max(minStartOffset, expandedStartOffset - maxScan);
+            int found = findBreakBefore(expandedStartOffset, scanEnd);
+            if (found >= 0) {
+                return found + 1;
+            }
+            if (scanEnd == minStartOffset) {
+                // Case 2
+                return minStartOffset;
+            }
+            scanEnd = Math.min(maxStartOffset, expandedStartOffset + maxScan);
+            found = findBreakAfter(expandedStartOffset, scanEnd);
+            if (found >= 0) {
+                return found + 1;
+            }
+            if (scanEnd == maxStartOffset) {
+                // Case 3
+                return maxStartOffset;
+            }
+            // Case 1
+            return expandedStartOffset;
+        }
+
+        private int pickEndOffset(int expandedEndOffset, int maxEndOffset) {
+            if (maxEndOffset <= expandedEndOffset) {
+                // Case 4
+                return maxEndOffset;
+            }
+            int scanEnd = Math.min(maxEndOffset, expandedEndOffset + maxScan);
+            int found = findBreakAfter(expandedEndOffset, scanEnd);
+            if (found >= 0) {
+                return found;
+            }
+            if (scanEnd == maxEndOffset) {
+                // Case 2
+                return maxEndOffset;
+            }
+            scanEnd = Math.max(minEndOffset, expandedEndOffset - maxScan);
+            found = findBreakBefore(expandedEndOffset, scanEnd);
+            if (found >= 0) {
+                return found;
+            }
+            if (scanEnd == minEndOffset) {
+                // Case 3
+                return minEndOffset;
+            }
+            // Case 1
+            return expandedEndOffset;
+        }
+
+        private int findBreakBefore(int start, int scanEnd) {
+            for (int scanPos = start; scanPos >= scanEnd; scanPos--) {
                 if (Arrays.binarySearch(boundaryCharacters, source.charAt(scanPos)) >= 0) {
                     return scanPos;
                 }
             }
-            return -100;
+            return -1;
+        }
+
+        private int findBreakAfter(int start, int max) {
+            for (int scanPos = start; scanPos < max; scanPos++) {
+                if (Arrays.binarySearch(boundaryCharacters, source.charAt(scanPos)) >= 0) {
+                    return scanPos;
+                }
+            }
+            return -1;
         }
     }
 }
