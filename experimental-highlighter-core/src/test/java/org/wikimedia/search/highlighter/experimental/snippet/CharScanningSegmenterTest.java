@@ -1,7 +1,9 @@
 package org.wikimedia.search.highlighter.experimental.snippet;
 
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.lessThan;
+import static org.hamcrest.Matchers.lessThanOrEqualTo;
 import static org.wikimedia.search.highlighter.experimental.Matchers.extracted;
 
 import java.util.ArrayList;
@@ -9,14 +11,15 @@ import java.util.List;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.wikimedia.search.highlighter.experimental.Segment;
 import org.wikimedia.search.highlighter.experimental.Segmenter;
-import org.wikimedia.search.highlighter.experimental.SourceExtracter;
 import org.wikimedia.search.highlighter.experimental.Segmenter.Memo;
-import org.wikimedia.search.highlighter.experimental.snippet.CharScanningSegmenter;
+import org.wikimedia.search.highlighter.experimental.SourceExtracter;
 import org.wikimedia.search.highlighter.experimental.source.StringSourceExtracter;
 
 import com.carrotsearch.randomizedtesting.RandomizedRunner;
 import com.carrotsearch.randomizedtesting.RandomizedTest;
+import com.carrotsearch.randomizedtesting.annotations.Repeat;
 
 @RunWith(RandomizedRunner.class)
 public class CharScanningSegmenterTest extends RandomizedTest {
@@ -170,6 +173,28 @@ public class CharScanningSegmenterTest extends RandomizedTest {
         setup("Thequickbrownfoxjumpedover the lazy dog.", 10, 2);
         assertThat(segmenter.memo(1, 2).pickBounds(0, Integer.MAX_VALUE),
                 extracted(extracter, equalTo("Thequickb")));
+    }
+
+    @Test
+    @Repeat(iterations=1000)
+    public void randomSegments() {
+        int minStart = between(-100, 400);
+        int maxStart = Math.max(0, minStart) + between(0, 400);
+        int minEnd = maxStart + between(0, 400);
+        int maxEnd = minEnd + between(0, 400);
+        int length = minEnd + between(0, 800);
+        StringBuilder b = new StringBuilder(length);
+        for (int i = 0; i < length; i++) {
+            b.append(rarely() ? ' ' : 'a');
+        }
+        setup(b.toString());
+        Segment bounds = segmenter.memo(maxStart, minEnd).pickBounds(minStart, maxEnd);
+        assertThat(bounds.startOffset(), lessThanOrEqualTo(maxStart));
+        assertThat(bounds.endOffset(), greaterThanOrEqualTo(minEnd));
+        if (segmenter.acceptable(maxStart, minEnd)) {
+            // 240 = the max size + twice the scan
+            assertThat(bounds.endOffset() - bounds.startOffset(), lessThanOrEqualTo(240));
+        }
     }
 
     @Test(timeout = 100000L)
