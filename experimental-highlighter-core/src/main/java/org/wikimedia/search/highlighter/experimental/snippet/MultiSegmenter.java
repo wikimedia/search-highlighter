@@ -114,7 +114,7 @@ public final class MultiSegmenter implements Segmenter {
         if (minEndOffset > segmenter.length || inSegmenterStartOffset < 0) {
             return false;
         }
-        return segmenter.segmenter.acceptable(maxStartOffset, minEndOffset);
+        return segmenter.segmenter.acceptable(inSegmenterStartOffset, minEndOffset);
     }
 
     /**

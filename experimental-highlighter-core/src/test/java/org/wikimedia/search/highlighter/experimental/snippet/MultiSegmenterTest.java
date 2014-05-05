@@ -21,7 +21,7 @@ public class MultiSegmenterTest extends RandomizedTest {
     private int offsetGap;
     private Segmenter segmenter;
     private SourceExtracter<String> extracter;
-    
+
     @Test
     public void empty() {
         setup();
@@ -57,8 +57,8 @@ public class MultiSegmenterTest extends RandomizedTest {
     public void startWithSomeEmptyThenSingleChar() {
         setup("", "", "", "a");
         assertTrue(segmenter.acceptable(offsetGap * 3, offsetGap * 3 + 1));
-        assertThat(segmenter.memo(offsetGap * 3, offsetGap * 3 + 1).pickBounds(0, Integer.MAX_VALUE),
-                extracted(extracter, equalTo("a")));
+        assertThat(segmenter.memo(offsetGap * 3, offsetGap * 3 + 1)
+                .pickBounds(0, Integer.MAX_VALUE), extracted(extracter, equalTo("a")));
         assertFalse(segmenter.acceptable(0, 1));
         assertFalse(segmenter.acceptable(offsetGap * 3, offsetGap * 3 + 3));
     }
@@ -84,7 +84,8 @@ public class MultiSegmenterTest extends RandomizedTest {
         // Now jump to the second
         assertTrue(segmenter.acceptable(offsetGap * 4 + 5, offsetGap * 4 + 36));
         assertThat(
-                segmenter.memo(offsetGap * 4 + 5, offsetGap * 4 + 36).pickBounds(0, Integer.MAX_VALUE),
+                segmenter.memo(offsetGap * 4 + 5, offsetGap * 4 + 36).pickBounds(0,
+                        Integer.MAX_VALUE),
                 extracted(extracter, equalTo("The quick brown fox jumped over the lazy dog.")));
 
         // Now jump back to the first
@@ -108,6 +109,16 @@ public class MultiSegmenterTest extends RandomizedTest {
                 extracted(extracter, equalTo("with two fields to test")));
     }
 
+    @Test
+    public void tooLong() {
+        String ten = "aaaaaaaaa ";
+        setup(Strings.repeat(ten, 10), Strings.repeat(ten, 20));
+
+        // Only lengths up to 100 are acceptable but we had a bug where we'd
+        // shift the end backwards but not the beginning.
+        assertFalse(segmenter.acceptable(110, 300));
+    }
+
     /**
      * Build a builder with a random offsetGap, a
      * StringMergingMultiSourceExtracter with the gap and record the gap.
@@ -118,7 +129,7 @@ public class MultiSegmenterTest extends RandomizedTest {
         StringMergingMultiSourceExtracter.Builder extracterBuilder = StringMergingMultiSourceExtracter
                 .builder(Strings.repeat(" ", offsetGap));
         for (String source : sources) {
-            builder.add(new CharScanningSegmenter(source, 200, 20), source.length());
+            builder.add(new CharScanningSegmenter(source, 100, 20), source.length());
             extracterBuilder.add(new StringSourceExtracter(source), source.length());
         }
         segmenter = builder.build();
