@@ -88,13 +88,23 @@ public class ExperimentalHighlighterTest extends ElasticsearchIntegrationTest {
     @Test
     public void singlePhraseQuery() throws IOException {
         buildIndex();
-        indexTestData();
+        indexTestData("test very simple test");
 
-        SearchRequestBuilder search = testSearch(matchPhraseQuery("test", "simple test"));
+        Map<String, Object> options = new HashMap<String, Object>();
+        SearchRequestBuilder search = testSearch(matchPhraseQuery("test", "simple test")).setHighlighterOptions(options);
         for (String hitSource : HIT_SOURCES) {
-            SearchResponse response = setHitSource(search, hitSource).get();
+            options.put("hit_source", hitSource);
+            SearchResponse response = search.get();
             assertHighlight(response, 0, "test", 0,
-                    equalTo("tests very <em>simple</em> <em>test</em>"));
+                    equalTo("test very <em>simple</em> <em>test</em>"));
+        }
+
+        options.put("phrase_as_terms", true);
+        for (String hitSource : HIT_SOURCES) {
+            options.put("hit_source", hitSource);
+            SearchResponse response = search.get();
+            assertHighlight(response, 0, "test", 0,
+                    equalTo("<em>test</em> very <em>simple</em> <em>test</em>"));
         }
     }
 
@@ -103,13 +113,100 @@ public class ExperimentalHighlighterTest extends ElasticsearchIntegrationTest {
         buildIndex();
         indexTestData();
 
-        SearchRequestBuilder search = testSearch(matchPhrasePrefixQuery("test", "simple te"));
+        Map<String, Object> options = new HashMap<String, Object>();
+        SearchRequestBuilder search = testSearch(matchPhrasePrefixQuery("test", "simple te")).setHighlighterOptions(options);
         for (String hitSource : HIT_SOURCES) {
-            SearchResponse response = setHitSource(search, hitSource).get();
-            // You can see right here that we aren't careful with phrase queries
-            // like the FVH is.
+            options.put("hit_source", hitSource);
+            SearchResponse response = search.get();
+            assertHighlight(response, 0, "test", 0,
+                    equalTo("tests very <em>simple</em> <em>test</em>"));
+        }
+
+        options.put("phrase_as_terms", true);
+        for (String hitSource : HIT_SOURCES) {
+            options.put("hit_source", hitSource);
+            SearchResponse response = search.get();
             assertHighlight(response, 0, "test", 0,
                     equalTo("<em>tests</em> very <em>simple</em> <em>test</em>"));
+        }
+    }
+
+    @Test
+    public void doublePhraseQuery() throws IOException {
+        buildIndex();
+        indexTestData("test very simple test double");
+
+        Map<String, Object> options = new HashMap<String, Object>();
+        SearchRequestBuilder search = testSearch(
+                boolQuery().should(matchPhraseQuery("test", "simple test")).should(
+                        matchPhraseQuery("test", "test double"))).setHighlighterOptions(options);
+        for (String hitSource : HIT_SOURCES) {
+            options.put("hit_source", hitSource);
+            SearchResponse response = search.get();
+            assertHighlight(response, 0, "test", 0,
+                    equalTo("test very <em>simple</em> <em>test</em> <em>double</em>"));
+        }
+
+        options.put("phrase_as_terms", true);
+        for (String hitSource : HIT_SOURCES) {
+            options.put("hit_source", hitSource);
+            SearchResponse response = search.get();
+            assertHighlight(response, 0, "test", 0,
+                    equalTo("<em>test</em> very <em>simple</em> <em>test</em> <em>double</em>"));
+        }
+    }
+
+    @Test
+    public void termAndPhraseQuery() throws IOException {
+        buildIndex();
+        indexTestData("test very simple test double");
+
+        Map<String, Object> options = new HashMap<String, Object>();
+        SearchRequestBuilder search = testSearch(
+                boolQuery().should(matchPhraseQuery("test", "simple test")).should(
+                        termQuery("test", "test"))).setHighlighterOptions(options);
+        for (String hitSource : HIT_SOURCES) {
+            options.put("hit_source", hitSource);
+            SearchResponse response = search.get();
+            assertHighlight(response, 0, "test", 0,
+                    equalTo("<em>test</em> very <em>simple</em> <em>test</em> double"));
+        }
+
+        options.put("phrase_as_terms", true);
+        for (String hitSource : HIT_SOURCES) {
+            options.put("hit_source", hitSource);
+            SearchResponse response = search.get();
+            assertHighlight(response, 0, "test", 0,
+                    equalTo("<em>test</em> very <em>simple</em> <em>test</em> double"));
+        }
+    }
+
+    /**
+     * Checks that phrase query filtering works in the presence of matched
+     * fields with very different tokenizers.
+     */
+    @Test
+    public void matchedFieldsPhraseQuery() throws IOException {
+        buildIndex();
+        indexTestData("test very simple test");
+
+        Map<String, Object> options = new HashMap<String, Object>();
+        SearchRequestBuilder search = testSearch(matchPhraseQuery("test", "simple test"))
+                .setHighlighterOptions(options).addHighlightedField(
+                        new HighlightBuilder.Field("test").matchedFields("test", "test.chars"));
+        for (String hitSource : HIT_SOURCES) {
+            options.put("hit_source", hitSource);
+            SearchResponse response = search.get();
+            assertHighlight(response, 0, "test", 0,
+                    equalTo("test very <em>simple</em> <em>test</em>"));
+        }
+
+        options.put("phrase_as_terms", true);
+        for (String hitSource : HIT_SOURCES) {
+            options.put("hit_source", hitSource);
+            SearchResponse response = search.get();
+            assertHighlight(response, 0, "test", 0,
+                    equalTo("<em>test</em> very <em>simple</em> <em>test</em>"));
         }
     }
 
@@ -429,6 +526,15 @@ public class ExperimentalHighlighterTest extends ElasticsearchIntegrationTest {
             assertHighlight(response, 0, "test", 0, equalTo("The quick brown fox jumped over the lazy <em>test</em>.  "));
             assertHighlight(response, 0, "test", 1, equalTo("Junk junk junk junk junk junk junk " +
                     "junk junk junk junk <em>test</em> <em>test</em> <em>test</em>."));
+        }
+
+        options.put("boost_before", ImmutableMap.of("10", 4, Integer.toString(Integer.MAX_VALUE), 0f));
+        options.put("fragment_weigher", "sum");
+        for (String hitSource : HIT_SOURCES) {
+            options.put("hit_source", hitSource);
+            SearchResponse response = search.setHighlighterOptions(options).get();
+            assertHighlight(response, 0, "test", 0, /* total fragments */1,
+                    equalTo("The quick brown fox jumped over the lazy <em>test</em>.  "));
         }
     }
 
@@ -1032,16 +1138,26 @@ public class ExperimentalHighlighterTest extends ElasticsearchIntegrationTest {
 
     private void buildIndex(boolean offsetsInPostings, boolean fvhLikeTermVectors, int shards)
             throws IOException {
-        XContentBuilder builder = jsonBuilder().startObject();
-        builder.startObject("test").startObject("properties");
-        addField(builder, "test", offsetsInPostings, fvhLikeTermVectors);
-        addField(builder, "test2", offsetsInPostings, fvhLikeTermVectors);
-        builder.startObject("foo").field("type").value("object").startObject("properties");
-        addField(builder, "test", offsetsInPostings, fvhLikeTermVectors);
-        builder.endObject().endObject().endObject().endObject();
-        assertAcked(prepareCreate("test").setSettings(
-                ImmutableMap.<String, Object> of("number_of_shards", shards)).addMapping("test",
-                builder));
+        XContentBuilder mapping = jsonBuilder().startObject();
+        mapping.startObject("test").startObject("properties");
+        addField(mapping, "test", offsetsInPostings, fvhLikeTermVectors);
+        addField(mapping, "test2", offsetsInPostings, fvhLikeTermVectors);
+        mapping.startObject("foo").field("type").value("object").startObject("properties");
+        addField(mapping, "test", offsetsInPostings, fvhLikeTermVectors);
+        mapping.endObject().endObject().endObject().endObject();
+
+        XContentBuilder settings = jsonBuilder().startObject().startObject("index");
+        settings.field("number_of_shards", shards);
+        settings.startObject("analysis");
+        settings.startObject("analyzer");
+        settings.startObject("chars").field("tokenizer", "chars").endObject();
+        settings.endObject();
+        settings.startObject("tokenizer");
+        settings.startObject("chars").field("type", "pattern").field("pattern", "(.)")
+                .field("group", 0).endObject();
+        settings.endObject();
+        settings.endObject().endObject();
+        assertAcked(prepareCreate("test").setSettings(settings).addMapping("test", mapping));
         ensureYellow();
     }
 
@@ -1053,6 +1169,7 @@ public class ExperimentalHighlighterTest extends ElasticsearchIntegrationTest {
         addSubField(builder, "whitespace", "whitespace", offsetsInPostings, fvhLikeTermVectors);
         addSubField(builder, "english", "english", offsetsInPostings, fvhLikeTermVectors);
         addSubField(builder, "english2", "english", offsetsInPostings, fvhLikeTermVectors);
+        addSubField(builder, "chars", "chars", offsetsInPostings, fvhLikeTermVectors);
         builder.endObject().endObject();
     }
 
@@ -1097,6 +1214,7 @@ public class ExperimentalHighlighterTest extends ElasticsearchIntegrationTest {
         Map<String, Object> options = new HashMap<String, Object>();
 
         options.put("fragment_weigher", "sum");
+        options.put("phrase_as_terms", true);
         for (String hitSource : HIT_SOURCES) {
             options.put("hit_source", hitSource);
             SearchResponse response = search.setHighlighterOptions(options).get();

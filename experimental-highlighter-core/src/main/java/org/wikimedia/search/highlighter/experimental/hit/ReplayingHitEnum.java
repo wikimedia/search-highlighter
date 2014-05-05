@@ -2,6 +2,7 @@ package org.wikimedia.search.highlighter.experimental.hit;
 
 import java.util.ArrayDeque;
 import java.util.Iterator;
+import java.util.Locale;
 import java.util.Queue;
 
 import org.wikimedia.search.highlighter.experimental.HitEnum;
@@ -17,6 +18,13 @@ public class ReplayingHitEnum implements HitEnum {
 
     public void record(int position, int startOffset, int endOffset, float weight, int source) {
         hits.add(new Hit(position, startOffset, endOffset, weight, source));
+    }
+
+    /**
+     * Record the current position of e.
+     */
+    public void recordCurrent(HitEnum e) {
+        record(e.position(), e.startOffset(), e.endOffset(), e.weight(), e.source());
     }
 
     /**
@@ -87,6 +95,14 @@ public class ReplayingHitEnum implements HitEnum {
         return current.source;
     }
 
+    @Override
+    public String toString() {
+        if (current == null) {
+            return hits.toString();
+        }
+        return String.format(Locale.ENGLISH, "%s:%s", current, hits.toString());
+    }
+
     private static class Hit {
         final int position;
         final int startOffset;
@@ -100,6 +116,11 @@ public class ReplayingHitEnum implements HitEnum {
             this.endOffset = endOffset;
             this.weight = weight;
             this.source = source;
+        }
+
+        @Override
+        public String toString() {
+            return String.format(Locale.ENGLISH, "%s@%s", weight, position);
         }
     }
 

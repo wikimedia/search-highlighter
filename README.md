@@ -25,7 +25,6 @@ support).
 * By default boosts matches on unique query terms per fragment
 
 This highlighter does not (currently):
-* Respect phrase matches at all (all phrases are reduced to terms)
 * Support require_field_match
 
 Elasticsearch installation
@@ -205,11 +204,10 @@ The ```fetch_fields``` option can be used to return fields next to the
 highlighted field.  It is designed for use with object fields but has a number
 of limitations.  Read more about it [here](docs/fetched_fields.md).
 
-If you aren't using Elasticsearch, you can combine hits from multiple sources
-using:
-```java
-new OverlapMergingHitEnumWrapper(new MergingHitEnum(hitsToMerge, HitEnum.LessThans.OFFSETS));
-```
+The ```phrase_as_terms``` option can be set to true to highlight phrase queries
+(and multi phrase prefix queries) as a bag of terms rather then a phrase.  This
+defaults to ```false``` so phrase queries are restricted to full phrase
+matches.
 
 Offsets in postings or term vectors
 -----------------------------------

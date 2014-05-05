@@ -2,6 +2,7 @@ package org.wikimedia.highlighter.experimental.lucene;
 
 import java.io.IOException;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import org.apache.lucene.index.IndexReader;
@@ -42,9 +43,11 @@ public class QueryFlattener {
      */
     private final Set<Object> sentAutomata = new HashSet<Object>();
     private final int maxMultiTermQueryTerms;
+    private final boolean phraseAsTerms;
 
-    public QueryFlattener(int maxMultiTermQueryTerms) {
+    public QueryFlattener(int maxMultiTermQueryTerms, boolean phraseAsTerms) {
         this.maxMultiTermQueryTerms = maxMultiTermQueryTerms;
+        this.phraseAsTerms = phraseAsTerms;
     }
 
     public interface Callback {
@@ -69,10 +72,34 @@ public class QueryFlattener {
          *            so this will always provide the source.
          */
         void flattened(Automaton automaton, float boost, int source);
+
+        /**
+         * Called to mark the start of a phrase.
+         */
+        void startPhrase(int termCount);
+
+        void startPhrasePosition(int termCount);
+
+        void endPhrasePosition();
+
+        /**
+         * Called to mark the end of a phrase.
+         */
+        void endPhrase(int slop, float weight);
     }
 
     public void flatten(Query query, IndexReader reader, Callback callback) {
         flatten(query, 1f, null, reader, callback);
+    }
+
+    /**
+     * Should phrase queries be returned as terms?
+     * 
+     * @return true mean skip startPhrase and endPhrase and give the terms in a
+     *         phrase the weight of the whole phrase
+     */
+    protected boolean phraseAsTerms() {
+        return phraseAsTerms;
     }
 
     protected void flatten(Query query, float pathBoost, Object sourceOverride, IndexReader reader,
@@ -159,8 +186,19 @@ public class QueryFlattener {
     protected void flattenQuery(PhraseQuery query, float pathBoost, Object sourceOverride,
             IndexReader reader, Callback callback) {
         float boost = pathBoost * query.getBoost();
-        for (Term term : query.getTerms()) {
-            callback.flattened(term.bytes(), boost, sourceOverride);
+        Term[] terms = query.getTerms();
+        if (phraseAsTerms) {
+            for (Term term : terms) {
+                callback.flattened(term.bytes(), boost, sourceOverride);
+            }
+        } else {
+            callback.startPhrase(terms.length);
+            for (Term term : terms) {
+                callback.startPhrasePosition(1);
+                callback.flattened(term.bytes(), 0, sourceOverride);
+                callback.endPhrasePosition();
+            }
+            callback.endPhrase(query.getSlop(), boost);
         }
     }
 
@@ -203,12 +241,26 @@ public class QueryFlattener {
     protected void flattenQuery(MultiPhraseQuery query, float pathBoost, Object sourceOverride,
             IndexReader reader, Callback callback) {
         // Elasticsearch uses a more complicated method to preserve the phrase
-        // queries. We can't use them so we go with something simpler.
+        // queries.
         float boost = pathBoost * query.getBoost();
-        for (Term[] terms : query.getTermArrays()) {
-            for (Term term : terms) {
-                callback.flattened(term.bytes(), boost, sourceOverride);
+        List<Term[]> termArrays = query.getTermArrays();
+
+        if (phraseAsTerms) {
+            for (Term[] terms : termArrays) {
+                for (Term term : terms) {
+                    callback.flattened(term.bytes(), boost, sourceOverride);
+                }
             }
+        } else {
+            callback.startPhrase(termArrays.size());
+            for (Term[] terms : termArrays) {
+                callback.startPhrasePosition(terms.length);
+                for (Term term : terms) {
+                    callback.flattened(term.bytes(), 0, sourceOverride);
+                }
+                callback.endPhrasePosition();
+            }
+            callback.endPhrase(query.getSlop(), boost);
         }
     }
 
@@ -268,10 +320,12 @@ public class QueryFlattener {
 
     protected void flattenQuery(PrefixQuery query, float pathBoost, Object sourceOverride,
             IndexReader reader, Callback callback) {
-        flattenPrefixQuery(query.getPrefix().bytes(), pathBoost * query.getBoost(), sourceOverride, callback);
+        flattenPrefixQuery(query.getPrefix().bytes(), pathBoost * query.getBoost(), sourceOverride,
+                callback);
     }
 
-    protected void flattenPrefixQuery(BytesRef bytes, float boost, Object sourceOverride, Callback callback) {
+    protected void flattenPrefixQuery(BytesRef bytes, float boost, Object sourceOverride,
+            Callback callback) {
         // Should be safe not to copy this because it is fixed...
         if (!sentAutomata.add(bytes)) {
             return;

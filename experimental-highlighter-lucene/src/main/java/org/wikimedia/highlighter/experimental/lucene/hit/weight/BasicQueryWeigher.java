@@ -1,6 +1,7 @@
 package org.wikimedia.highlighter.experimental.lucene.hit.weight;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -16,6 +17,8 @@ import org.apache.lucene.util.automaton.ByteRunAutomaton;
 import org.apache.lucene.util.automaton.CompiledAutomaton;
 import org.wikimedia.highlighter.experimental.lucene.QueryFlattener;
 import org.wikimedia.highlighter.experimental.lucene.QueryFlattener.Callback;
+import org.wikimedia.search.highlighter.experimental.HitEnum;
+import org.wikimedia.search.highlighter.experimental.hit.PhraseHitEnumWrapper;
 import org.wikimedia.search.highlighter.experimental.hit.TermSourceFinder;
 import org.wikimedia.search.highlighter.experimental.hit.TermWeigher;
 
@@ -29,15 +32,20 @@ public class BasicQueryWeigher implements TermWeigher<BytesRef>, TermSourceFinde
     private final List<AutomatonSourceInfo> automata = new ArrayList<AutomatonSourceInfo>();
     private final List<BytesRef> terms = new ArrayList<BytesRef>();
     private final TermInfos termInfos;
+    private List<PhraseInfo> phrases;
     private CompiledAutomaton acceptable;
 
     public BasicQueryWeigher(IndexReader reader, Query query) {
-        this(new QueryFlattener(1000), new HashMapTermInfos(), reader, query);
+        this(new QueryFlattener(1000, false), new HashMapTermInfos(), reader, query);
     }
 
     public BasicQueryWeigher(QueryFlattener flattener, final TermInfos termInfos, IndexReader reader, Query query) {
         this.termInfos = termInfos;
         flattener.flatten(query, reader, new Callback() {
+            private int[][] phrase;
+            private int phrasePosition;
+            private int phraseTerm;
+
             @Override
             public void flattened(BytesRef term, float boost, Object rewritten) {
                 int source = rewritten == null ? term.hashCode() : rewritten.hashCode();
@@ -60,6 +68,9 @@ public class BasicQueryWeigher implements TermWeigher<BytesRef>, TermSourceFinde
                     }
                     info.weight = Math.max(info.weight, boost);
                 }
+                if (phrase != null) {
+                    phrase[phrasePosition][phraseTerm++] = info.source;
+                }
             }
 
             @Override
@@ -69,6 +80,32 @@ public class BasicQueryWeigher implements TermWeigher<BytesRef>, TermSourceFinde
                 info.source = source;
                 info.weight = boost;
                 automata.add(info);
+                if (phrase != null) {
+                    phrase[phrasePosition][phraseTerm++] = info.source;
+                }
+            }
+
+            @Override
+            public void startPhrase(int termCount) {
+                phrase = new int[termCount][];
+                phrasePosition = -1;
+            }
+            @Override
+            public void startPhrasePosition(int termCount) {
+                phrasePosition++;
+                phrase[phrasePosition] = new int[termCount];
+                phraseTerm = 0;
+            }
+            @Override
+            public void endPhrasePosition() {
+            }
+            @Override
+            public void endPhrase(int slop, float weight) {
+                if (phrases == null) {
+                    phrases = new ArrayList<PhraseInfo>();
+                }
+                phrases.add(new PhraseInfo(phrase, slop, weight));
+                phrase = null;
             }
         });
 
@@ -88,6 +125,19 @@ public class BasicQueryWeigher implements TermWeigher<BytesRef>, TermSourceFinde
     public int source(BytesRef term) {
         SourceInfo info = findInfo(term);
         return info == null ? 0 : info.source;
+    }
+
+    /**
+     * Wrap the hit enum if required to support things like phrases.
+     */
+    public HitEnum wrap(HitEnum e) {
+        if (phrases == null) {
+            return e;
+        }
+        for (PhraseInfo phrase: phrases) {
+            e = new PhraseHitEnumWrapper(e, phrase.phrase, phrase.weight, phrase.slop);
+        }
+        return e;
     }
 
     public CompiledAutomaton acceptableTerms() {
@@ -174,6 +224,22 @@ public class BasicQueryWeigher implements TermWeigher<BytesRef>, TermSourceFinde
         @Override
         public void put(BytesRef term, SourceInfo info) {
             infos.put(BytesRef.deepCopyOf(term), info);
+        }
+    }
+
+    private static class PhraseInfo {
+        private final int[][] phrase;
+        private final int slop;
+        private final float weight;
+
+        public PhraseInfo(int[][] phrase, int slop, float weight) {
+            this.phrase = phrase;
+            this.slop = slop;
+            this.weight = weight;
+
+            for (int i = 0; i < phrase.length; i++) {
+                Arrays.sort(phrase[i]);
+            }
         }
     }
 }

@@ -8,6 +8,7 @@ import static org.mockito.Matchers.eq;
 import static org.mockito.Matchers.isNull;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.wikimedia.highlighter.experimental.lucene.LuceneMatchers.recognises;
@@ -38,19 +39,40 @@ public class QueryFlattenerTest {
     @Test
     public void termQuery() {
         Callback callback = mock(Callback.class);
-        new QueryFlattener(1).flatten(new TermQuery(bar), null, callback);
+        new QueryFlattener(1, false).flatten(new TermQuery(bar), null, callback);
         verify(callback).flattened(bar.bytes(), 1f, null);
     }
 
     @Test
-    public void phraseQuery() {
+    public void phraseQueryPhraseAsPhrase() {
+        phraseQueryTestCase(false);
+    }
+
+    @Test
+    public void phraseQueryPhraseAsTerms() {
+        phraseQueryTestCase(true);
+    }
+
+    private void phraseQueryTestCase(boolean phraseAsTerms) {
         Callback callback = mock(Callback.class);
         PhraseQuery q = new PhraseQuery();
         q.add(bar);
         q.add(baz);
-        new QueryFlattener(1).flatten(q, null, callback);
-        verify(callback).flattened(bar.bytes(), 1f, null);
-        verify(callback).flattened(baz.bytes(), 1f, null);
+        new QueryFlattener(1, phraseAsTerms).flatten(q, null, callback);
+        verify(callback).flattened(bar.bytes(), phraseAsTerms ? 1f : 0, null);
+        verify(callback).flattened(baz.bytes(), phraseAsTerms ? 1f : 0, null);
+        if (phraseAsTerms) {
+            verify(callback, never()).startPhrase(anyInt());
+            verify(callback, never()).startPhrasePosition(anyInt());
+            verify(callback, never()).endPhrasePosition();
+            verify(callback, never()).endPhrase(anyInt(), anyFloat());
+        } else {
+            verify(callback).startPhrase(2);
+            verify(callback, times(2)).startPhrasePosition(1);
+            verify(callback, times(2)).endPhrasePosition();
+            verify(callback).endPhrase(0, 1);
+        }
+
     }
 
     @Test
@@ -59,7 +81,7 @@ public class QueryFlattenerTest {
         BooleanQuery bq = new BooleanQuery();
         bq.add(new BooleanClause(new TermQuery(bar), Occur.MUST));
         bq.add(new BooleanClause(new TermQuery(baz), Occur.MUST_NOT));
-        new QueryFlattener(1).flatten(bq, null, callback);
+        new QueryFlattener(1, false).flatten(bq, null, callback);
         verify(callback).flattened(bar.bytes(), 1f, null);
         verify(callback, never()).flattened(eq(baz.bytes()), anyFloat(), isNull(Query.class));
     }
@@ -69,7 +91,7 @@ public class QueryFlattenerTest {
         Callback callback = mock(Callback.class);
         Query rewritten = mock(Query.class);
         when(rewritten.rewrite(null)).thenReturn(new TermQuery(bar));
-        new QueryFlattener(1).flatten(rewritten, null, callback);
+        new QueryFlattener(1, false).flatten(rewritten, null, callback);
         verify(callback).flattened(bar.bytes(), 1f, rewritten);
     }
 
@@ -103,7 +125,7 @@ public class QueryFlattenerTest {
     @SafeVarargs
     private final void flattenedToAutomatonThatMatches(Query query, Matcher<Automaton>... matchers) {
         Callback callback = mock(Callback.class);
-        new QueryFlattener(1).flatten(query, null, callback);
+        new QueryFlattener(1, false).flatten(query, null, callback);
         ArgumentCaptor<Automaton> a = ArgumentCaptor.forClass(Automaton.class);
         verify(callback).flattened(a.capture(), eq(1f), anyInt());
         for (Matcher<Automaton> matcher : matchers) {

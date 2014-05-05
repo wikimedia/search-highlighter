@@ -29,9 +29,9 @@ import org.wikimedia.search.highlighter.experimental.Segmenter;
 import org.wikimedia.search.highlighter.experimental.SourceExtracter;
 import org.wikimedia.search.highlighter.experimental.hit.ConcatHitEnum;
 import org.wikimedia.search.highlighter.experimental.hit.PositionBoostingHitEnumWrapper;
+import org.wikimedia.search.highlighter.experimental.hit.WeightFilteredHitEnumWrapper;
 import org.wikimedia.search.highlighter.experimental.hit.ReplayingHitEnum.HitEnumAndLength;
 import org.wikimedia.search.highlighter.experimental.hit.TermWeigher;
-import org.wikimedia.search.highlighter.experimental.hit.WeightFilteredHitEnumWrapper;
 import org.wikimedia.search.highlighter.experimental.hit.weight.CachingTermWeigher;
 import org.wikimedia.search.highlighter.experimental.hit.weight.MultiplyingTermWeigher;
 import org.wikimedia.search.highlighter.experimental.snippet.MultiSegmenter;
@@ -158,12 +158,25 @@ public class FieldWrapper {
 
     public HitEnum buildHitEnum() throws IOException {
         HitEnum e = buildHitEnumForSource();
+
+        // Support phrase matches. Note that this must be done here rather than
+        // after merging HitEnums because each hit could map offsets to
+        // different positions. Since they are merged based on _offset_ the
+        // phrase wrapper will see jumbled positions, causing it to break
+        // horribly. Don't do it. I've tried.
+        e = weigher.wrap(e);
+
         FieldOptions options = context.field.fieldOptions();
         if (!options.scoreOrdered()) {
             Boolean topScoring = (Boolean)executionContext.getOption("top_scoring");
             if (topScoring == null || !topScoring) {
                 // If we don't pay attention to scoring then there is no point
                 // is messing with the weights.
+
+                // Filter 0 weight hits which pop out from the TokenStreamHitEnum,
+                // phrase match misses.
+                e = new WeightFilteredHitEnumWrapper(e, 0f);
+
                 return e;
             }
         }
@@ -184,6 +197,11 @@ public class FieldWrapper {
                 boosting.add(entry.getKey(), entry.getValue());
             }
         }
+
+        // Filter 0 weight hits which pop out from the TokenStreamHitEnum,
+        // phrase match misses, and boost_before being used as a filter.
+        e = new WeightFilteredHitEnumWrapper(e, 0f);
+
         return e;
     }
 
@@ -246,7 +264,7 @@ public class FieldWrapper {
         if (analyzer == null) {
             analyzer = context.context.analysisService().defaultIndexAnalyzer();
         }
-        return new WeightFilteredHitEnumWrapper(buildTokenStreamHitEnum(analyzer), 0);
+        return buildTokenStreamHitEnum(analyzer);
     }
 
     private HitEnum buildTokenStreamHitEnum(final Analyzer analyzer) throws IOException {

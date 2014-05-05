@@ -74,16 +74,22 @@ public class ReplayingHitEnumTest extends RandomizedTest {
 
     @Test
     public void restartable() {
+        // We also check that multiple calls to next after it returns false
+        // continues to return false until it is filled again.
         ReplayingHitEnum e = new ReplayingHitEnum();
         e.record(0, 0, 2, 0, 0);
         assertThat(e, advances());
         assertThat(e, allOf(atPosition(0), atStartOffset(0), atEndOffset(2), atWeight(0), atSource(0)));
+        assertThat(e, isEmpty());
+        assertThat(e, isEmpty());
+        assertThat(e, isEmpty());
         assertThat(e, isEmpty());
         assertEquals(e.waiting(), 0);
         e.record(10, 4, 20, 0, 1);
         assertEquals(e.waiting(), 1);
         assertThat(e, advances());
         assertThat(e, allOf(atPosition(10), atStartOffset(4), atEndOffset(20), atWeight(0), atSource(1)));
+        assertThat(e, isEmpty());
         assertThat(e, isEmpty());
     }
 

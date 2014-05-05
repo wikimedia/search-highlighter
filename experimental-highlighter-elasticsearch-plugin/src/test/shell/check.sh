@@ -115,6 +115,10 @@ function suite() {
     each
     export search=multi
     each
+    export search="\\\"huge string\\\""
+    each
+    export search="huge string"
+    each
   done
 }
 

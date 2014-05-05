@@ -61,7 +61,16 @@ public class ExperimentalHighlighter implements Highlighter {
                 // Elasticsearch versions.
                 BytesRefHashTermInfos infos = new BytesRefHashTermInfos(BigArrays.NON_RECYCLING_INSTANCE);
 //                context.context.addReleasable(infos);
-                weigher = new BasicQueryWeigher(new ElasticsearchQueryFlattener(100), infos,
+                boolean phraseAsTerms = false;
+                if (context.field.fieldOptions().options() != null) {
+                    Boolean phraseAsTermsOption = (Boolean) context.field.fieldOptions().options()
+                            .get("phrase_as_terms");
+                    if (phraseAsTermsOption != null) {
+                        phraseAsTerms = phraseAsTermsOption;
+                    }
+                }
+                weigher = new BasicQueryWeigher(
+                        new ElasticsearchQueryFlattener(100, phraseAsTerms), infos,
                         context.hitContext.topLevelReader(), context.query.originalQuery());
                 // Build the QueryWeigher with the top level reader to get all
                 // the frequency information
@@ -161,11 +170,12 @@ public class ExperimentalHighlighter implements Highlighter {
          * Builds the hit enum including any required wrappers.
          */
         private HitEnum buildHitEnum() throws IOException {
-            // TODO should we be more judicious about this wrapper?
-            // * We need the wrapper for matched fields
-            // * We need it whenever the analyzer generates overlaps
-            // * How much does it actually cost in performance?
-            return new OverlapMergingHitEnumWrapper(buildHitFindingHitEnum());
+            HitEnum e = buildHitFindingHitEnum();
+
+            // Merge any overlapping hits to support matched fields and
+            // analyzers that make overlaps.
+            e = new OverlapMergingHitEnumWrapper(e);
+            return e;
         }
 
         /**
