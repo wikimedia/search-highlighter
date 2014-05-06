@@ -38,7 +38,7 @@ Elasticsearch installation
 
 Install it like so:
 ```bash
-./bin/plugin --install org.wikimedia.search.highlighter/experimental-highlighter-elasticsearch-plugin/0.0.6
+./bin/plugin --install org.wikimedia.search.highlighter/experimental-highlighter-elasticsearch-plugin/0.0.8
 ```
 
 Then you can use it by searching like so:
