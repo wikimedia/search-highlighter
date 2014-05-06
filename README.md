@@ -11,6 +11,8 @@ Comes in three flavors:
 * Lucene: A jar containing a bridge between the core and lucene
 * Elasticsearch: An Elasticsearch plugin
 
+You can read more on how it works [here](docs/how_it_works.md).
+
 
 Elasticsearch value proposition
 -------------------------------
