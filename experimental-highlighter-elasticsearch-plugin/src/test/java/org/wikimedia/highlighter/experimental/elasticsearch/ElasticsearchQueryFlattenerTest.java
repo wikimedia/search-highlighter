@@ -5,6 +5,7 @@ import static org.hamcrest.Matchers.not;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Matchers.anyFloat;
 import static org.mockito.Matchers.anyInt;
+import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Matchers.isNull;
 import static org.mockito.Mockito.mock;
@@ -66,13 +67,13 @@ public class ElasticsearchQueryFlattenerTest {
             verify(callback, never()).startPhrase(anyInt());
             verify(callback, never()).startPhrasePosition(anyInt());
             verify(callback, never()).endPhrasePosition();
-            verify(callback, never()).endPhrase(anyInt(), anyFloat());
+            verify(callback, never()).endPhrase(anyString(), anyInt(), anyFloat());
         } else {
             verify(callback).startPhrase(3);
             verify(callback).startPhrasePosition(1);
             verify(callback, times(2)).startPhrasePosition(2);
             verify(callback, times(3)).endPhrasePosition();
-            verify(callback).endPhrase(0, 1);
+            verify(callback).endPhrase("test", 0, 1);
         }
     }
 }

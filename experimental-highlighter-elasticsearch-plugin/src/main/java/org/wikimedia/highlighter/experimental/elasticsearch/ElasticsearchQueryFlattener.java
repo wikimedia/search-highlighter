@@ -74,7 +74,7 @@ public class ElasticsearchQueryFlattener extends QueryFlattener {
                 flattenPrefixQuery(term.bytes(), 0, sourceOverride, callback);
             }
             callback.endPhrasePosition();
-            callback.endPhrase(query.getSlop(), boost);
+            callback.endPhrase(query.getField(), query.getSlop(), boost);
         }
     }
 }
