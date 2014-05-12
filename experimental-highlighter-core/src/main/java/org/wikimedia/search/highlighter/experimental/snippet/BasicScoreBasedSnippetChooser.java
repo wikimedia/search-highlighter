@@ -79,8 +79,7 @@ public class BasicScoreBasedSnippetChooser extends AbstractBasicSnippetChooser<B
     protected List<Snippet> results(State state) {
         // Dump to an array because Collections.sort would do it anyway, and
         // this prevents dumping, rebuilding, dumping, and rebuilding again.
-        ProtoSnippet[] protos = state.results.contents().toArray(
-                new ProtoSnippet[state.results.contents().size()]);
+        ProtoSnippet[] protos = state.results.contents();
 
         // Sort in source order, pick bounds ensuring no overlaps
         Arrays.sort(protos, ProtoSnippetComparators.OFFSETS);
@@ -161,15 +160,16 @@ public class BasicScoreBasedSnippetChooser extends AbstractBasicSnippetChooser<B
          * Copies the contents of the queue in heap order. If you need them in
          * any particular order, you should sort them.
          */
-        public List<ProtoSnippet> contents() {
-           List<ProtoSnippet> snippets = new ArrayList<ProtoSnippet>(size());
+        public ProtoSnippet[] contents() {
+           ProtoSnippet[] snippets = new ProtoSnippet[size()];
            Object[] heapArray = getHeapArray();
+           int s = 0;
            for (int i = 0; i < heapArray.length; i++) {
                Object o = heapArray[i];
                if (o == null) {
                    continue;
                }
-               snippets.add((ProtoSnippet)o);
+               snippets[s++] = (ProtoSnippet)o;
            }
            return snippets;
         }

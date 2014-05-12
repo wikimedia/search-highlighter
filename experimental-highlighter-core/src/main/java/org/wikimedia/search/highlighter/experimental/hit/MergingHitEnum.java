@@ -57,7 +57,12 @@ public class MergingHitEnum implements HitEnum {
     public int source() {
         return top.source();
     }
-    
+
+    @Override
+    public String toString() {
+        return queue.toString();
+    }
+
     private static class HitEnumPriorityQueue extends PriorityQueue<HitEnum> {
         private final LessThan<HitEnum> lessThan;
         
@@ -76,6 +81,26 @@ public class MergingHitEnum implements HitEnum {
         @Override
         protected boolean lessThan(HitEnum a, HitEnum b) {
             return lessThan.lessThan(a, b);
+        }
+
+        @Override
+        public String toString() {
+            StringBuilder b = new StringBuilder(1000).append('[');
+            Object[] arr = getHeapArray();
+            boolean comma = false;
+            for (int i = 0; i < arr.length; i++) {
+                if (arr[i] == null) {
+                    continue;
+                }
+                if (comma) {
+                    b.append(',');
+                } else {
+                    comma = true;
+                }
+                b.append(arr[i]);
+            }
+            b.append(']');
+            return b.toString();
         }
     }
 }

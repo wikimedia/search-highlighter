@@ -57,14 +57,26 @@ public class PhraseHitEnumWrapperTest {
         phrase(0, 0, 2);
         inputs(0, 1, 0, 1);
         result(2, 1, 2, 1);
+
+        inputs(0, 1, 1, 0, 1);
+        result(1, 1, 1, 1, 1);
     }
 
     @Test
     public void moreSlop() {
+        // Same inputs but vary the slop
         slop(3);
         phrase(0, 1, 2, 4, 5, 2);
-        inputs(0, 1, 2, 2, 2, 4, 4, 4, 4, 5, 1);
-        result(2, 2, 2, 1, 1, 2, 1, 1, 1, 2, 1);
+        inputs(0, 1, 2, 2, 2, 4, 4, 5, 1);
+        result(2, 2, 2, 1, 1, 2, 1, 2, 1);
+
+        slop(4);
+        inputs(0, 1, 2, 2, 2, 4, 4, 5, 1);
+        result(2, 2, 2, 1, 1, 2, 1, 2, 1);
+
+        slop(2);
+        inputs(0, 1, 2, 2, 2, 4, 4, 5, 1);
+        result(1, 1, 1, 1, 1, 1, 1, 1, 1);
     }
 
     @Test

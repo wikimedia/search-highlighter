@@ -32,7 +32,7 @@ public class BasicQueryWeigher implements TermWeigher<BytesRef>, TermSourceFinde
     private final List<AutomatonSourceInfo> automata = new ArrayList<AutomatonSourceInfo>();
     private final List<BytesRef> terms = new ArrayList<BytesRef>();
     private final TermInfos termInfos;
-    private List<PhraseInfo> phrases;
+    private Map<String, List<PhraseInfo>> phrases;
     private CompiledAutomaton acceptable;
 
     public BasicQueryWeigher(IndexReader reader, Query query) {
@@ -100,11 +100,20 @@ public class BasicQueryWeigher implements TermWeigher<BytesRef>, TermSourceFinde
             public void endPhrasePosition() {
             }
             @Override
-            public void endPhrase(int slop, float weight) {
+            public void endPhrase(String field, int slop, float weight) {
+                List<PhraseInfo> phraseList;
                 if (phrases == null) {
-                    phrases = new ArrayList<PhraseInfo>();
+                    phrases = new HashMap<String, List<PhraseInfo>>();
+                    phraseList = new ArrayList<PhraseInfo>();
+                    phrases.put(field, phraseList);
+                } else {
+                    phraseList = phrases.get(field);
+                    if (phraseList == null) {
+                        phraseList = new ArrayList<PhraseInfo>();
+                        phrases.put(field, phraseList);
+                    }
                 }
-                phrases.add(new PhraseInfo(phrase, slop, weight));
+                phraseList.add(new PhraseInfo(phrase, slop, weight));
                 phrase = null;
             }
         });
@@ -130,11 +139,15 @@ public class BasicQueryWeigher implements TermWeigher<BytesRef>, TermSourceFinde
     /**
      * Wrap the hit enum if required to support things like phrases.
      */
-    public HitEnum wrap(HitEnum e) {
+    public HitEnum wrap(String field, HitEnum e) {
         if (phrases == null) {
             return e;
         }
-        for (PhraseInfo phrase: phrases) {
+        List<PhraseInfo> phraseList = phrases.get(field);
+        if (phraseList == null) {
+            return e;
+        }
+        for (PhraseInfo phrase: phraseList) {
             e = new PhraseHitEnumWrapper(e, phrase.phrase, phrase.weight, phrase.slop);
         }
         return e;
@@ -240,6 +253,18 @@ public class BasicQueryWeigher implements TermWeigher<BytesRef>, TermSourceFinde
             for (int i = 0; i < phrase.length; i++) {
                 Arrays.sort(phrase[i]);
             }
+        }
+
+        @Override
+        public String toString() {
+            StringBuilder b = new StringBuilder();
+            for (int p = 0; p < phrase.length; p++) {
+                if (p != 0) {
+                    b.append(":");
+                }
+                b.append(Arrays.toString(phrase[p]));
+            }
+            return b.toString();
         }
     }
 }

@@ -85,7 +85,7 @@ public class QueryFlattener {
         /**
          * Called to mark the end of a phrase.
          */
-        void endPhrase(int slop, float weight);
+        void endPhrase(String field, int slop, float weight);
     }
 
     public void flatten(Query query, IndexReader reader, Callback callback) {
@@ -187,6 +187,9 @@ public class QueryFlattener {
             IndexReader reader, Callback callback) {
         float boost = pathBoost * query.getBoost();
         Term[] terms = query.getTerms();
+        if (terms.length == 0) {
+            return;
+        }
         if (phraseAsTerms) {
             for (Term term : terms) {
                 callback.flattened(term.bytes(), boost, sourceOverride);
@@ -198,7 +201,7 @@ public class QueryFlattener {
                 callback.flattened(term.bytes(), 0, sourceOverride);
                 callback.endPhrasePosition();
             }
-            callback.endPhrase(query.getSlop(), boost);
+            callback.endPhrase(terms[0].field(), query.getSlop(), boost);
         }
     }
 
@@ -253,14 +256,20 @@ public class QueryFlattener {
             }
         } else {
             callback.startPhrase(termArrays.size());
+            String field = null;
             for (Term[] terms : termArrays) {
                 callback.startPhrasePosition(terms.length);
                 for (Term term : terms) {
                     callback.flattened(term.bytes(), 0, sourceOverride);
+                    field = term.field();
                 }
                 callback.endPhrasePosition();
             }
-            callback.endPhrase(query.getSlop(), boost);
+            // field will be null if there are no terms in the phrase which
+            // would be weird
+            if (field != null) {
+                callback.endPhrase(field, query.getSlop(), boost);
+            }
         }
     }
 

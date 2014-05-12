@@ -164,9 +164,23 @@ public class PhraseHitEnumWrapper implements HitEnum {
         return pullFrom.source();
     }
 
+    @Override
+    public String toString() {
+        StringBuilder b = new StringBuilder(100).append('[');
+        for (int p = 0; p < phrase.length; p++) {
+            if (p != 0) {
+                b.append(":");
+            }
+            b.append(Arrays.toString(phrase[p]));
+        }
+        return b.append("]~").append(phraseSlop).append('\u21D2').append(phraseWeight).append('(')
+                .append(wrapped).append(')').toString();
+    }
+
     private class PhraseCandidate {
         private final int[] matchedPositions;
         private final int[] matchedSources;
+        private final int horizon;
         private int lastIndex = 0;
         private int phrasePosition;
 
@@ -175,10 +189,17 @@ public class PhraseHitEnumWrapper implements HitEnum {
             matchedPositions[0] = wrapped.position();
             matchedSources = new int[phrase.length];
             matchedSources[0] = wrapped.source();
+            horizon = matchedPositions[0] + phrase.length + phraseSlop - 1;
             phrasePosition = 1;
         }
 
         private boolean acceptsCurrent() {
+            // No if we're way beyond
+            int distanceLeft = horizon - wrapped.position();
+            if (distanceLeft < 0) {
+                return false;
+            }
+            // Yes on a match
             int index = Arrays.binarySearch(phrase[phrasePosition], wrapped.source());
             if (index >= 0) {
                 lastIndex++;
@@ -187,7 +208,8 @@ public class PhraseHitEnumWrapper implements HitEnum {
                 phrasePosition++;
                 return true;
             }
-            return wrapped.position() <= matchedPositions[lastIndex] + phraseSlop;
+            // Yes if we're within the slop, no otherwise
+            return distanceLeft >= 1;
         }
 
         private boolean isMatch() {

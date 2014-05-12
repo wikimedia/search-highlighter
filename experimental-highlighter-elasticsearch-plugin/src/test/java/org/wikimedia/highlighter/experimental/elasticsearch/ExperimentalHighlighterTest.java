@@ -109,6 +109,26 @@ public class ExperimentalHighlighterTest extends ElasticsearchIntegrationTest {
     }
 
     @Test
+    public void phraseWithSeparations() throws IOException {
+        buildIndex();
+        indexTestData("simple test very simple stuff stuff stuff test");
+
+        SearchRequestBuilder search = testSearch(matchPhraseQuery("test", "simple test"));
+        for (String hitSource : HIT_SOURCES) {
+            SearchResponse response = setHitSource(search, hitSource).get();
+            assertHighlight(response, 0, "test", 0,
+                    equalTo("<em>simple</em> <em>test</em> very simple stuff stuff stuff test"));
+        }
+
+        search = testSearch(matchPhraseQuery("test", "simple test").slop(3));
+        for (String hitSource : HIT_SOURCES) {
+            SearchResponse response = setHitSource(search, hitSource).get();
+            assertHighlight(response, 0, "test", 0,
+                    equalTo("<em>simple</em> <em>test</em> very <em>simple</em> stuff stuff stuff <em>test</em>"));
+        }
+    }
+
+    @Test
     public void singlePhrasePrefixQuery() throws IOException {
         buildIndex();
         indexTestData();
@@ -178,6 +198,35 @@ public class ExperimentalHighlighterTest extends ElasticsearchIntegrationTest {
             SearchResponse response = search.get();
             assertHighlight(response, 0, "test", 0,
                     equalTo("<em>test</em> very <em>simple</em> <em>test</em> double"));
+        }
+    }
+
+    /**
+     * Even without require_field_match phrases must be restricted to the field
+     * on which they are defined. If they aren't then you can get some really
+     * confusing false matches.
+     */
+    @Test
+    public void phraseQueryOnJustOneOfTwoMatchedFields() throws IOException {
+        buildIndex();
+        indexTestData("Blah blah blah video games blah blah blah.  video game blah blah.");
+
+        HighlightBuilder.Field field = new HighlightBuilder.Field("test").matchedFields("test",
+                "test.english");
+        SearchRequestBuilder search = testSearch(matchPhraseQuery("test", "video game"))
+                .addHighlightedField(field);
+        for (String hitSource : HIT_SOURCES) {
+            SearchResponse response = setHitSource(search, hitSource).get();
+            assertHighlight(response, 0, "test", 0,
+                    equalTo("Blah blah blah video games blah blah blah.  <em>video</em> <em>game</em> blah blah."));
+        }
+
+        search = testSearch(matchPhraseQuery("test.english", "video game"))
+                .addHighlightedField(field);
+        for (String hitSource : HIT_SOURCES) {
+            SearchResponse response = setHitSource(search, hitSource).get();
+            assertHighlight(response, 0, "test", 0,
+                    equalTo("Blah blah blah <em>video</em> <em>games</em> blah blah blah.  <em>video</em> <em>game</em> blah blah."));
         }
     }
 

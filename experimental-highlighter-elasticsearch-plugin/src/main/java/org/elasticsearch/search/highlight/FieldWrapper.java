@@ -164,7 +164,7 @@ public class FieldWrapper {
         // different positions. Since they are merged based on _offset_ the
         // phrase wrapper will see jumbled positions, causing it to break
         // horribly. Don't do it. I've tried.
-        e = weigher.wrap(e);
+        e = weigher.wrap(context.fieldName, e);
 
         FieldOptions options = context.field.fieldOptions();
         if (!options.scoreOrdered()) {

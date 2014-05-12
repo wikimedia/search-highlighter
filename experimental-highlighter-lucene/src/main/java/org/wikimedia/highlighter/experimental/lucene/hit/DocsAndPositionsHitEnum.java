@@ -3,6 +3,7 @@ package org.wikimedia.highlighter.experimental.lucene.hit;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 import org.apache.lucene.index.AtomicReader;
 import org.apache.lucene.index.AtomicReaderContext;
@@ -149,5 +150,10 @@ public class DocsAndPositionsHitEnum implements HitEnum {
     @Override
     public int source() {
         return source;
+    }
+
+    @Override
+    public String toString() {
+        return String.format(Locale.ENGLISH, "%s(%s)", weight, source);
     }
 }
