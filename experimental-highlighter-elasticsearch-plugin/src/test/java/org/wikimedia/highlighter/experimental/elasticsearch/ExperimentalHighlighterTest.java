@@ -25,6 +25,7 @@ import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertNotH
 import static org.hamcrest.Matchers.both;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.lessThan;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -106,6 +107,53 @@ public class ExperimentalHighlighterTest extends ElasticsearchIntegrationTest {
             assertHighlight(response, 0, "test", 0,
                     equalTo("<em>test</em> very <em>simple</em> <em>test</em>"));
         }
+    }
+
+    /**
+     * Makes sure we skip fields if the query is just phrases and none of them are on the field.
+     */
+    @Test
+    public void phraseQueryNoPossiblePhrasesSpeed() throws IOException {
+        buildIndex();
+        // Size has to be big enough to make it really expensive to highlight
+        // the field to exaggerate the issue
+        int size = 100000;
+        int iterations = 100;
+        StringBuilder b = new StringBuilder(5 * size);
+        for (int i = 0; i < size; i++) {
+            b.append("test ");
+        }
+        client().prepareIndex("test", "test", "1").setSource("test", b.toString(), "test2", "simple test").get();
+        refresh();
+
+        SearchRequestBuilder search = setHitSource(testSearch(matchPhraseQuery("test2", "simple test")), "analyze");
+        long start = System.currentTimeMillis();
+        for (int i = 0; i < iterations; i++) {
+            SearchResponse response = search.get();
+            assertNotHighlighted(response, 0, "test");
+        }
+        long total = System.currentTimeMillis() - start;
+        // Without the optimization this runs about 7 seconds, with, about 1.8.
+        assertThat(total, lessThan(3000l));
+
+        search.addHighlightedField(new HighlightBuilder.Field("test2").matchedFields("test.english", "test.whitespace"));
+        start = System.currentTimeMillis();
+        for (int i = 0; i < iterations; i++) {
+            SearchResponse response = search.get();
+            assertNotHighlighted(response, 0, "test");
+        }
+        total = System.currentTimeMillis() - start;
+        // Without the optimization this runs about 7 seconds, with, about 1.8.
+        assertThat(total, lessThan(3000l));
+
+        search.addHighlightedField(new HighlightBuilder.Field("test2").matchedFields("test", "test2.whitespace"));
+        start = System.currentTimeMillis();
+        for (int i = 0; i < iterations; i++) {
+            assertNoFailures(search.get());
+        }
+        total = System.currentTimeMillis() - start;
+        // Without the optimization this runs about 7 seconds, with, about 1.8.
+        assertThat(total, lessThan(3000l));
     }
 
     @Test

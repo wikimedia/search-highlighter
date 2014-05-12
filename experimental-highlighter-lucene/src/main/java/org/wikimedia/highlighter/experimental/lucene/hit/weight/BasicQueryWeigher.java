@@ -16,7 +16,6 @@ import org.apache.lucene.util.automaton.BasicOperations;
 import org.apache.lucene.util.automaton.ByteRunAutomaton;
 import org.apache.lucene.util.automaton.CompiledAutomaton;
 import org.wikimedia.highlighter.experimental.lucene.QueryFlattener;
-import org.wikimedia.highlighter.experimental.lucene.QueryFlattener.Callback;
 import org.wikimedia.search.highlighter.experimental.HitEnum;
 import org.wikimedia.search.highlighter.experimental.hit.PhraseHitEnumWrapper;
 import org.wikimedia.search.highlighter.experimental.hit.TermSourceFinder;
@@ -32,6 +31,7 @@ public class BasicQueryWeigher implements TermWeigher<BytesRef>, TermSourceFinde
     private final List<AutomatonSourceInfo> automata = new ArrayList<AutomatonSourceInfo>();
     private final List<BytesRef> terms = new ArrayList<BytesRef>();
     private final TermInfos termInfos;
+    private final float maxTermWeight;
     private Map<String, List<PhraseInfo>> phrases;
     private CompiledAutomaton acceptable;
 
@@ -41,83 +41,9 @@ public class BasicQueryWeigher implements TermWeigher<BytesRef>, TermSourceFinde
 
     public BasicQueryWeigher(QueryFlattener flattener, final TermInfos termInfos, IndexReader reader, Query query) {
         this.termInfos = termInfos;
-        flattener.flatten(query, reader, new Callback() {
-            private int[][] phrase;
-            private int phrasePosition;
-            private int phraseTerm;
-
-            @Override
-            public void flattened(BytesRef term, float boost, Object rewritten) {
-                int source = rewritten == null ? term.hashCode() : rewritten.hashCode();
-                SourceInfo info = termInfos.get(term);
-                if (info == null) {
-                    info = new SourceInfo();
-                    info.source = source;
-                    info.weight = boost;
-                    termInfos.put(term, info);
-                    terms.add(BytesRef.deepCopyOf(term));
-                } else {
-                    /*
-                     * If both terms can't be traced back to the same source we
-                     * declare that they are from a new source by merging the
-                     * hashes. This might not be ideal, but it has the advantage
-                     * of being consistent.
-                     */
-                    if (info.source != source) {
-                        info.source = source * 31 + source;
-                    }
-                    info.weight = Math.max(info.weight, boost);
-                }
-                if (phrase != null) {
-                    phrase[phrasePosition][phraseTerm++] = info.source;
-                }
-            }
-
-            @Override
-            public void flattened(Automaton automaton, float boost, int source) {
-                AutomatonSourceInfo info = new AutomatonSourceInfo(automaton);
-                // Automata don't have a hashcode so we always use the source
-                info.source = source;
-                info.weight = boost;
-                automata.add(info);
-                if (phrase != null) {
-                    phrase[phrasePosition][phraseTerm++] = info.source;
-                }
-            }
-
-            @Override
-            public void startPhrase(int termCount) {
-                phrase = new int[termCount][];
-                phrasePosition = -1;
-            }
-            @Override
-            public void startPhrasePosition(int termCount) {
-                phrasePosition++;
-                phrase[phrasePosition] = new int[termCount];
-                phraseTerm = 0;
-            }
-            @Override
-            public void endPhrasePosition() {
-            }
-            @Override
-            public void endPhrase(String field, int slop, float weight) {
-                List<PhraseInfo> phraseList;
-                if (phrases == null) {
-                    phrases = new HashMap<String, List<PhraseInfo>>();
-                    phraseList = new ArrayList<PhraseInfo>();
-                    phrases.put(field, phraseList);
-                } else {
-                    phraseList = phrases.get(field);
-                    if (phraseList == null) {
-                        phraseList = new ArrayList<PhraseInfo>();
-                        phrases.put(field, phraseList);
-                    }
-                }
-                phraseList.add(new PhraseInfo(phrase, slop, weight));
-                phrase = null;
-            }
-        });
-
+        FlattenerCallback callback = new FlattenerCallback();
+        flattener.flatten(query, reader, callback);
+        maxTermWeight = callback.maxTermWeight;
     }
 
     public boolean singleTerm() {
@@ -151,6 +77,27 @@ public class BasicQueryWeigher implements TermWeigher<BytesRef>, TermSourceFinde
             e = new PhraseHitEnumWrapper(e, phrase.phrase, phrase.weight, phrase.slop);
         }
         return e;
+    }
+
+    /**
+     * The maximum weight of a single term without phrase queries.
+     */
+    public float maxTermWeight() {
+        return maxTermWeight;
+    }
+
+    /**
+     * Are there phrases on the provided field?
+     */
+    public boolean areTherePhrasesOnField(String field) {
+        if (phrases == null) {
+            return false;
+        }
+        List<PhraseInfo> phraseList = phrases.get(field);
+        if (phraseList == null) {
+            return false;
+        }
+        return !phraseList.isEmpty();
     }
 
     public CompiledAutomaton acceptableTerms() {
@@ -265,6 +212,89 @@ public class BasicQueryWeigher implements TermWeigher<BytesRef>, TermSourceFinde
                 b.append(Arrays.toString(phrase[p]));
             }
             return b.toString();
+        }
+    }
+
+    private class FlattenerCallback implements QueryFlattener.Callback {
+        private float maxTermWeight = 0;
+        private int[][] phrase;
+        private int phrasePosition;
+        private int phraseTerm;
+
+        @Override
+        public void flattened(BytesRef term, float boost, Object rewritten) {
+            maxTermWeight = Math.max(maxTermWeight, boost);
+            int source = rewritten == null ? term.hashCode() : rewritten.hashCode();
+            SourceInfo info = termInfos.get(term);
+            if (info == null) {
+                info = new SourceInfo();
+                info.source = source;
+                info.weight = boost;
+                termInfos.put(term, info);
+                terms.add(BytesRef.deepCopyOf(term));
+            } else {
+                /*
+                 * If both terms can't be traced back to the same source we
+                 * declare that they are from a new source by merging the
+                 * hashes. This might not be ideal, but it has the advantage
+                 * of being consistent.
+                 */
+                if (info.source != source) {
+                    info.source = source * 31 + source;
+                }
+                info.weight = Math.max(info.weight, boost);
+            }
+            if (phrase != null) {
+                phrase[phrasePosition][phraseTerm++] = info.source;
+            }
+        }
+
+        @Override
+        public void flattened(Automaton automaton, float boost, int source) {
+            maxTermWeight = Math.max(maxTermWeight, boost);
+            AutomatonSourceInfo info = new AutomatonSourceInfo(automaton);
+            // Automata don't have a hashcode so we always use the source
+            info.source = source;
+            info.weight = boost;
+            automata.add(info);
+            if (phrase != null) {
+                phrase[phrasePosition][phraseTerm++] = info.source;
+            }
+        }
+
+        @Override
+        public void startPhrase(int termCount) {
+            phrase = new int[termCount][];
+            phrasePosition = -1;
+        }
+
+        @Override
+        public void startPhrasePosition(int termCount) {
+            phrasePosition++;
+            phrase[phrasePosition] = new int[termCount];
+            phraseTerm = 0;
+        }
+
+        @Override
+        public void endPhrasePosition() {
+        }
+
+        @Override
+        public void endPhrase(String field, int slop, float weight) {
+            List<PhraseInfo> phraseList;
+            if (phrases == null) {
+                phrases = new HashMap<String, List<PhraseInfo>>();
+                phraseList = new ArrayList<PhraseInfo>();
+                phrases.put(field, phraseList);
+            } else {
+                phraseList = phrases.get(field);
+                if (phraseList == null) {
+                    phraseList = new ArrayList<PhraseInfo>();
+                    phrases.put(field, phraseList);
+                }
+            }
+            phraseList.add(new PhraseInfo(phrase, slop, weight));
+            phrase = null;
         }
     }
 }

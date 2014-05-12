@@ -30,6 +30,7 @@ import org.wikimedia.search.highlighter.experimental.Snippet;
 import org.wikimedia.search.highlighter.experimental.SnippetChooser;
 import org.wikimedia.search.highlighter.experimental.SnippetFormatter;
 import org.wikimedia.search.highlighter.experimental.SnippetWeigher;
+import org.wikimedia.search.highlighter.experimental.hit.EmptyHitEnum;
 import org.wikimedia.search.highlighter.experimental.hit.MergingHitEnum;
 import org.wikimedia.search.highlighter.experimental.hit.OverlapMergingHitEnumWrapper;
 import org.wikimedia.search.highlighter.experimental.snippet.BasicScoreBasedSnippetChooser;
@@ -184,6 +185,9 @@ public class ExperimentalHighlighter implements Highlighter {
         private HitEnum buildHitFindingHitEnum() throws IOException {
             Set<String> matchedFields = context.field.fieldOptions().matchedFields();
             if (matchedFields == null) {
+                if (!defaultField.canProduceHits()) {
+                    return EmptyHitEnum.INSTANCE;
+                }
                 return defaultField.buildHitEnum();
             }
             List<HitEnum> toMerge = new ArrayList<HitEnum>(matchedFields.size());
@@ -195,8 +199,16 @@ public class ExperimentalHighlighter implements Highlighter {
                 } else {
                     wrapper = new FieldWrapper(this, context, weigher, field);
                 }
-                toMerge.add(wrapper.buildHitEnum());
+                if (wrapper.canProduceHits()) {
+                    toMerge.add(wrapper.buildHitEnum());
+                }
                 extraFields.add(wrapper);
+            }
+            if (toMerge.size() == 0) {
+                return EmptyHitEnum.INSTANCE;
+            }
+            if (toMerge.size() == 1) {
+                return toMerge.get(0);
             }
             return new MergingHitEnum(toMerge, HitEnum.LessThans.OFFSETS);
         }

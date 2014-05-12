@@ -29,9 +29,9 @@ import org.wikimedia.search.highlighter.experimental.Segmenter;
 import org.wikimedia.search.highlighter.experimental.SourceExtracter;
 import org.wikimedia.search.highlighter.experimental.hit.ConcatHitEnum;
 import org.wikimedia.search.highlighter.experimental.hit.PositionBoostingHitEnumWrapper;
-import org.wikimedia.search.highlighter.experimental.hit.WeightFilteredHitEnumWrapper;
 import org.wikimedia.search.highlighter.experimental.hit.ReplayingHitEnum.HitEnumAndLength;
 import org.wikimedia.search.highlighter.experimental.hit.TermWeigher;
+import org.wikimedia.search.highlighter.experimental.hit.WeightFilteredHitEnumWrapper;
 import org.wikimedia.search.highlighter.experimental.hit.weight.CachingTermWeigher;
 import org.wikimedia.search.highlighter.experimental.hit.weight.MultiplyingTermWeigher;
 import org.wikimedia.search.highlighter.experimental.snippet.MultiSegmenter;
@@ -110,8 +110,6 @@ public class FieldWrapper {
     }
 
     public SourceExtracter<String> buildSourceExtracter() throws IOException {
-        // TODO loading source is expensive if you don't need it. Delay
-        // this.
         List<String> fieldValues = getFieldValues();
         switch (fieldValues.size()) {
         case 0:
@@ -154,6 +152,15 @@ public class FieldWrapper {
             }
             return builder.build();
         }
+    }
+
+    /**
+     * Can this field produce hits? This'll return false when there are no terms
+     * worth anything that aren't in phrases AND there aren't any phrases on
+     * this field.
+     */
+    public boolean canProduceHits() {
+        return weigher.maxTermWeight() > 0 || weigher.areTherePhrasesOnField(context.fieldName);
     }
 
     public HitEnum buildHitEnum() throws IOException {
