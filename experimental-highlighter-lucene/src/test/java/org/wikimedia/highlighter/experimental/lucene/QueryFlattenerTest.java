@@ -2,6 +2,7 @@ package org.wikimedia.highlighter.experimental.lucene;
 
 import static org.hamcrest.Matchers.not;
 import static org.junit.Assert.assertThat;
+import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyFloat;
 import static org.mockito.Matchers.anyInt;
 import static org.mockito.Matchers.anyString;
@@ -100,6 +101,14 @@ public class QueryFlattenerTest {
     public void fuzzyQuery() {
         flattenedToAutomatonThatMatches(new FuzzyQuery(bar), recognises(bar), recognises(baz),
                 recognises("barr"), recognises("bor"), not(recognises("barrrr")));
+    }
+
+    @Test
+    public void fuzzyQueryShorterThenPrefix() {
+        Callback callback = mock(Callback.class);
+        new QueryFlattener(1, false).flatten(new FuzzyQuery(bar, 2, 100), null, callback);
+        verify(callback).flattened(bar.bytes(), 1f, null);
+        verify(callback, never()).flattened(any(Automaton.class), anyFloat(), anyInt());
     }
 
     @Test

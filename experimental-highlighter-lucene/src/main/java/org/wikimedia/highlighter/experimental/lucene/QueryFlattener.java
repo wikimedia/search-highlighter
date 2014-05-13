@@ -354,6 +354,7 @@ public class QueryFlattener {
         String term = query.getTerm().bytes().utf8ToString();
         if (query.getPrefixLength() >= term.length()) {
             callback.flattened(query.getTerm().bytes(), boost, sourceOverride);
+            return;
         }
 
         FuzzyQueryInfo key = new FuzzyQueryInfo(term, query);
