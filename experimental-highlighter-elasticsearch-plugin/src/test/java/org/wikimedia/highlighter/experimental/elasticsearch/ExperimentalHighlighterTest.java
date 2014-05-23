@@ -109,6 +109,25 @@ public class ExperimentalHighlighterTest extends ElasticsearchIntegrationTest {
         }
     }
 
+    @Test
+    public void phraseAsTermsSwitch() throws IOException {
+        buildIndex();
+        client().prepareIndex("test", "test", "1").setSource("test", "phrase test test", "test2", "phrase phrase test").get();
+        refresh();
+
+        Map<String, Object> options = new HashMap<String, Object>();
+        SearchRequestBuilder search = testSearch(matchPhraseQuery("test", "phrase test"))
+                .addHighlightedField(new HighlightBuilder.Field("test2").options(options));
+        options.put("phrase_as_terms", true);
+        for (String hitSource : HIT_SOURCES) {
+            SearchResponse response = setHitSource(search, hitSource).get();
+            assertHighlight(response, 0, "test", 0,
+                    equalTo("<em>phrase</em> <em>test</em> test"));
+            assertHighlight(response, 0, "test2", 0,
+                    equalTo("<em>phrase</em> <em>phrase</em> <em>test</em>"));
+        }
+    }
+
     /**
      * Makes sure we skip fields if the query is just phrases and none of them are on the field.
      */

@@ -55,27 +55,28 @@ public class ExperimentalHighlighter implements Highlighter {
                 entry = new CacheEntry();
                 context.hitContext.cache().put(CACHE_KEY, entry);
             }
-            BasicQueryWeigher weigher = entry.queryWeighers.get(context.query.originalQuery());
+            boolean phraseAsTerms = false;
+            if (context.field.fieldOptions().options() != null) {
+                Boolean phraseAsTermsOption = (Boolean) context.field.fieldOptions().options()
+                        .get("phrase_as_terms");
+                if (phraseAsTermsOption != null) {
+                    phraseAsTerms = phraseAsTermsOption;
+                }
+            }
+            QueryCacheKey key = new QueryCacheKey(context.query.originalQuery(), phraseAsTerms);
+            BasicQueryWeigher weigher = entry.queryWeighers.get(key);
             if (weigher == null) {
                 // TODO recycle. But addReleasble doesn't seem to close it
                 // properly later. I believe this is fixed in later
                 // Elasticsearch versions.
                 BytesRefHashTermInfos infos = new BytesRefHashTermInfos(BigArrays.NON_RECYCLING_INSTANCE);
 //                context.context.addReleasable(infos);
-                boolean phraseAsTerms = false;
-                if (context.field.fieldOptions().options() != null) {
-                    Boolean phraseAsTermsOption = (Boolean) context.field.fieldOptions().options()
-                            .get("phrase_as_terms");
-                    if (phraseAsTermsOption != null) {
-                        phraseAsTerms = phraseAsTermsOption;
-                    }
-                }
                 weigher = new BasicQueryWeigher(
                         new ElasticsearchQueryFlattener(100, phraseAsTerms), infos,
                         context.hitContext.topLevelReader(), context.query.originalQuery());
                 // Build the QueryWeigher with the top level reader to get all
                 // the frequency information
-                entry.queryWeighers.put(context.query.originalQuery(), weigher);
+                entry.queryWeighers.put(key, weigher);
             }
             HighlightExecutionContext executionContext = new HighlightExecutionContext(context,
                     weigher);
@@ -91,7 +92,44 @@ public class ExperimentalHighlighter implements Highlighter {
     }
 
     static class CacheEntry {
-        private final Map<Query, BasicQueryWeigher> queryWeighers = new HashMap<Query, BasicQueryWeigher>();
+        private final Map<QueryCacheKey, BasicQueryWeigher> queryWeighers = new HashMap<QueryCacheKey, BasicQueryWeigher>();
+    }
+
+    static class QueryCacheKey {
+        private final Query query;
+        private final boolean phraseAsTerms;
+        public QueryCacheKey(Query query, boolean phraseAsTerms) {
+            this.query = query;
+            this.phraseAsTerms = phraseAsTerms;
+        }
+
+        @Override
+        public int hashCode() {
+            final int prime = 31;
+            int result = 1;
+            result = prime * result + (phraseAsTerms ? 1231 : 1237);
+            result = prime * result + ((query == null) ? 0 : query.hashCode());
+            return result;
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj)
+                return true;
+            if (obj == null)
+                return false;
+            if (getClass() != obj.getClass())
+                return false;
+            QueryCacheKey other = (QueryCacheKey) obj;
+            if (phraseAsTerms != other.phraseAsTerms)
+                return false;
+            if (query == null) {
+                if (other.query != null)
+                    return false;
+            } else if (!query.equals(other.query))
+                return false;
+            return true;
+        }
     }
 
     static class HighlightExecutionContext {
