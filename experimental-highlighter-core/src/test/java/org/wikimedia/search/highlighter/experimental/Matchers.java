@@ -47,6 +47,14 @@ public class Matchers {
         return new WeightMatcher(closeTo(score, 0.0001));
     }
 
+    public static Matcher<HitEnum> atQueryWeight(float score) {
+        return new QueryWeightMatcher(closeTo(score, 0.0001));
+    }
+
+    public static Matcher<HitEnum> atCorpusWeight(float score) {
+        return new CorpusWeightMatcher(closeTo(score, 0.0001));
+    }
+
     public static Matcher<HitEnum> atSource(int source) {
         return new SourceMatcher(source);
     }
@@ -220,13 +228,65 @@ public class Matchers {
         @Override
         protected void describeMismatchSafely(HitEnum e, Description description) {
             description.appendText("but at weight ");
-            weightMatcher.describeMismatch(e.weight(), description);
+            weightMatcher.describeMismatch(e.queryWeight() * e.corpusWeight(), description);
         }
 
         @Override
         protected boolean matchesSafely(HitEnum e) {
             // It is easier to use the Double Matcher then make new float ones
-            return weightMatcher.matches((double) e.weight());
+            return weightMatcher.matches((double) e.queryWeight() * e.corpusWeight());
+        }
+    }
+
+    private static class QueryWeightMatcher extends TypeSafeMatcher<HitEnum> {
+        private final Matcher<Double> weightMatcher;
+
+        public QueryWeightMatcher(Matcher<Double> weightMatcher) {
+            this.weightMatcher = weightMatcher;
+        }
+
+        @Override
+        public void describeTo(Description description) {
+            description.appendText("at query weight ");
+            weightMatcher.describeTo(description);
+        }
+
+        @Override
+        protected void describeMismatchSafely(HitEnum e, Description description) {
+            description.appendText("but at query weight ");
+            weightMatcher.describeMismatch(e.queryWeight(), description);
+        }
+
+        @Override
+        protected boolean matchesSafely(HitEnum e) {
+            // It is easier to use the Double Matcher then make new float ones
+            return weightMatcher.matches((double) e.queryWeight());
+        }
+    }
+
+    private static class CorpusWeightMatcher extends TypeSafeMatcher<HitEnum> {
+        private final Matcher<Double> weightMatcher;
+
+        public CorpusWeightMatcher(Matcher<Double> weightMatcher) {
+            this.weightMatcher = weightMatcher;
+        }
+
+        @Override
+        public void describeTo(Description description) {
+            description.appendText("at corpus weight ");
+            weightMatcher.describeTo(description);
+        }
+
+        @Override
+        protected void describeMismatchSafely(HitEnum e, Description description) {
+            description.appendText("but at corpus weight ");
+            weightMatcher.describeMismatch(e.corpusWeight(), description);
+        }
+
+        @Override
+        protected boolean matchesSafely(HitEnum e) {
+            // It is easier to use the Double Matcher then make new float ones
+            return weightMatcher.matches((double) e.corpusWeight());
         }
     }
 }

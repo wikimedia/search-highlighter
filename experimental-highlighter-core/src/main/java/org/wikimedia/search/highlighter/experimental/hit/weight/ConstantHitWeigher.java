@@ -6,14 +6,8 @@ import org.wikimedia.search.highlighter.experimental.hit.HitWeigher;
  * Simple HitWeigher that adds a constant weight.
  */
 public class ConstantHitWeigher implements HitWeigher {
+    public static final HitWeigher ONE = new ConstantHitWeigher(1);
     private final float weight;
-
-    /**
-     * Initialize with a constant weight of 1.
-     */
-    public ConstantHitWeigher() {
-        this(1);
-    }
 
     /**
      * Initialize with a constant weight.

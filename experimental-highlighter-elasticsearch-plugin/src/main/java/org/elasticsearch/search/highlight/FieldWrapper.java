@@ -33,7 +33,7 @@ import org.wikimedia.search.highlighter.experimental.hit.ReplayingHitEnum.HitEnu
 import org.wikimedia.search.highlighter.experimental.hit.TermWeigher;
 import org.wikimedia.search.highlighter.experimental.hit.WeightFilteredHitEnumWrapper;
 import org.wikimedia.search.highlighter.experimental.hit.weight.CachingTermWeigher;
-import org.wikimedia.search.highlighter.experimental.hit.weight.MultiplyingTermWeigher;
+import org.wikimedia.search.highlighter.experimental.hit.weight.ConstantTermWeigher;
 import org.wikimedia.search.highlighter.experimental.snippet.MultiSegmenter;
 import org.wikimedia.search.highlighter.experimental.source.NonMergingMultiSourceExtracter;
 import org.wikimedia.search.highlighter.experimental.source.StringSourceExtracter;
@@ -257,13 +257,13 @@ public class FieldWrapper {
     private HitEnum buildPostingsHitEnum() throws IOException {
         return DocsAndPositionsHitEnum.fromPostings(context.hitContext.reader(),
                 context.hitContext.docId(), context.mapper.names().indexName(),
-                weigher.acceptableTerms(), getTermWeigher(false), weigher);
+                weigher.acceptableTerms(), getQueryWeigher(false), getCorpusWeigher(false), weigher);
     }
 
     private HitEnum buildTermVectorsHitEnum() throws IOException {
         return DocsAndPositionsHitEnum.fromTermVectors(context.hitContext.reader(),
                 context.hitContext.docId(), context.mapper.names().indexName(),
-                weigher.acceptableTerms(), getTermWeigher(false), weigher);
+                weigher.acceptableTerms(), getQueryWeigher(false), getCorpusWeigher(false), weigher);
     }
 
     private HitEnum buildTokenStreamHitEnum() throws IOException {
@@ -321,43 +321,33 @@ public class FieldWrapper {
                     "If analyzing to find hits each matched field must have a unique analyzer.", e);
         }
         this.tokenStream = tokenStream;
-        return new TokenStreamHitEnum(tokenStream, getTermWeigher(false), weigher);
+        return new TokenStreamHitEnum(tokenStream, getQueryWeigher(true), getCorpusWeigher(true), weigher);
     }
 
-    private TermWeigher<BytesRef> getTermWeigher(boolean mightWeighTermsMultipleTimes) {
-        boolean slowToWeighTermsMultipleTimes = false;
-        TermWeigher<BytesRef> termWeigher = weigher;
+    private TermWeigher<BytesRef> getQueryWeigher(boolean mightWeighTermsMultipleTimes) {
+        return weigher;
+    }
+
+    private TermWeigher<BytesRef> getCorpusWeigher(boolean mightWeighTermsMultipleTimes) {
         // No need to add fancy term weights if there is only one term or we
         // aren't using score order.
-        if (!weigher.singleTerm()) {
-            boolean scoreMatters = context.field.fieldOptions().scoreOrdered();
-            if (!scoreMatters) {
-                Boolean topScoring = (Boolean) executionContext.getOption("top_scoring");
-                scoreMatters = topScoring != null && topScoring;
-            }
-            if (scoreMatters) {
-                Boolean useDefaultSimilarity = (Boolean) executionContext.getOption("default_similarity");
-                if (useDefaultSimilarity == null || useDefaultSimilarity == true) {
-                    slowToWeighTermsMultipleTimes = true;
-                    // Use a top level reader to fetch the frequency information
-                    termWeigher = new MultiplyingTermWeigher<BytesRef>(weigher,
-                            new DefaultSimilarityTermWeigher(context.hitContext.topLevelReader(),
-                                    context.fieldName));
-                }
-            }
+        if (weigher.singleTerm() || !executionContext.scoreMatters()) {
+            return new ConstantTermWeigher<BytesRef>();
         }
-        if (mightWeighTermsMultipleTimes && slowToWeighTermsMultipleTimes) {
-            // The normal way to get here is because you have to reanalyze the
-            // source document to find hits. In that case weighing the document
-            // is unlikely to be a big performance bottleneck.  OTOH, this should
-            // reduce any IO that might come from this step which is worth it.
-
+        Boolean useDefaultSimilarity = (Boolean) executionContext.getOption("default_similarity");
+        if (useDefaultSimilarity == null || useDefaultSimilarity == true) {
+            // Use a top level reader to fetch the frequency information
+            TermWeigher<BytesRef> corpusWeigher = new DefaultSimilarityTermWeigher(context.hitContext.topLevelReader(),
+                    context.fieldName);
             // TODO maybe switch to a recycling instance on the off chance that
             // we find a ton of terms in the document. That'd require more work
             // to make sure everything is properly Releasable.
-            termWeigher = new CachingTermWeigher<BytesRef>(new BytesRefTermWeigherCache(
-                    BigArrays.NON_RECYCLING_INSTANCE), weigher);
+            if (mightWeighTermsMultipleTimes) {
+                corpusWeigher = new CachingTermWeigher<BytesRef>(new BytesRefTermWeigherCache(
+                        BigArrays.NON_RECYCLING_INSTANCE), corpusWeigher);
+            }
+            return corpusWeigher;
         }
-        return termWeigher;
+        return new ConstantTermWeigher<BytesRef>();
     }
 }

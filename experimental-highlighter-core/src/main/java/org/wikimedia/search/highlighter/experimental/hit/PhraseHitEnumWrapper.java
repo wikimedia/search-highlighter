@@ -9,6 +9,8 @@ import org.wikimedia.search.highlighter.experimental.HitEnum;
 
 /**
  * Naive implementation of applying different scores to phrases.
+ * 
+ * TODO this weight phrases too low because it doesn't include the default similarity
  */
 public class PhraseHitEnumWrapper implements HitEnum {
     private final ReplayingHitEnum replaying = new ReplayingHitEnum();
@@ -35,6 +37,8 @@ public class PhraseHitEnumWrapper implements HitEnum {
         for (int i = 0; i < phrase.length; i++) {
             this.phrase[i] = new int[] {phrase[i]};
         }
+
+        assert phraseIsSorted();
     }
 
     /**
@@ -145,18 +149,20 @@ public class PhraseHitEnumWrapper implements HitEnum {
     }
 
     @Override
-    public float weight() {
+    public float queryWeight() {
         if (weight >= 0) {
             return weight;
         }
-        weight = pullFrom.weight();
+        weight = pullFrom.queryWeight();
         for (PhraseCandidate candidate : currentMatches) {
-            float newWeight = candidate.weight();
-            if (newWeight > 0) {
-                weight = Math.max(weight, newWeight);
-            }
+            weight = Math.max(weight, candidate.weight());
         }
         return weight;
+    }
+
+    @Override
+    public float corpusWeight() {
+        return pullFrom.corpusWeight();
     }
 
     @Override

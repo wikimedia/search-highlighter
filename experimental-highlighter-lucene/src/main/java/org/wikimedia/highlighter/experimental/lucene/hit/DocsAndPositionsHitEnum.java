@@ -30,31 +30,34 @@ import org.wikimedia.search.highlighter.experimental.hit.TermWeigher;
  */
 public class DocsAndPositionsHitEnum implements HitEnum {
     public static HitEnum fromTermVectors(IndexReader reader, int docId, String fieldName,
-            CompiledAutomaton acceptable, TermWeigher<BytesRef> weigher,
-            TermSourceFinder<BytesRef> sourceFinder) throws IOException {
+            CompiledAutomaton acceptable, TermWeigher<BytesRef> queryWeigher,
+            TermWeigher<BytesRef> corpusWeigher, TermSourceFinder<BytesRef> sourceFinder)
+            throws IOException {
         Fields vectors = reader.getTermVectors(docId);
         if (vectors == null) {
             // No term vectors so no hits
             return EmptyHitEnum.INSTANCE;
         }
-        return fromTerms(vectors.terms(fieldName), acceptable, reader, -1, weigher, sourceFinder);
+        return fromTerms(vectors.terms(fieldName), acceptable, reader, -1, queryWeigher,
+                corpusWeigher, sourceFinder);
     }
 
     public static HitEnum fromPostings(IndexReader reader, int docId, String fieldName,
-            CompiledAutomaton acceptable, TermWeigher<BytesRef> weigher,
-            TermSourceFinder<BytesRef> sourceFinder) throws IOException {
+            CompiledAutomaton acceptable, TermWeigher<BytesRef> queryWeigher,
+            TermWeigher<BytesRef> corpusWeigher, TermSourceFinder<BytesRef> sourceFinder)
+            throws IOException {
         List<AtomicReaderContext> leaves = reader.getContext().leaves();
         int leaf = ReaderUtil.subIndex(docId, leaves);
         AtomicReaderContext subcontext = leaves.get(leaf);
         AtomicReader atomicReader = subcontext.reader();
         docId -= subcontext.docBase;
         return fromTerms(atomicReader.terms(fieldName), acceptable, reader, docId,
-                weigher, sourceFinder);
+                queryWeigher, corpusWeigher, sourceFinder);
     }
 
     private static HitEnum fromTerms(Terms terms, CompiledAutomaton acceptable, IndexReader reader,
-            int docId, TermWeigher<BytesRef> weigher, TermSourceFinder<BytesRef> sourceFinder)
-            throws IOException {
+            int docId, TermWeigher<BytesRef> queryWeigher, TermWeigher<BytesRef> corpusWeigher,
+            TermSourceFinder<BytesRef> sourceFinder) throws IOException {
         if (terms == null) {
             // No term vectors on field so no hits
             return EmptyHitEnum.INSTANCE;
@@ -79,23 +82,31 @@ public class DocsAndPositionsHitEnum implements HitEnum {
                     continue;
                 }
             }
-            HitEnum e = new DocsAndPositionsHitEnum(dp, weigher.weigh(term), sourceFinder.source(term));
+            HitEnum e = new DocsAndPositionsHitEnum(dp, queryWeigher.weigh(term), corpusWeigher.weigh(term), sourceFinder.source(term));
             enums.add(e);
             dp = null;
+        }
+        switch (enums.size()){
+        case 0:
+            return EmptyHitEnum.INSTANCE;
+        case 1:
+            return enums.get(0);
         }
         return new MergingHitEnum(enums, HitEnum.LessThans.POSITION);
     }
 
     private final DocsAndPositionsEnum dp;
     private final int freq;
-    private final float weight;
+    private final float queryWeight;
+    private final float corpusWeight;
     private final int source;
     private int current;
     private int position;
 
-    public DocsAndPositionsHitEnum(DocsAndPositionsEnum dp, float weight, int source) {
+    public DocsAndPositionsHitEnum(DocsAndPositionsEnum dp, float queryWeight, float corpusWeight, int source) {
         this.dp = dp;
-        this.weight = weight;
+        this.queryWeight = queryWeight;
+        this.corpusWeight = corpusWeight;
         this.source = source;
         try {
             freq = dp.freq();
@@ -143,8 +154,13 @@ public class DocsAndPositionsHitEnum implements HitEnum {
     }
 
     @Override
-    public float weight() {
-        return weight;
+    public float queryWeight() {
+        return queryWeight;
+    }
+
+    @Override
+    public float corpusWeight() {
+        return corpusWeight;
     }
 
     @Override
@@ -154,6 +170,6 @@ public class DocsAndPositionsHitEnum implements HitEnum {
 
     @Override
     public String toString() {
-        return String.format(Locale.ENGLISH, "%s(%s)", weight, source);
+        return String.format(Locale.ENGLISH, "%s(%s)", queryWeight * corpusWeight, source);
     }
 }

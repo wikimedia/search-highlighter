@@ -101,14 +101,20 @@ public class ExperimentalHighlighter implements Highlighter {
         private List<FieldWrapper> extraFields;
         private SegmenterFactory segmenterFactory;
         private DelayedSegmenter segmenter;
+        private boolean scoreMatters;
 
         HighlightExecutionContext(HighlighterContext context, BasicQueryWeigher weigher) {
             this.context = context;
             this.weigher = weigher;
-            defaultField = new FieldWrapper(this, context, weigher);
         }
 
         HighlightField highlight() throws IOException {
+            scoreMatters = context.field.fieldOptions().scoreOrdered();
+            if (!scoreMatters) {
+                Boolean topScoring = (Boolean) getOption("top_scoring");
+                scoreMatters = topScoring != null && topScoring;
+            }
+            defaultField = new FieldWrapper(this, context, weigher);
             int numberOfSnippets = context.field.fieldOptions().numberOfFragments();
             if (numberOfSnippets == 0) {
                 numberOfSnippets = 1;
@@ -165,6 +171,10 @@ public class ExperimentalHighlighter implements Highlighter {
                 return null;
             }
             return context.field.fieldOptions().options().get(key);
+        }
+        
+        boolean scoreMatters() {
+            return scoreMatters;
         }
 
         /**

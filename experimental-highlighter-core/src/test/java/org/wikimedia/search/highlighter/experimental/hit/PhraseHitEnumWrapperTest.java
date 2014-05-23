@@ -4,8 +4,9 @@ import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.lessThan;
 import static org.junit.Assert.assertThat;
 import static org.wikimedia.search.highlighter.experimental.Matchers.advances;
+import static org.wikimedia.search.highlighter.experimental.Matchers.atCorpusWeight;
 import static org.wikimedia.search.highlighter.experimental.Matchers.atPosition;
-import static org.wikimedia.search.highlighter.experimental.Matchers.atWeight;
+import static org.wikimedia.search.highlighter.experimental.Matchers.atQueryWeight;
 import static org.wikimedia.search.highlighter.experimental.Matchers.isEmpty;
 
 import java.util.concurrent.TimeUnit;
@@ -105,7 +106,7 @@ public class PhraseHitEnumWrapperTest {
         long start = System.currentTimeMillis();
         for (int p = 0; p < size; p++) {
             assertThat(e, advances());
-            assertThat(e, allOf(atPosition(p), atWeight(2)));
+            assertThat(e, allOf(atPosition(p), atQueryWeight(2), atCorpusWeight(p)));
         }
         assertThat(e, isEmpty());
         assertThat(System.currentTimeMillis() - start, lessThan(TimeUnit.SECONDS.toMillis(10)));
@@ -135,7 +136,7 @@ public class PhraseHitEnumWrapperTest {
 
     private void inputs(int... sources) {
         for (int p = 0; p < sources.length; p++) {
-            input.record(p, 0, 0, 1, sources[p]);
+            input.record(p, 0, 0, 1, p, sources[p]);
         }
     }
 
@@ -143,7 +144,8 @@ public class PhraseHitEnumWrapperTest {
         HitEnum e = new PhraseHitEnumWrapper(input, phrase, weight, slop);
         for (int p = 0; p < weights.length; p++) {
             assertThat(e, advances());
-            assertThat(e, allOf(atPosition(p), atWeight(weights[p])));
+            // PhraseHitEnum only modifies the query weight so we set corpus weight to something and make sure it doesn't change.
+            assertThat(e, allOf(atPosition(p), atQueryWeight(weights[p]), atCorpusWeight(p)));
         }
         assertThat(e, isEmpty());
     }

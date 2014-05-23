@@ -17,7 +17,8 @@ public class OverlapMergingHitEnumWrapper implements HitEnum {
     private int position;
     private int startOffset;
     private int endOffset;
-    private float weight;
+    private float queryWeight;
+    private float corpusWeight;
     private int source;
 
     public OverlapMergingHitEnumWrapper(HitEnum delegate) {
@@ -35,7 +36,8 @@ public class OverlapMergingHitEnumWrapper implements HitEnum {
         startOffset = delegate.startOffset();
         endOffset = delegate.endOffset();
         assert startOffset <= endOffset;
-        weight = delegate.weight();
+        queryWeight = delegate.queryWeight();
+        corpusWeight = delegate.corpusWeight();
         source = delegate.source();
         while (true) {
             if (!delegate.next()) {
@@ -55,7 +57,8 @@ public class OverlapMergingHitEnumWrapper implements HitEnum {
             endOffset = delegate.endOffset();
             assert delegate.startOffset() <= delegate.endOffset();
             assert startOffset <= endOffset;
-            weight = Math.max(weight, delegate.weight());
+            queryWeight = Math.max(queryWeight, delegate.queryWeight());
+            corpusWeight = Math.max(corpusWeight, delegate.corpusWeight());
             /*
              * If both hits can't be traced back to the same source we declare
              * that they are from a new source by merging the hashes. This might
@@ -84,12 +87,23 @@ public class OverlapMergingHitEnumWrapper implements HitEnum {
     }
 
     @Override
-    public float weight() {
-        return weight;
+    public float queryWeight() {
+        return queryWeight;
+    }
+
+    @Override
+    public float corpusWeight() {
+        return corpusWeight;
     }
 
     @Override
     public int source() {
         return source;
+    }
+
+    @Override
+    public String toString() {
+        // Union symbol - close enought to merge, right?
+        return "\u222A" + delegate.toString();
     }
 }

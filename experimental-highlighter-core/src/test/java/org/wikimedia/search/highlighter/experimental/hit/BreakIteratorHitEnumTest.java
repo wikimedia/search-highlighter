@@ -12,8 +12,6 @@ import java.util.Locale;
 import org.junit.Test;
 import org.wikimedia.search.highlighter.experimental.HitEnum;
 import org.wikimedia.search.highlighter.experimental.SourceExtracter;
-import org.wikimedia.search.highlighter.experimental.hit.BreakIteratorHitEnum;
-import org.wikimedia.search.highlighter.experimental.hit.weight.ConstantHitWeigher;
 import org.wikimedia.search.highlighter.experimental.source.StringSourceExtracter;
 
 public class BreakIteratorHitEnumTest extends AbstractHitEnumTestBase {
@@ -21,7 +19,7 @@ public class BreakIteratorHitEnumTest extends AbstractHitEnumTestBase {
 	protected HitEnum buildEnum(String str) {
         BreakIterator itr = BreakIterator.getWordInstance(Locale.ENGLISH);
         itr.setText(str);
-        return BreakIteratorHitEnum.repair(new BreakIteratorHitEnum(itr, new ConstantHitWeigher()),
+        return BreakIteratorHitEnum.repair(new BreakIteratorHitEnum(itr),
                 str);
     }
 
@@ -31,7 +29,7 @@ public class BreakIteratorHitEnumTest extends AbstractHitEnumTestBase {
         BreakIterator itr = BreakIterator.getWordInstance(Locale.ENGLISH);
         itr.setText(source);
         SourceExtracter<String> extracter = new StringSourceExtracter(source);
-        HitEnum e = new BreakIteratorHitEnum(itr, new ConstantHitWeigher());
+        HitEnum e = new BreakIteratorHitEnum(itr);
         assertThat(e, advances());
         assertThat(e, hit(0, extracter, equalTo("hero")));
         assertThat(e, advances());

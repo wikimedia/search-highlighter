@@ -279,6 +279,27 @@ public class ExperimentalHighlighterTest extends ElasticsearchIntegrationTest {
     }
 
     /**
+     * Make sure term queries don't overwhelm phrase queries in the presence of
+     * boosts.
+     */
+    @Test
+    public void termAndPhraseQueryWeightsAndDifferentFields() throws IOException {
+        buildIndex();
+        indexTestData(new Object[] { "test very simple foo", "test test" });
+        SearchRequestBuilder search = testSearch(
+                boolQuery().should(matchPhraseQuery("test", "simple foo"))
+                        .should(termQuery("test", "test"))
+                        .should(termQuery("fake", "test").boost(1000f))
+                        .should(matchPhraseQuery("test", "simple foo").boost(1000f))).setHighlighterOrder(
+                "score");
+        for (String hitSource : HIT_SOURCES) {
+            SearchResponse response = setHitSource(search, hitSource).get();
+            assertHighlight(response, 0, "test", 0,
+                    equalTo("<em>test</em> very <em>simple</em> <em>foo</em>"));
+        }
+    }
+
+    /**
      * Checks that phrase query filtering works in the presence of matched
      * fields with very different tokenizers.
      */

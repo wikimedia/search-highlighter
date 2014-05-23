@@ -33,6 +33,7 @@ public class BasicQueryWeigher implements TermWeigher<BytesRef>, TermSourceFinde
     private final TermInfos termInfos;
     private final float maxTermWeight;
     private Map<String, List<PhraseInfo>> phrases;
+    private Map<PhraseKey, PhraseInfo> allPhrases;
     private CompiledAutomaton acceptable;
 
     public BasicQueryWeigher(IndexReader reader, Query query) {
@@ -190,7 +191,7 @@ public class BasicQueryWeigher implements TermWeigher<BytesRef>, TermSourceFinde
     private static class PhraseInfo {
         private final int[][] phrase;
         private final int slop;
-        private final float weight;
+        private float weight;
 
         public PhraseInfo(int[][] phrase, int slop, float weight) {
             this.phrase = phrase;
@@ -281,6 +282,23 @@ public class BasicQueryWeigher implements TermWeigher<BytesRef>, TermSourceFinde
 
         @Override
         public void endPhrase(String field, int slop, float weight) {
+            // Because terms get the max weight across all fields phrases must as well.
+            PhraseKey key = new PhraseKey(phrase);
+            PhraseInfo info;
+            if (allPhrases == null) {
+                allPhrases = new HashMap<PhraseKey, PhraseInfo>();
+                info = new PhraseInfo(phrase, slop, weight);
+                allPhrases.put(key, info);
+            } else {
+                info = allPhrases.get(key);
+                if (info == null) {
+                    info = new PhraseInfo(phrase, slop, weight);
+                    allPhrases.put(key, info);
+                } else {
+                    info.weight = Math.max(info.weight, weight);
+                }
+            }
+
             List<PhraseInfo> phraseList;
             if (phrases == null) {
                 phrases = new HashMap<String, List<PhraseInfo>>();
@@ -293,8 +311,40 @@ public class BasicQueryWeigher implements TermWeigher<BytesRef>, TermSourceFinde
                     phrases.put(field, phraseList);
                 }
             }
-            phraseList.add(new PhraseInfo(phrase, slop, weight));
+            phraseList.add(info);
             phrase = null;
+        }
+    }
+
+    private static class PhraseKey {
+        private final int[][] phrase;
+
+        public PhraseKey(int[][] phrase) {
+            this.phrase = phrase;
+        }
+
+        @Override
+        public int hashCode() {
+            final int prime = 31;
+            int result = 1;
+            for (int[] position: phrase)  {
+                result = prime * result + Arrays.hashCode(position);
+            }
+            return result;
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj)
+                return true;
+            if (obj == null)
+                return false;
+            if (getClass() != obj.getClass())
+                return false;
+            PhraseKey other = (PhraseKey) obj;
+            if (!Arrays.deepEquals(phrase, other.phrase))
+                return false;
+            return true;
         }
     }
 }

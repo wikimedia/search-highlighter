@@ -35,7 +35,7 @@ public abstract class AbstractBasicSnippetChooserTestBase {
     protected HitEnum hitEnum;
 
     protected void setup(String source) {
-        setup(source, new ConstantHitWeigher());
+        setup(source, ConstantHitWeigher.ONE);
     }
 
     /**
@@ -53,7 +53,7 @@ public abstract class AbstractBasicSnippetChooserTestBase {
         extracter = new StringSourceExtracter(source);
         BreakIterator itr = BreakIterator.getWordInstance(Locale.ENGLISH);
         itr.setText(source);
-        hitEnum = BreakIteratorHitEnum.repair(new BreakIteratorHitEnum(itr, weigher), source);
+        hitEnum = BreakIteratorHitEnum.repair(new BreakIteratorHitEnum(itr, weigher, ConstantHitWeigher.ONE), source);
     }
 
     @Before

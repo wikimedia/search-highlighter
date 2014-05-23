@@ -29,9 +29,18 @@ public interface HitEnum extends Segment {
     int endOffset();
 
     /**
-     * Weight of the hit.  Only positive numbers are valid.
+     * Weight of the hit from the query definition. This stores the weight that
+     * the user placed on the search term. Only positive numbers are valid.
      */
-    float weight();
+    float queryWeight();
+
+    /**
+     * Weight of the hit from the corpus being searched. Only positive numbers
+     * are valid. This makes the most sense in a Lucene context where certain
+     * terms may be worth more then others based on the frequency with which
+     * they appear across all documents in the search corpus.
+     */
+    float corpusWeight();
 
     /**
      * Hashcode of source of this hit. We use the hashcode here because the loss
