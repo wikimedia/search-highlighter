@@ -161,7 +161,10 @@ public final class MultiSegmenter implements Segmenter {
         if (inSegmenterStartOffset < 0) {
             return findSegmenterBackwards();
         }
-        assert segmenter != null;
+        if (segmenter == null) {
+            // Can happen if the first request didn't find anything.
+            return false;
+        }
         if (inSegmenterStartOffset >= segmenter.length) {
             inSegmenterStartOffset -= segmenter.length + offsetGap;
             lastStartOffset += segmenter.length + offsetGap;

@@ -7,8 +7,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.wikimedia.search.highlighter.experimental.Segmenter;
 import org.wikimedia.search.highlighter.experimental.SourceExtracter;
-import org.wikimedia.search.highlighter.experimental.snippet.CharScanningSegmenter;
-import org.wikimedia.search.highlighter.experimental.snippet.MultiSegmenter;
 import org.wikimedia.search.highlighter.experimental.source.StringMergingMultiSourceExtracter;
 import org.wikimedia.search.highlighter.experimental.source.StringSourceExtracter;
 
@@ -59,7 +57,9 @@ public class MultiSegmenterTest extends RandomizedTest {
         assertTrue(segmenter.acceptable(offsetGap * 3, offsetGap * 3 + 1));
         assertThat(segmenter.memo(offsetGap * 3, offsetGap * 3 + 1)
                 .pickBounds(0, Integer.MAX_VALUE), extracted(extracter, equalTo("a")));
-        assertFalse(segmenter.acceptable(0, 1));
+        if (offsetGap > 0) {
+            assertFalse(segmenter.acceptable(0, 1));
+        }
         assertFalse(segmenter.acceptable(offsetGap * 3, offsetGap * 3 + 3));
     }
 
