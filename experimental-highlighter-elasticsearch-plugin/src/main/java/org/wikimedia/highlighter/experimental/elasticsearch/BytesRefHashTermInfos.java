@@ -46,8 +46,7 @@ public class BytesRefHashTermInfos implements TermInfos, Releasable {
     }
 
     @Override
-    public boolean release() throws ElasticsearchException {
-        Releasables.release(bytes, infos);
-        return true;
+    public void close() throws ElasticsearchException {
+        Releasables.close(bytes, infos);
     }
 }
