@@ -5,7 +5,7 @@ import java.util.Locale;
 import org.wikimedia.search.highlighter.experimental.HitEnum;
 
 /**
- * Filters a HitEnum to hits that have more then a certain weight.
+ * Filters a HitEnum to hits that have more then a certain weight (query weight * corpus weight).
  */
 public class WeightFilteredHitEnumWrapper extends AbstractFilteredHitEnumWrapper {
     private final float cutoff;
@@ -17,7 +17,7 @@ public class WeightFilteredHitEnumWrapper extends AbstractFilteredHitEnumWrapper
 
     @Override
     protected boolean keep() {
-        return wrapped().weight() > cutoff;
+        return wrapped().queryWeight() * wrapped().corpusWeight() > cutoff;
     }
 
     @Override

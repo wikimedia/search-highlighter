@@ -49,8 +49,13 @@ public class MergingHitEnum implements HitEnum {
     }
 
     @Override
-    public float weight() {
-        return top.weight();
+    public float queryWeight() {
+        return top.queryWeight();
+    }
+
+    @Override
+    public float corpusWeight() {
+        return top.corpusWeight();
     }
 
     @Override

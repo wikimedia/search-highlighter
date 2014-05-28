@@ -65,8 +65,13 @@ public class ConcatHitEnum implements HitEnum {
     }
 
     @Override
-    public float weight() {
-        return current.delegate().weight();
+    public float queryWeight() {
+        return current.delegate().queryWeight();
+    }
+
+    @Override
+    public float corpusWeight() {
+        return current.delegate().corpusWeight();
     }
 
     @Override

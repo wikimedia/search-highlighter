@@ -32,7 +32,12 @@ public final class EmptyHitEnum implements HitEnum {
     }
 
     @Override
-    public float weight() {
+    public float queryWeight() {
+        return 0;
+    }
+
+    @Override
+    public float corpusWeight() {
         return 0;
     }
 

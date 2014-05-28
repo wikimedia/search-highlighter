@@ -2,11 +2,12 @@ package org.wikimedia.search.highlighter.experimental.hit;
 
 import static org.hamcrest.Matchers.allOf;
 import static org.wikimedia.search.highlighter.experimental.Matchers.advances;
+import static org.wikimedia.search.highlighter.experimental.Matchers.atCorpusWeight;
 import static org.wikimedia.search.highlighter.experimental.Matchers.atEndOffset;
 import static org.wikimedia.search.highlighter.experimental.Matchers.atPosition;
+import static org.wikimedia.search.highlighter.experimental.Matchers.atQueryWeight;
 import static org.wikimedia.search.highlighter.experimental.Matchers.atSource;
 import static org.wikimedia.search.highlighter.experimental.Matchers.atStartOffset;
-import static org.wikimedia.search.highlighter.experimental.Matchers.atWeight;
 import static org.wikimedia.search.highlighter.experimental.Matchers.isEmpty;
 
 import java.util.ArrayList;
@@ -33,10 +34,11 @@ public class ConcatHitEnumTest extends RandomizedTest {
                 int position = randomInt();
                 int startOffset = randomInt();
                 int endOffset = randomInt();
-                float weight = randomFloat();
+                float queryWeight = randomFloat();
+                float corpusWeight = randomFloat();
                 int source = randomInt();
-                inputForReplaying.record(position, startOffset, endOffset, weight, source);
-                inputForConcat.record(position, startOffset, endOffset, weight, source);
+                inputForReplaying.record(position, startOffset, endOffset, queryWeight, corpusWeight, source);
+                inputForConcat.record(position, startOffset, endOffset, queryWeight, corpusWeight, source);
             }
             allEnumsForReplaying.add(new HitEnumAndLength(inputForReplaying, 99));
             allEnumsForConcat.add(new HitEnumAndLength(inputForConcat, 99));
@@ -49,8 +51,9 @@ public class ConcatHitEnumTest extends RandomizedTest {
             assertThat(
                     concat,
                     allOf(atPosition(replaying.position()), atStartOffset(replaying.startOffset()),
-                            atEndOffset(replaying.endOffset()), atWeight(replaying.weight()),
-                            atSource(replaying.source())));
+                            atEndOffset(replaying.endOffset()),
+                            atQueryWeight(replaying.queryWeight()),
+                            atCorpusWeight(replaying.corpusWeight()), atSource(replaying.source())));
         }
         assertThat(concat, isEmpty());
     }

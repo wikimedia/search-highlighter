@@ -9,6 +9,7 @@ public class TokenStreamHitEnumTest extends AbstractLuceneHitEnumTestBase {
     @Override
     protected HitEnum buildEnum(String source) {
         return new TokenStreamHitEnum(buildTokenStream(source, mockAnalyzer()),
-                new ConstantTermWeigher<BytesRef>(), new NoSourceTermSourceFinder<BytesRef>());
+                new ConstantTermWeigher<BytesRef>(), new ConstantTermWeigher<BytesRef>(),
+                new NoSourceTermSourceFinder<BytesRef>());
     }
 }

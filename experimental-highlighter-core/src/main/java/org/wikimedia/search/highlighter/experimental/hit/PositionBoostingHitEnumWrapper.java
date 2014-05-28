@@ -38,11 +38,11 @@ public class PositionBoostingHitEnumWrapper extends AbstractHitEnumWrapper {
     }
 
     @Override
-    public float weight() {
+    public float queryWeight() {
         if (current >= boosts.size()) {
-            return super.weight();
+            return super.queryWeight();
         }
-        return boosts.get(current).boost * super.weight();
+        return boosts.get(current).boost * super.queryWeight();
     }
 
     @Override

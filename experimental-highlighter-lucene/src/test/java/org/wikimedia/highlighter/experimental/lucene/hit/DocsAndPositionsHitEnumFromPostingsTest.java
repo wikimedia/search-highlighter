@@ -19,7 +19,7 @@ public class DocsAndPositionsHitEnumFromPostingsTest extends
         try {
             return DocsAndPositionsHitEnum.fromPostings(buildIndexReader(source, analyzer), 0,
                     "field", acceptable, new ConstantTermWeigher<BytesRef>(),
-                    new NoSourceTermSourceFinder<BytesRef>());
+                    new ConstantTermWeigher<BytesRef>(), new NoSourceTermSourceFinder<BytesRef>());
         } catch (IOException e) {
             throw new WrappedExceptionFromLucene(e);
         }

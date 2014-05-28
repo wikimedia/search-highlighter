@@ -5,6 +5,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.wikimedia.search.highlighter.experimental.HitEnum;
+import org.wikimedia.search.highlighter.experimental.hit.weight.ConstantHitWeigher;
 
 /**
  * Implements a HitEnum with a BreakIterator and returns terms in the order they
@@ -24,15 +25,25 @@ public final class BreakIteratorHitEnum implements HitEnum {
     }
 
     private final BreakIterator itr;
-    private final HitWeigher weigher;
+    private final HitWeigher queryWeigher;
+    private final HitWeigher corpusWeigher;
     private int position = -1;
     private int startOffset;
     private int endOffset;
-    private float weight;
+    private float queryWeight;
+    private float corpusWeight;
 
-    public BreakIteratorHitEnum(BreakIterator itr, HitWeigher weigher) {
+    /**
+     * Build the HitEnum so all hits have equal weight.
+     */
+    public BreakIteratorHitEnum(BreakIterator itr) {
+        this(itr, ConstantHitWeigher.ONE, ConstantHitWeigher.ONE);
+    }
+
+    public BreakIteratorHitEnum(BreakIterator itr, HitWeigher queryWeigher, HitWeigher corpusWeigher) {
         this.itr = itr;
-        this.weigher = weigher;
+        this.queryWeigher = queryWeigher;
+        this.corpusWeigher = corpusWeigher;
         startOffset = itr.first();
     }
 
@@ -48,7 +59,8 @@ public final class BreakIteratorHitEnum implements HitEnum {
         if (endOffset == BreakIterator.DONE) {
             return false;
         } else {
-            weight = weigher.weight(position, startOffset, endOffset);
+            queryWeight = queryWeigher.weight(position, startOffset, endOffset);
+            corpusWeight = corpusWeigher.weight(position, startOffset, endOffset);
             return true;
         }
     }
@@ -69,8 +81,16 @@ public final class BreakIteratorHitEnum implements HitEnum {
     }
 
     @Override
-    public float weight() {
-        return weight;
+    public float queryWeight() {
+        return queryWeight;
+    }
+
+    /**
+     * Since the BreakIteratorHitEnum has no real idea how to 
+     */
+    @Override
+    public float corpusWeight() {
+        return corpusWeight;
     }
 
     @Override

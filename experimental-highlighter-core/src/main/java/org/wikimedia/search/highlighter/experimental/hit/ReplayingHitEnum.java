@@ -16,15 +16,25 @@ public class ReplayingHitEnum implements HitEnum {
     private final Queue<Hit> hits = new ArrayDeque<Hit>();
     private Hit current;
 
-    public void record(int position, int startOffset, int endOffset, float weight, int source) {
-        hits.add(new Hit(position, startOffset, endOffset, weight, source));
+    /**
+     * Record a hit.
+     */
+    public void record(int position, int startOffset, int endOffset, float queryWeight, float corpusWeight, int source) {
+        hits.add(new Hit(position, startOffset, endOffset, queryWeight, corpusWeight, source));
+    }
+
+    /**
+     * Record a hit with the corpusWeight defaulted to 1.
+     */
+    public void record(int position, int startOffset, int endOffset, float queryWeight, int source) {
+        record(position, startOffset, endOffset, queryWeight, 1, source);
     }
 
     /**
      * Record the current position of e.
      */
     public void recordCurrent(HitEnum e) {
-        record(e.position(), e.startOffset(), e.endOffset(), e.weight(), e.source());
+        record(e.position(), e.startOffset(), e.endOffset(), e.queryWeight(), e.corpusWeight(), e.source());
     }
 
     /**
@@ -42,7 +52,9 @@ public class ReplayingHitEnum implements HitEnum {
             while (e.delegate().next()) {
                 position = e.delegate().position();
                 endOffset = e.delegate().endOffset();
-                record(position + relativePosition, e.delegate().startOffset() + relativeOffset, endOffset + relativeOffset, e.delegate().weight(), e.delegate().source());
+                record(position + relativePosition, e.delegate().startOffset() + relativeOffset,
+                        endOffset + relativeOffset, e.delegate().queryWeight(), e.delegate()
+                                .corpusWeight(), e.delegate().source());
             }
             relativePosition += position + positionGap;
             relativeOffset += e.length + offsetGap;
@@ -86,8 +98,13 @@ public class ReplayingHitEnum implements HitEnum {
     }
 
     @Override
-    public float weight() {
-        return current.weight;
+    public float queryWeight() {
+        return current.queryWeight;
+    }
+
+    @Override
+    public float corpusWeight() {
+        return current.corpusWeight;
     }
 
     @Override
@@ -107,20 +124,22 @@ public class ReplayingHitEnum implements HitEnum {
         final int position;
         final int startOffset;
         final int endOffset;
-        final float weight;
+        final float queryWeight;
+        final float corpusWeight;
         final int source;
 
-        public Hit(int position, int startOffset, int endOffset, float weight, int source) {
+        public Hit(int position, int startOffset, int endOffset, float queryWeight, float corpusWeight, int source) {
             this.position = position;
             this.startOffset = startOffset;
             this.endOffset = endOffset;
-            this.weight = weight;
+            this.queryWeight = queryWeight;
+            this.corpusWeight = corpusWeight;
             this.source = source;
         }
 
         @Override
         public String toString() {
-            return String.format(Locale.ENGLISH, "%s@%s", weight, position);
+            return String.format(Locale.ENGLISH, "%s@%s", queryWeight * corpusWeight, position);
         }
     }
 
