@@ -208,9 +208,39 @@ highlighted field.  It is designed for use with object fields but has a number
 of limitations.  Read more about it [here](docs/fetched_fields.md).
 
 The ```phrase_as_terms``` option can be set to true to highlight phrase queries
-(and multi phrase prefix queries) as a bag of terms rather then a phrase.  This
+(and multi phrase prefix queries) as a set of terms rather then a phrase.  This
 defaults to ```false``` so phrase queries are restricted to full phrase
 matches.
+
+The ```regex``` option lets you set regular expressions that identify hits. It
+can be specified as a string for a single regular expression or a list for
+more then one.  You ```regex_flavor``` option sets the flavor of regex.  The
+default flavor is ```[lucene](https://lucene.apache.org/core/4_9_0/core/org/apache/lucene/util/automaton/RegExp.html)```
+and the other option is ```[java](http://docs.oracle.com/javase/7/docs/api/java/util/regex/Pattern.html)```.
+Its also possible to skip matching the query entirely by setting the
+```skip_query``` option to ```true```.  The ```regex_case_insensitive``` option
+can be set to true to make the regex case insensitive using the case rules in
+the locale specified by ```locale```.  Example:
+```js
+  "highlight": {
+    "fields": {
+      "title": {
+        "type": "experimental",
+        "options": {
+          "regex": [
+            "fo+",
+            "bar|z",
+            "bor?t blah"
+          ],
+          "regex_flavor": "lucene",
+          "skip_query": true,
+          "locale": "en_US",
+          "regex_case_insensitive":
+        }
+      }
+    }
+  }
+```
 
 Offsets in postings or term vectors
 -----------------------------------

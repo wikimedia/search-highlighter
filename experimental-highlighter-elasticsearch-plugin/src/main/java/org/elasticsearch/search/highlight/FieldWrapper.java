@@ -47,6 +47,10 @@ public class FieldWrapper {
      * If there is a TokenStream still open during the highlighting.
      */
     private TokenStream tokenStream;
+    /**
+     * Position gap for the field.  Only looked up if needed.  < 0 means not looked up.
+     */
+    private int positionGap = 1;
 
     /**
      * Build a wrapper around the default field in the context.
@@ -282,10 +286,6 @@ public class FieldWrapper {
         case 1:
             return buildTokenStreamHitEnum(analyzer, fieldValues.get(0));
         default:
-            int positionGap = 1;
-            if (context.mapper instanceof StringFieldMapper) {
-                positionGap = ((StringFieldMapper) context.mapper).getPositionOffsetGap();
-            }
             /*
              * Note that it is super important that this process is _lazy_
              * because we can't have multiple TokenStreams open per analyzer.
@@ -306,7 +306,7 @@ public class FieldWrapper {
 
                         }
                     });
-            return new ConcatHitEnum(hitEnumsFromStreams, positionGap, 1);
+            return new ConcatHitEnum(hitEnumsFromStreams, getPositionGap(), 1);
         }
     }
 
@@ -349,5 +349,16 @@ public class FieldWrapper {
             return corpusWeigher;
         }
         return new ConstantTermWeigher<BytesRef>();
+    }
+    
+    public int getPositionGap() {
+        if (positionGap < 0) {
+            if (context.mapper instanceof StringFieldMapper) {
+                positionGap = ((StringFieldMapper) context.mapper).getPositionOffsetGap();
+            } else {
+                positionGap = 1;
+            }
+        }
+        return positionGap;
     }
 }

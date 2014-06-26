@@ -9,16 +9,17 @@ import org.wikimedia.search.highlighter.experimental.hit.weight.ConstantHitWeigh
 
 /**
  * Implements a HitEnum with a BreakIterator and returns terms in the order they
- * are in the text. Note: this doesn't just enumerate words - it'll enumerate the
- * space between the words too. This is required because there is no way to tell
- * from BreakIterator if a particular break is the start or the end of a
+ * are in the text. Note: this doesn't just enumerate words - it'll enumerate
+ * the space between the words too. This is required because there is no way to
+ * tell from BreakIterator if a particular break is the start or the end of a
  * word/sentence/line/whatever. See BreakIteratorHitEnum.repair which attempts
  * to throw away the spaces. It might not always be successful or desirable
  * though.
  */
 public final class BreakIteratorHitEnum implements HitEnum {
     /**
-     * Wraps a HitEnum with another one that attempts to squash away any word breaks returned.
+     * Wraps a HitEnum with another one that attempts to squash away any word
+     * breaks returned.
      */
     public static HitEnum repair(HitEnum e, CharSequence source) {
         return new RepairedHitEnum(e, source);
@@ -86,7 +87,7 @@ public final class BreakIteratorHitEnum implements HitEnum {
     }
 
     /**
-     * Since the BreakIteratorHitEnum has no real idea how to 
+     * Since the BreakIteratorHitEnum has no real idea how to
      */
     @Override
     public float corpusWeight() {
@@ -112,7 +113,8 @@ public final class BreakIteratorHitEnum implements HitEnum {
 
         @Override
         protected boolean keep() {
-            Matcher m = DISCARD.matcher(source).region(wrapped().startOffset(), wrapped().endOffset());
+            Matcher m = DISCARD.matcher(source).region(wrapped().startOffset(),
+                    wrapped().endOffset());
             if (m.matches()) {
                 positionOffset++;
                 return false;

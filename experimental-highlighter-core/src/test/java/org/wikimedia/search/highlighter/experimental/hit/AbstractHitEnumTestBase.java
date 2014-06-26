@@ -28,6 +28,17 @@ public abstract class AbstractHitEnumTestBase {
     }
 
     @Test
+    public void oneWord() {
+        String source = "hero";
+        SourceExtracter<String> extracter = new StringSourceExtracter(source);
+        HitEnum e = buildEnum(source);
+        assertThat(e, advances());
+        assertThat(e, hit(0, extracter, equalTo("hero")));
+        assertThat(e.endOffset(), equalTo(source.length()));
+        assertThat(e, isEmpty());
+    }
+
+    @Test
     public void aCoupleWords() {
         String source = "hero of legend";
         SourceExtracter<String> extracter = new StringSourceExtracter(source);
