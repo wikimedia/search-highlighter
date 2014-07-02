@@ -297,9 +297,10 @@ public class ExperimentalHighlighter implements Highlighter {
                     AutomatonHitEnum.Factory factory = cache.automatonHitEnumFactories.get(regex);
                     if (factory == null) {
                         RegExp regexp = new RegExp(regex);
-                        // allowMutate is supposed to be slightly faster but not
-                        // thread safe which is fine by us.
-                        regexp.setAllowMutate(true);
+                        // allowMutate is supposed to be slightly faster but not thread safe.
+                        // regexp.setAllowMutate(true);
+                        // It isn't clear from the documentation but that means
+                        // that all automaton operations may blow up. Not good.
                         Automaton automaton = regexp.toAutomaton();
                         factory = AutomatonHitEnum.factory(automaton);
                         cache.automatonHitEnumFactories.put(regex, factory);
