@@ -37,18 +37,10 @@ public class PhraseQueryTest extends AbstractExperimentalHighlighterIntegrationT
             assertHighlight(response, 0, "test", 0,
                     equalTo("test very <em>simple</em> <em>test</em>"));
         }
-
-        options.put("phrase_as_terms", true);
-        for (String hitSource : HIT_SOURCES) {
-            options.put("hit_source", hitSource);
-            SearchResponse response = search.get();
-            assertHighlight(response, 0, "test", 0,
-                    equalTo("<em>test</em> very <em>simple</em> <em>test</em>"));
-        }
     }
 
     @Test
-    public void phraseAsTermsSwitch() throws IOException {
+    public void singlePhraseWithPhraseAsTermsSwitch() throws IOException {
         buildIndex();
         client().prepareIndex("test", "test", "1").setSource("test", "phrase test test", "test2", "phrase phrase test").get();
         refresh();
@@ -63,6 +55,32 @@ public class PhraseQueryTest extends AbstractExperimentalHighlighterIntegrationT
                     equalTo("<em>phrase</em> <em>test</em> test"));
             assertHighlight(response, 0, "test2", 0,
                     equalTo("<em>phrase</em> <em>phrase</em> <em>test</em>"));
+        }
+    }
+
+    @Test
+    public void phraseWithStopWords() throws IOException {
+        buildIndex();
+        indexTestData("and and test test");
+
+        Map<String, Object> options = new HashMap<String, Object>();
+        SearchRequestBuilder search = testSearch(boolQuery()
+                .should(matchPhraseQuery("test", "and test"))
+                .should(matchPhraseQuery("test.english", "and test")));
+        search.setHighlighterOptions(options).addHighlightedField("test.english");
+        for (String hitSource : HIT_SOURCES) {
+            options.put("hit_source", hitSource);
+            SearchResponse response = search.get();
+            assertHighlight(response, 0, "test.english", 0,
+                    equalTo("and and <em>test</em> <em>test</em>"));
+        }
+
+        search.addHighlightedField(new HighlightBuilder.Field("test.english").matchedFields("test.english", "test"));
+        for (String hitSource : HIT_SOURCES) {
+            options.put("hit_source", hitSource);
+            SearchResponse response = search.get();
+            assertHighlight(response, 0, "test.english", 0,
+                    equalTo("and <em>and</em> <em>test</em> <em>test</em>"));
         }
     }
 
