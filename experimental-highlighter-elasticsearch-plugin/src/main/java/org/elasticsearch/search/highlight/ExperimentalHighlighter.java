@@ -73,6 +73,7 @@ public class ExperimentalHighlighter implements Highlighter {
                 executionContext.cleanup();
             }
         } catch (Exception e) {
+//            e.printStackTrace();
             throw new FetchPhaseExecutionException(context.context, "Failed to highlight field ["
                     + context.fieldName + "]", e);
         }
