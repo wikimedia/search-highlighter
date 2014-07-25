@@ -10,14 +10,19 @@ import java.util.List;
 import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.common.collect.ImmutableList;
 import org.elasticsearch.common.collect.ImmutableMap;
+import org.elasticsearch.common.settings.ImmutableSettings;
+import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.index.query.QueryBuilder;
+import org.elasticsearch.plugins.PluginsService;
 import org.elasticsearch.test.ElasticsearchIntegrationTest;
 
+@ElasticsearchIntegrationTest.ClusterScope(
+        scope = ElasticsearchIntegrationTest.Scope.SUITE, transportClientRatio = 0.0)
 public abstract class AbstractExperimentalHighlighterIntegrationTestBase extends ElasticsearchIntegrationTest {
     protected static final List<String> HIT_SOURCES = ImmutableList.of("postings", "vectors",
             "analyze");
-    
+
     /**
      * A simple search for the term "test".
      */
@@ -107,4 +112,14 @@ public abstract class AbstractExperimentalHighlighterIntegrationTestBase extends
         client().prepareIndex("test", "test", "1").setSource("test", contents).get();
         refresh();
     }
+
+    /**
+     * Enable plugin loading.
+     */
+    @Override
+    protected Settings nodeSettings(int nodeOrdinal) {
+        return ImmutableSettings.builder().put(super.nodeSettings(nodeOrdinal))
+                .put("plugins." + PluginsService.LOAD_PLUGIN_FROM_CLASSPATH, true).build();
+    }
+
 }

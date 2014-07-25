@@ -34,6 +34,7 @@ Elasticsearch installation
 
 | Experimental Highlighter Plugin |  ElasticSearch  |
 |---------------------------------|-----------------|
+| master                          | 1.3.0 -> master |
 | 0.0.10 -> master                | 1.2.0 -> master |
 | 0.0.9                           | 1.1.0           |
 
