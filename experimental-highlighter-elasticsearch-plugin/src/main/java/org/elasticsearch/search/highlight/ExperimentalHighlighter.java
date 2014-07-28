@@ -82,6 +82,8 @@ public class ExperimentalHighlighter implements Highlighter {
     static class CacheEntry {
         private final Map<QueryCacheKey, BasicQueryWeigher> queryWeighers = new HashMap<>();
         private Map<String, AutomatonHitEnum.Factory> automatonHitEnumFactories;
+        private boolean lastMatched = false;
+        private int lastDocId = -1;
     }
 
     static class QueryCacheKey {
@@ -138,6 +140,10 @@ public class ExperimentalHighlighter implements Highlighter {
         }
 
         HighlightField highlight() throws IOException {
+            if (shouldSkip()) {
+                return null;
+            }
+
             // TODO it might be possible to not build the weigher at all if just using regex highlighting
             ensureWeigher();
             scoreMatters = context.field.fieldOptions().scoreOrdered();
@@ -154,8 +160,10 @@ public class ExperimentalHighlighter implements Highlighter {
             List<Snippet> snippets = buildChooser().choose(segmenter, buildHitEnum(),
                     numberOfSnippets);
             if (snippets.size() != 0) {
+                cache.lastMatched = true;
                 return new HighlightField(context.fieldName, formatSnippets(snippets));
             }
+            cache.lastMatched = false;
             int noMatchSize = context.field.fieldOptions().noMatchSize();
             if (noMatchSize <= 0) {
                 return null;
@@ -167,6 +175,17 @@ public class ExperimentalHighlighter implements Highlighter {
             Text fragment = new StringText(getSegmenterFactory()
                     .extractNoMatchFragment(fieldValues.get(0), noMatchSize));
             return new HighlightField(context.fieldName, new Text[] {fragment});
+        }
+
+        private boolean shouldSkip() {
+            // Maintain lastMatched - it should be false if we shift to a new doc.
+            if (cache.lastDocId != context.hitContext.docId()) {
+                cache.lastMatched = false;
+                cache.lastDocId = context.hitContext.docId();
+            }
+
+            Boolean skipIfLastMatched = (Boolean)getOption("skip_if_last_matched");
+            return skipIfLastMatched == null ? false : skipIfLastMatched && cache.lastMatched;
         }
 
         void cleanup() throws Exception {

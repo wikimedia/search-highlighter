@@ -243,6 +243,32 @@ the locale specified by ```locale```.  Example:
   }
 ```
 
+The ```skip_if_last_matched``` option can be used to entirely skip highlighting
+if the last field matched.  This can be used to form "chains" of fields only one
+of which will return a match:
+```js
+  "highlight": {
+    "type": "experimental",
+    "fields": {
+      "text": {},
+      "aux_text": { "options": { "skip_if_last_matched": true } },
+      "title": {},
+      "redirect": { "options": { "skip_if_last_matched": true } },
+      "section_heading": { "options": { "skip_if_last_matched": true } },
+      "category": { "options": { "skip_if_last_matched": true } },
+    }
+  }
+```
+The above example creates two "chains":
+* aux_text will only be highlighted if there isn't a match in text.
+-and-
+* redirect will only be highlighted if there isn't a match in title.
+* section_heading will only be highlighted if there isn't a match in redirect
+and title.
+* category will only be highlighted if there isn't a match in section_heading,
+redirect, or title.
+
+
 Offsets in postings or term vectors
 -----------------------------------
 Since adding offsets to the postings (set ```index_options``` to ```offsets```
