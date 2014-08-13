@@ -55,8 +55,9 @@ But this document won't work:
 ```
 
 The thing is, ```fetch_fields``` uses a trick to pick the right field to fetch:
-in most documents the ordinal positions of all ```multi_field```s line up.
-Meaning, this document works just fine:
+in most documents the ordinal positions of all the multi-valued fields line up
+regardless of actual document structure.  Meaning this document works just
+fine:
 ```js
 {
   "test": [
@@ -74,4 +75,4 @@ and so does this one:
 }
 ```
 
-Use it, but be careful.
+Use it but be careful.

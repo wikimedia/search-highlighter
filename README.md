@@ -191,22 +191,23 @@ Note also that ```boost_before``` works with ```top_scoring```.
 The ```max_fragments_scored``` option lets you limit the number of fragments
 scored.  The default is Integer.MAX_VALUE so you'll score them all.  This can
 be used to limit the CPU cost of scoring many matches when it is likely that
-the first few matches will have the highest score.  This is quite likely the
-configuration also contains ```boost_before```.
+the first few matches will have the highest score.
 
 The ```matched_fields``` field turns on combining matches from multiple fields,
 just like the Fast Vector Highlighter.  See the [Elasticsearch documentation](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/search-request-highlighting.html#matched-fields)
 for more on it.  The only real difference is that if ```hit_source``` is left
-out then each field's HitSource is determined independently if .  If one field
-is short feel free to leave out any special settings for ```index_options``` or
-for ```term_vector```s.
+out then each field's HitSource is determined independently which isn't
+possible with the fast vector highlighter as it only supports the
+```postings``` hit source.  Remember: For very short fields ```analyze``` hit
+source will be the most efficient because no secondary data has to be loaded
+from disk.
 
 A limitation in ```matched_fields```: if the highlighter has to analyze the
 field value to find hits then you can't reuse analyzers in each matched field.
 
 The ```fetch_fields``` option can be used to return fields next to the
 highlighted field.  It is designed for use with object fields but has a number
-of limitations.  Read more about it [here](docs/fetched_fields.md).
+of limitations.  Read more about it [here](docs/fetch_fields.md).
 
 The ```phrase_as_terms``` option can be set to true to highlight phrase queries
 (and multi phrase prefix queries) as a set of terms rather then a phrase.  This
