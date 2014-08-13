@@ -66,7 +66,7 @@ Then you can use it by searching like so:
 
 Elasticsearch options
 ---------------------
-The ```fragmenter``` field to defaults to ```scan``` but can also be set to
+The ```fragmenter``` field defaults to ```scan``` but can also be set to
 ```sentence``` or ```none```.  ```scan``` produces results that look like the
 Fast Vector Highlighter.  ```sentence``` produces results that look like the
 Postings Highlighter.  ```none``` won't fragment on anything so it is cleaner
@@ -92,7 +92,7 @@ Each fragmenter has different ```no_match_size``` strategies based on the
 spirit of the fragmenter.
 
 By default fragments are weighed such that additional matches for the same
-query term are worth less then unique matched query terms.  This can be
+query term are worth less than unique matched query terms.  This can be
 customized with the ```fragment_weigher``` option.  Setting it to ```sum```
 will weight a fragment as the sum of all its matches, just like the FVH.  The
 default settings, ```exponential``` weighs fragments as the sum of:
@@ -104,9 +104,9 @@ provides the discount on duplicate terms.  It can be changed by setting
 ```fragment_weigher``` like this: ```{"exponential": {"base": 1.01}}```.
 Setting the ```base``` closer to ```1``` will make duplicate matches worth
 less.   Setting the ```base``` between ```0``` and ```1``` will make duplicate
-matches worth less then single matches which doesn't make much sense (but is
-possible.)  Similarly, setting ```base``` to a negative number or a number
-greater then ```sqrt(2)``` will do other probably less then desireable things.
+matches worth less than single matches which doesn't make much sense (but is
+possible).  Similarly, setting ```base``` to a negative number or a number
+greater then ```sqrt(2)``` will do other probably less than desirable things.
 
 The ```top_scoring``` option can be set to true while sorting fragments by
 source to return only the top scoring fragmenter but leave them in source
@@ -128,9 +128,9 @@ order.  Example:
   }
 ```
 
-The ```default_similarity``` option defaults to true for queries with more then
+The ```default_similarity``` option defaults to true for queries with more than
 one term.  It will weigh each matched term using Lucene's default similarity
-model similarly to how the Fast Vectory Highlighter weighs terms.  If can be
+model similarly to how the Fast Vector Highlighter weighs terms.  If can be
 set to false to leave out that weighing.  If there is only a single term in the
 query it will never be used.
 ```js
@@ -167,7 +167,7 @@ to using the first option that wouldn't throw an error.
 
 The ```boost_before``` option lets you set up boosts before positions.  For
 example, this will multiply the weight of matches before the 20th position by
-5 abd before the 100th position by 1.5.
+5 and before the 100th position by 1.5.
 ```js
   "highlight": {
     "fields": {
@@ -201,7 +201,7 @@ out then each field's HitSource is determined independently if .  If one field
 is short feel free to leave out any special settings for ```index_options``` or
 for ```term_vector```s.
 
-A limitation in ```matched_fields```: if the highlighlighter has to analyze the
+A limitation in ```matched_fields```: if the highlighter has to analyze the
 field value to find hits then you can't reuse analyzers in each matched field.
 
 The ```fetch_fields``` option can be used to return fields next to the
@@ -215,10 +215,10 @@ matches.
 
 The ```regex``` option lets you set regular expressions that identify hits. It
 can be specified as a string for a single regular expression or a list for
-more then one.  You ```regex_flavor``` option sets the flavor of regex.  The
+more than one.  Your ```regex_flavor``` option sets the flavor of regex.  The
 default flavor is ```[lucene](https://lucene.apache.org/core/4_9_0/core/org/apache/lucene/util/automaton/RegExp.html)```
 and the other option is ```[java](http://docs.oracle.com/javase/7/docs/api/java/util/regex/Pattern.html)```.
-Its also possible to skip matching the query entirely by setting the
+It's also possible to skip matching the query entirely by setting the
 ```skip_query``` option to ```true```.  The ```regex_case_insensitive``` option
 can be set to true to make the regex case insensitive using the case rules in
 the locale specified by ```locale```.  Example:
@@ -236,7 +236,7 @@ the locale specified by ```locale```.  Example:
           "regex_flavor": "lucene",
           "skip_query": true,
           "locale": "en_US",
-          "regex_case_insensitive":
+          "regex_case_insensitive": true
         }
       }
     }
@@ -248,6 +248,6 @@ Offsets in postings or term vectors
 Since adding offsets to the postings (set ```index_options``` to ```offsets```
 in Elasticsearch) and creating term vectors with offsets (set ```term_vector```
 to ```with_positions_offsets``` in Elasticsearch) both act to speed up
-highligting of this highlighter you have a choice which to use.  Unless you
-have a compelling reason go with adding offsets to the postings.  That is
-faster (by my tests, at least) and uses much less space.
+highlighting of this highlighter you have a choice which one to use.  Unless
+you have a compelling reason otherwise go with adding offsets to the postings.
+That is faster (by my tests, at least) and uses much less space.

@@ -1,6 +1,6 @@
 Fetch Fields
 ============
-The ```fetched_fields``` option can be used to return fields next to the
+The ```fetch_fields``` option can be used to return fields next to the
 highlighted field.  It is designed for use with object fields but has a number
 of limitations.  For example, while highlighting the ```foo``` field in the
 document below it can be used to fetch the "bar" field:
@@ -40,7 +40,7 @@ And here is the interesting part of the output:
   }
 ```
 Notice that ```2``` is returned as a string and just looks like another
-segment.  This return format is a compromize with the way Elasticsearch expects
+segment.  This return format is a compromise with the way Elasticsearch expects
 segments to be returned.  It doesn't count against the segment limit.  It just
 looks a bit funny.
 
@@ -54,8 +54,8 @@ But this document won't work:
 }
 ```
 
-The thing is, ```fetched_fields``` uses a trick to get pick the right field to
-fetch: in most documents the ordinal position each all the multifields line up.
+The thing is, ```fetch_fields``` uses a trick to pick the right field to fetch:
+in most documents the ordinal positions of all ```multi_field```s line up.
 Meaning, this document works just fine:
 ```js
 {

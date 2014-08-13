@@ -20,8 +20,8 @@ Comes in two flavors:<dl>
     WeightFilterHitEnumWrapper or PositionBoostingHitEnumWrapper.  Some are
     much more involved like PhraseHitEnumWrapper and
     MergingHitEnum.  HitEnums that wrap a single HitEnum should be named
-    FooHitEnumWrapper.  I don't have a consisten naming scheme for those that
-    wrap more then one HitEnum.</dd>
+    FooHitEnumWrapper.  I don't have a consistent naming scheme for those that
+    wrap more than one HitEnum.</dd>
 </dl>
 
 
