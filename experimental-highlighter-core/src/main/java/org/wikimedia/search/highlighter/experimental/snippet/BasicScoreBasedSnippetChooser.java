@@ -118,7 +118,7 @@ public class BasicScoreBasedSnippetChooser extends AbstractBasicSnippetChooser<B
         List<Hit> hits;
         Segment pickedBounds;
     }
-    
+
     enum ProtoSnippetComparators implements Comparator<ProtoSnippet> {
         OFFSETS {
             @Override
@@ -145,7 +145,7 @@ public class BasicScoreBasedSnippetChooser extends AbstractBasicSnippetChooser<B
             }
         };
     }
-    
+
     private class ProtoSnippetQueue extends PriorityQueue<ProtoSnippet> {
         public ProtoSnippetQueue(int maxSize) {
             super(maxSize);
@@ -161,17 +161,16 @@ public class BasicScoreBasedSnippetChooser extends AbstractBasicSnippetChooser<B
          * any particular order, you should sort them.
          */
         public ProtoSnippet[] contents() {
-           ProtoSnippet[] snippets = new ProtoSnippet[size()];
-           Object[] heapArray = getHeapArray();
-           int s = 0;
-           for (int i = 0; i < heapArray.length; i++) {
-               Object o = heapArray[i];
-               if (o == null) {
-                   continue;
-               }
-               snippets[s++] = (ProtoSnippet)o;
-           }
-           return snippets;
+            ProtoSnippet[] snippets = new ProtoSnippet[size()];
+            Object[] heapArray = getHeapArray();
+            int s = 0;
+            for (Object o : heapArray) {
+                if (o == null) {
+                    continue;
+                }
+                snippets[s++] = (ProtoSnippet) o;
+            }
+            return snippets;
         }
     }
 }

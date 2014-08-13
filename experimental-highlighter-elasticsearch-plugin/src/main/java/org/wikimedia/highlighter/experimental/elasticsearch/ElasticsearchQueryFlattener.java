@@ -52,8 +52,8 @@ public class ElasticsearchQueryFlattener extends QueryFlattener {
         if (phraseAsTerms()) {
             for (int i = 0; i < sizeMinus1; i++) {
                 Term[] termArray = termArrays.get(i);
-                for (int t = 0; t < termArray.length; t++) {
-                    callback.flattened(termArray[t].bytes(), boost, sourceOverride);
+                for (Term term : termArray) {
+                    callback.flattened(term.bytes(), boost, sourceOverride);
                 }
             }
             for (Term term : termArrays.get(sizeMinus1)) {
@@ -64,8 +64,8 @@ public class ElasticsearchQueryFlattener extends QueryFlattener {
             for (int i = 0; i < sizeMinus1; i++) {
                 Term[] termArray = termArrays.get(i);
                 callback.startPhrasePosition(termArray.length);
-                for (int t = 0; t < termArray.length; t++) {
-                    callback.flattened(termArray[t].bytes(), 0, sourceOverride);
+                for (Term term : termArray) {
+                    callback.flattened(term.bytes(), 0, sourceOverride);
                 }
                 callback.endPhrasePosition();
             }
