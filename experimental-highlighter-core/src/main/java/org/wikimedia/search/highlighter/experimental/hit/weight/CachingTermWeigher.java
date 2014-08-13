@@ -55,7 +55,7 @@ public class CachingTermWeigher<T> implements TermWeigher<T> {
         float get(T term);
         /**
          * Add a weight to the cache.
-         * @param term the temr
+         * @param term the term
          * @param weight the weight, will be >= 0
          */
         void put(T term, float weight);
