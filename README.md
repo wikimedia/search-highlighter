@@ -217,8 +217,8 @@ matches.
 The ```regex``` option lets you set regular expressions that identify hits. It
 can be specified as a string for a single regular expression or a list for
 more than one.  Your ```regex_flavor``` option sets the flavor of regex.  The
-default flavor is ```[lucene](https://lucene.apache.org/core/4_9_0/core/org/apache/lucene/util/automaton/RegExp.html)```
-and the other option is ```[java](http://docs.oracle.com/javase/7/docs/api/java/util/regex/Pattern.html)```.
+default flavor is [lucene](https://lucene.apache.org/core/4_9_0/core/org/apache/lucene/util/automaton/RegExp.html)
+and the other option is [java](http://docs.oracle.com/javase/7/docs/api/java/util/regex/Pattern.html).
 It's also possible to skip matching the query entirely by setting the
 ```skip_query``` option to ```true```.  The ```regex_case_insensitive``` option
 can be set to true to make the regex case insensitive using the case rules in
