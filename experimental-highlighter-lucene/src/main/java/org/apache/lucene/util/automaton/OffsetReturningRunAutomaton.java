@@ -7,7 +7,7 @@ package org.apache.lucene.util.automaton;
  */
 public class OffsetReturningRunAutomaton extends RunAutomaton {
     public OffsetReturningRunAutomaton(Automaton a, boolean utf8) {
-        super(utf8 ? a : new UTF32ToUTF8().convert(a), 256, true);
+        super(a, Character.MAX_CODE_POINT, true);
     }
 
     /**
@@ -18,12 +18,14 @@ public class OffsetReturningRunAutomaton extends RunAutomaton {
      * @param end end offset to end checking
      * @return the end offset of the matching string or -1 if no match
      */
-    public int run(byte[] s, int offset, int end) {
+    public int run(String s, int offset, int end) {
         int p = initial;
         int i;
+        int cp;
         int lastMatch = -1;
-        for (i = offset; i < end; i++) {
-            p = step(p, s[i] & 0xFF);
+        for (i = offset, cp = 0; i < end; i += Character.charCount(cp)) {
+            cp = s.codePointAt(i);
+            p = step(p, cp);
             if (p == -1) {
                 // We're off the automaton so no new positions will match. If we
                 // have a last match then that was it - otherwise we're out of

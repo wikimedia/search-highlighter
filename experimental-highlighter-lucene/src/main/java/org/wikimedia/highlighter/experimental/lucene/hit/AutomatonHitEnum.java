@@ -1,7 +1,5 @@
 package org.wikimedia.highlighter.experimental.lucene.hit;
 
-import java.nio.charset.Charset;
-
 import org.apache.lucene.util.automaton.Automaton;
 import org.apache.lucene.util.automaton.OffsetReturningRunAutomaton;
 import org.wikimedia.search.highlighter.experimental.HitEnum;
@@ -13,8 +11,6 @@ import org.wikimedia.search.highlighter.experimental.hit.weight.ConstantHitWeigh
  * matching whatever matches. Does not support overlapping matches.
  */
 public class AutomatonHitEnum implements HitEnum {
-    private static final Charset UTF8 = Charset.forName("UTF-8");
-
     public static Factory factory(Automaton automaton) {
         return new Factory(automaton);
     }
@@ -40,9 +36,10 @@ public class AutomatonHitEnum implements HitEnum {
     }
 
     private final OffsetReturningRunAutomaton runAutomaton;
-    private final byte[] source;
+    private final String source;
     private final HitWeigher queryWeigher;
     private final HitWeigher corpusWeigher;
+    private final int length;
     private int start;
     private int end;
     private float queryWeight;
@@ -52,7 +49,8 @@ public class AutomatonHitEnum implements HitEnum {
     public AutomatonHitEnum(OffsetReturningRunAutomaton runAutomaton, String source,
             HitWeigher queryWeigher, HitWeigher corpusWeigher) {
         this.runAutomaton = runAutomaton;
-        this.source = source.getBytes(UTF8);
+        this.source = source;
+        this.length = source.length();
         this.queryWeigher = queryWeigher;
         this.corpusWeigher = corpusWeigher;
     }
@@ -63,9 +61,8 @@ public class AutomatonHitEnum implements HitEnum {
         start = end;
 
         // Look until there aren't any more characters
-        while (start < source.length) {
-            end = runAutomaton.run(source, start, source.length);
-
+        while (start < length) {
+            end = runAutomaton.run(source, start, length);
             if (end >= 0) {
                 // Found a match!
                 position++;
@@ -77,8 +74,8 @@ public class AutomatonHitEnum implements HitEnum {
             start++;
         }
 
-        // No matches at all, set start to end so we never check again
-        start = end;
+        // No matches at all, set end to length so we never check again
+        end = length;
         return false;
     }
 
