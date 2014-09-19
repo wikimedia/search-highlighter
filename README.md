@@ -35,8 +35,8 @@ Elasticsearch installation
 | Experimental Highlighter Plugin |  ElasticSearch  |
 |---------------------------------|-----------------|
 | 0.0.11 -> master                | 1.3.0 -> master |
-| 0.0.10 -> 0.0.11                | 1.2.0           |
-| 0.0.9                           | 1.1.0           |
+| 0.0.10                          | 1.2.0           |
+| 0.0.1 -> 0.0.9                  | 1.1.0           |
 
 Install it like so:
 ```bash
