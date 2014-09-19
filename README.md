@@ -276,5 +276,6 @@ Since adding offsets to the postings (set ```index_options``` to ```offsets```
 in Elasticsearch) and creating term vectors with offsets (set ```term_vector```
 to ```with_positions_offsets``` in Elasticsearch) both act to speed up
 highlighting of this highlighter you have a choice which one to use.  Unless
-you have a compelling reason otherwise go with adding offsets to the postings.
-That is faster (by my tests, at least) and uses much less space.
+you have a compelling reason to use term vectors, go with adding offsets to the
+postings because that is faster (by my tests, at least) and uses much less
+space.
