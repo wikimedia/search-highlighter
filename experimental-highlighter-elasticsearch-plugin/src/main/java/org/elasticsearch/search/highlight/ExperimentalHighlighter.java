@@ -17,6 +17,8 @@ import org.apache.lucene.util.automaton.RegExp;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.base.Function;
 import org.elasticsearch.common.collect.Iterators;
+import org.elasticsearch.common.logging.ESLogger;
+import org.elasticsearch.common.logging.ESLoggerFactory;
 import org.elasticsearch.common.text.StringAndBytesText;
 import org.elasticsearch.common.text.StringText;
 import org.elasticsearch.common.text.Text;
@@ -52,6 +54,7 @@ import org.wikimedia.search.highlighter.experimental.snippet.SumSnippetWeigher;
 public class ExperimentalHighlighter implements Highlighter {
     private static final String CACHE_KEY = "highlight-experimental";
     private static final Text EMPTY_STRING = new StringAndBytesText("");
+    private static final ESLogger log = ESLoggerFactory.getLogger(ExperimentalHighlighter.class.getName());
 
     @Override
     public String[] names() {
@@ -73,7 +76,7 @@ public class ExperimentalHighlighter implements Highlighter {
                 executionContext.cleanup();
             }
         } catch (Exception e) {
-//            e.printStackTrace();
+            log.error("Failed to highlight field [{}]", e, context.fieldName);
             throw new FetchPhaseExecutionException(context.context, "Failed to highlight field ["
                     + context.fieldName + "]", e);
         }
