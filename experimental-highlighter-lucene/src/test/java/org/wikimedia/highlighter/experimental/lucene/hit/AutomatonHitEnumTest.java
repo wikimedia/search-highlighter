@@ -74,4 +74,19 @@ public class AutomatonHitEnumTest extends AbstractHitEnumTestBase {
         assertThat(e, hit(0, extracter, equalTo("hero")));
         assertThat(e, isEmpty());
     }
+
+    @Test
+    public void unicode() {
+        String source = "The common Chinese names for the country are Zhōngguó (Chinese: 中国, from zhōng, \"central\"";
+        SourceExtracter<String> extracter = new StringSourceExtracter(source);
+        HitEnum e = AutomatonHitEnum.factory(new RegExp("from").toAutomaton()).build(source);
+        assertThat(e, advances());
+        assertThat(e, hit(0, extracter, equalTo("from")));
+        assertThat(e, isEmpty());
+
+        e = AutomatonHitEnum.factory(new RegExp("国").toAutomaton()).build(source);
+        assertThat(e, advances());
+        assertThat(e, hit(0, extracter, equalTo("国")));
+        assertThat(e, isEmpty());
+    }
 }

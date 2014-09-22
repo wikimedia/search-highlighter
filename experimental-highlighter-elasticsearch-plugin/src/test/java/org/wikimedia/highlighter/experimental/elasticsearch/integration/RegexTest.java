@@ -168,4 +168,29 @@ public class RegexTest extends AbstractExperimentalHighlighterIntegrationTestBas
         }
     }
 
+    @Test
+    public void multiByte() throws IOException {
+        buildIndex();
+        indexTestData("test {{lang|ar|الخلافة الراشدة}}\n|conventional_long_name");
+
+        Map<String, Object> options = new HashMap<>();
+        options.put("regex", "long");
+        options.put("skip_query", true);
+        options.put("locale", "en_US");
+        options.put("regex_case_insensitive", true);
+        for (String flavor: new String[] {"java", "lucene"}) {
+            options.put("regex_flavor", flavor);
+            SearchRequestBuilder search = testSearch().setHighlighterOptions(options);
+            SearchResponse response = search.get();
+            assertHighlight(response, 0, "test", 0, equalTo("test {{lang|ar|الخلافة الراشدة}}\n|conventional_<em>long</em>_name"));
+        }
+
+        options.put("regex", "خلا");
+        for (String flavor: new String[] {"java", "lucene"}) {
+            options.put("regex_flavor", flavor);
+            SearchRequestBuilder search = testSearch().setHighlighterOptions(options);
+            SearchResponse response = search.get();
+            assertHighlight(response, 0, "test", 0, equalTo("test {{lang|ar|ال<em>خلا</em>فة الراشدة}}\n|conventional_long_name"));
+        }
+    }
 }
