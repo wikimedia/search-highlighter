@@ -10,7 +10,7 @@
 
   <groupId>org.wikimedia.search.highlighter</groupId>
   <artifactId>experimental</artifactId>
-  <version>0.0.12</version>
+  <version>0.0.13-SNAPSHOT</version>
   <packaging>pom</packaging>
 
   <modules>
