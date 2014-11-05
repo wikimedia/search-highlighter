@@ -1,7 +1,7 @@
 package org.wikimedia.highlighter.experimental.lucene.hit;
 
-import org.apache.lucene.util.automaton.Automaton;
 import org.apache.lucene.util.automaton.OffsetReturningRunAutomaton;
+import org.apache.lucene.util.automaton.XAutomaton;
 import org.wikimedia.search.highlighter.experimental.HitEnum;
 import org.wikimedia.search.highlighter.experimental.hit.HitWeigher;
 import org.wikimedia.search.highlighter.experimental.hit.weight.ConstantHitWeigher;
@@ -11,14 +11,14 @@ import org.wikimedia.search.highlighter.experimental.hit.weight.ConstantHitWeigh
  * matching whatever matches. Does not support overlapping matches.
  */
 public class AutomatonHitEnum implements HitEnum {
-    public static Factory factory(Automaton automaton) {
+    public static Factory factory(XAutomaton automaton) {
         return new Factory(automaton);
     }
 
     public static class Factory {
         private OffsetReturningRunAutomaton run;
 
-        private Factory(Automaton automaton) {
+        private Factory(XAutomaton automaton) {
             run = new OffsetReturningRunAutomaton(automaton, false);
         }
 

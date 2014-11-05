@@ -5,8 +5,8 @@ package org.apache.lucene.util.automaton;
 /**
  * RunAutomaton that returns the end offset of the matching string.
  */
-public class OffsetReturningRunAutomaton extends RunAutomaton {
-    public OffsetReturningRunAutomaton(Automaton a, boolean utf8) {
+public class OffsetReturningRunAutomaton extends XRunAutomaton {
+    public OffsetReturningRunAutomaton(XAutomaton a, boolean utf8) {
         super(a, Character.MAX_CODE_POINT, true);
     }
 

@@ -244,6 +244,12 @@ the locale specified by ```locale```.  Example:
   }
 ```
 
+The ```max_determinized_states``` option can be used to limit the complexity
+explosion that comes from compiling Lucene Regular Expressions into DFAs.  It
+defaults to 20,000 states.  Increasing it allows more complex regexes to take
+the memory and time that they need to compile.  The default allows for
+reasonably complex regexes.
+
 The ```skip_if_last_matched``` option can be used to entirely skip highlighting
 if the last field matched.  This can be used to form "chains" of fields only one
 of which will return a match:
@@ -268,7 +274,6 @@ The above example creates two "chains":
 and title.
 * category will only be highlighted if there isn't a match in section_heading,
 redirect, or title.
-
 
 Offsets in postings or term vectors
 -----------------------------------

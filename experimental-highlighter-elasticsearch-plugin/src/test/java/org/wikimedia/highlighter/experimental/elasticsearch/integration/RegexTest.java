@@ -1,7 +1,7 @@
 package org.wikimedia.highlighter.experimental.elasticsearch.integration;
 
-import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertHighlight;
-import static org.hamcrest.Matchers.equalTo;
+import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.*;
+import static org.hamcrest.Matchers.*;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -10,6 +10,7 @@ import java.util.Map;
 import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.common.collect.ImmutableList;
+import org.elasticsearch.rest.RestStatus;
 import org.junit.Test;
 import org.wikimedia.highlighter.experimental.elasticsearch.AbstractExperimentalHighlighterIntegrationTestBase;
 
@@ -192,5 +193,33 @@ public class RegexTest extends AbstractExperimentalHighlighterIntegrationTestBas
             SearchResponse response = search.get();
             assertHighlight(response, 0, "test", 0, equalTo("test {{lang|ar|ال<em>خلا</em>فة الراشدة}}\n|conventional_long_name"));
         }
+    }
+
+    @Test
+    public void maxDeterminizedStatesLimitsComplexityOfLuceneRegex() throws IOException {
+        buildIndex();
+        indexTestData("test");
+        // The default is good enough to prevent craziness
+
+        Map<String, Object> options = new HashMap<>();
+        options.put("regex", "[^]]*alt=[^]\\|}]{80,}");
+        options.put("skip_query", true);
+        options.put("locale", "en_US");
+        options.put("regex_case_sensitive", true);
+        options.put("regex_flavor", "lucene");
+        assertFailures(testSearch().setHighlighterOptions(options),
+                RestStatus.INTERNAL_SERVER_ERROR, containsString("Determinizing automaton would result in more than"));
+        // Some regexes with explosive state growth still run because they
+        // don't explode into too many states.
+        options.put("regex", ".*te*s[tabclse]{1,16}.*");
+        SearchResponse response = testSearch().setHighlighterOptions(options).get();
+        assertHitCount(response, 1);
+        // But you can stop them by lowering max_determinized_states
+        options.put("regex", ".*te*s[tabcse]{1,16}.*");
+        options.put("max_determinized_states", 100);
+        assertFailures(testSearch().setHighlighterOptions(options),
+                RestStatus.INTERNAL_SERVER_ERROR, containsString("Determinizing automaton would result in more than 100"));
+        // Its unfortunate that this comes back as an INTERNAL_SERVER_ERROR but
+        // I can't find any way from here to mark it otherwise.
     }
 }

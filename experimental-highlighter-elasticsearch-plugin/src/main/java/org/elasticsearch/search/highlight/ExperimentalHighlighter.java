@@ -12,8 +12,8 @@ import java.util.Set;
 import java.util.regex.Pattern;
 
 import org.apache.lucene.search.Query;
-import org.apache.lucene.util.automaton.Automaton;
-import org.apache.lucene.util.automaton.RegExp;
+import org.apache.lucene.util.automaton.XAutomaton;
+import org.apache.lucene.util.automaton.XRegExp;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.base.Function;
 import org.elasticsearch.common.collect.Iterators;
@@ -127,6 +127,7 @@ public class ExperimentalHighlighter implements Highlighter {
     }
 
     static class HighlightExecutionContext {
+        private static final int DEFAULT_MAX_DETERMINIZED_STATES = 20000;
         private final HighlighterContext context;
         private final CacheEntry cache;
         private BasicQueryWeigher weigher;
@@ -136,6 +137,7 @@ public class ExperimentalHighlighter implements Highlighter {
         private DelayedSegmenter segmenter;
         private boolean scoreMatters;
         private Locale locale;
+        private int maxDeterminizedStates;
 
         HighlightExecutionContext(HighlighterContext context, CacheEntry cache) {
             this.context = context;
@@ -319,12 +321,8 @@ public class ExperimentalHighlighter implements Highlighter {
                     }
                     AutomatonHitEnum.Factory factory = cache.automatonHitEnumFactories.get(regex);
                     if (factory == null) {
-                        RegExp regexp = new RegExp(regex);
-                        // allowMutate is supposed to be slightly faster but not thread safe.
-                        // regexp.setAllowMutate(true);
-                        // It isn't clear from the documentation but that means
-                        // that all automaton operations may blow up. Not good.
-                        Automaton automaton = regexp.toAutomaton();
+                        XRegExp regexp = new XRegExp(regex);
+                        XAutomaton automaton = regexp.toAutomaton(getMaxDeterminizedStates());
                         factory = AutomatonHitEnum.factory(automaton);
                         cache.automatonHitEnumFactories.put(regex, factory);
                     }
@@ -338,6 +336,19 @@ public class ExperimentalHighlighter implements Highlighter {
                 }
             }
             return hitEnums;
+        }
+
+        private int getMaxDeterminizedStates() {
+            if (maxDeterminizedStates != 0) {
+                return maxDeterminizedStates;
+            }
+            Integer maxDeterminizedStates = (Integer) getOption("max_determinized_states");
+            if (maxDeterminizedStates == null) {
+                this.maxDeterminizedStates = DEFAULT_MAX_DETERMINIZED_STATES;
+            } else {
+                this.maxDeterminizedStates = maxDeterminizedStates;
+            }
+            return this.maxDeterminizedStates;
         }
 
         /**
