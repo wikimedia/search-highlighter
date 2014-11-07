@@ -49,4 +49,16 @@ public class TestRegExp extends LuceneTestCase {
 			assert(e.getMessage().contains(source));
 		}
 	}
+
+	public void testRepeatWithEmptyLanguage() throws Exception {
+        XAutomaton a = new XRegExp("#*").toAutomaton(1000);
+        // paranoia:
+        assertTrue(a.toString().length() > 0);
+        a = new XRegExp("#+").toAutomaton(1000);
+        assertTrue(a.toString().length() > 0);
+        a = new XRegExp("#{2,10}").toAutomaton(1000);
+        assertTrue(a.toString().length() > 0);
+        a = new XRegExp("#?").toAutomaton(1000);
+        assertTrue(a.toString().length() > 0);
+    }
 }

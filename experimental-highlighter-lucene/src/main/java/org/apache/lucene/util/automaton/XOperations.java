@@ -174,6 +174,10 @@ final public class XOperations {
    * Complexity: linear in number of states.
    */
   static public XAutomaton repeat(XAutomaton a) {
+    if (a.getNumStates() == 0) {
+      // Repeating the empty automata will still only accept the empty automata.
+      return a;
+    }
     XAutomaton.Builder builder = new XAutomaton.Builder();
     builder.createState();
     builder.setAccept(0, true);
