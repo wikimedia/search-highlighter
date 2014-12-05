@@ -14,7 +14,6 @@ import java.util.regex.Pattern;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.util.automaton.XAutomaton;
 import org.apache.lucene.util.automaton.XRegExp;
-import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.base.Function;
 import org.elasticsearch.common.collect.Iterators;
 import org.elasticsearch.common.logging.ESLogger;
@@ -23,6 +22,7 @@ import org.elasticsearch.common.text.StringAndBytesText;
 import org.elasticsearch.common.text.StringText;
 import org.elasticsearch.common.text.Text;
 import org.elasticsearch.common.util.BigArrays;
+import org.elasticsearch.common.util.LocaleUtils;
 import org.elasticsearch.search.fetch.FetchPhaseExecutionException;
 import org.elasticsearch.search.highlight.SearchContextHighlight.FieldOptions;
 import org.wikimedia.highlighter.experimental.elasticsearch.BytesRefHashTermInfos;
@@ -601,7 +601,7 @@ public class ExperimentalHighlighter implements Highlighter {
                 return locale;
             }
             String localeString = (String) getOption("locale");
-            locale = localeString == null ? Locale.US : Strings.parseLocaleString(localeString);
+            locale = localeString == null ? Locale.US : LocaleUtils.parse(localeString);
             return locale;
         }
     }

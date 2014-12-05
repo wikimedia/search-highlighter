@@ -10,11 +10,11 @@ import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.util.BytesRef;
 import org.apache.lucene.util.CollectionUtil;
+import org.apache.lucene.util.automaton.Automata;
 import org.apache.lucene.util.automaton.Automaton;
-import org.apache.lucene.util.automaton.BasicAutomata;
-import org.apache.lucene.util.automaton.BasicOperations;
 import org.apache.lucene.util.automaton.ByteRunAutomaton;
 import org.apache.lucene.util.automaton.CompiledAutomaton;
+import org.apache.lucene.util.automaton.Operations;
 import org.wikimedia.highlighter.experimental.lucene.QueryFlattener;
 import org.wikimedia.search.highlighter.experimental.HitEnum;
 import org.wikimedia.search.highlighter.experimental.hit.PhraseHitEnumWrapper;
@@ -111,7 +111,7 @@ public class BasicQueryWeigher implements TermWeigher<BytesRef>, TermSourceFinde
     private Automaton buildAcceptableTerms() {
         if (automata.isEmpty()) {
             if (terms.isEmpty()) {
-                return BasicAutomata.makeEmpty();
+                return Automata.makeEmpty();
             }
             return buildTermsAutomata();
         }
@@ -125,13 +125,13 @@ public class BasicQueryWeigher implements TermWeigher<BytesRef>, TermSourceFinde
         if (!terms.isEmpty()) {
             all.add(buildTermsAutomata());
         }
-        return BasicOperations.union(all);
+        return Operations.union(all);
     }
 
     private Automaton buildTermsAutomata() {
         // Sort the terms in UTF-8 order.
         CollectionUtil.timSort(terms);
-        return BasicAutomata.makeStringUnion(terms);
+        return Automata.makeStringUnion(terms);
     }
 
     private SourceInfo findInfo(BytesRef term) {

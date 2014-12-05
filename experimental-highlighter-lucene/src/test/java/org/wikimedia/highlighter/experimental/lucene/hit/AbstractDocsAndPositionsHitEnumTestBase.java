@@ -17,7 +17,7 @@ import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.memory.MemoryIndex;
 import org.apache.lucene.util.BytesRef;
 import org.apache.lucene.util.Version;
-import org.apache.lucene.util.automaton.BasicAutomata;
+import org.apache.lucene.util.automaton.Automata;
 import org.apache.lucene.util.automaton.CompiledAutomaton;
 import org.junit.Test;
 import org.wikimedia.search.highlighter.experimental.HitEnum;
@@ -38,7 +38,7 @@ public abstract class AbstractDocsAndPositionsHitEnumTestBase extends AbstractLu
             refs.add(new BytesRef(acceptable));
         }
         return buildEnum(source, analyzer,
-                new CompiledAutomaton(BasicAutomata.makeStringUnion(refs)));
+                new CompiledAutomaton(Automata.makeStringUnion(refs)));
     }
 
     protected IndexReader buildIndexReader(String source, Analyzer analyzer) {
@@ -51,7 +51,7 @@ public abstract class AbstractDocsAndPositionsHitEnumTestBase extends AbstractLu
     @Override
     protected HitEnum buildEnum(String source) {
         return buildEnum(source, mockAnalyzer(),
-                new CompiledAutomaton(BasicAutomata.makeAnyString()));
+                new CompiledAutomaton(Automata.makeAnyString()));
     }
 
     @Test

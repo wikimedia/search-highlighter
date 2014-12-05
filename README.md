@@ -34,11 +34,12 @@ Elasticsearch installation
 
 | Experimental Highlighter Plugin |  ElasticSearch  |
 |---------------------------------|-----------------|
-| 0.0.11 -> master                | 1.3.0 -> master |
+| master                          | 1.4.1           |
+| 0.0.11 -> 0.0.13, 1.3 branch    | 1.3.0 -> 1.3.6  |
 | 0.0.10                          | 1.2.0           |
 | 0.0.1 -> 0.0.9                  | 1.1.0           |
 
-Install it like so:
+Install it like so for Elasticsearch 1.3.x:
 ```bash
 ./bin/plugin --install org.wikimedia.search.highlighter/experimental-highlighter-elasticsearch-plugin/0.0.13
 ```

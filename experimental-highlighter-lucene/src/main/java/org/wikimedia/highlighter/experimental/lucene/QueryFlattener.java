@@ -28,10 +28,10 @@ import org.apache.lucene.search.spans.SpanPositionCheckQuery;
 import org.apache.lucene.search.spans.SpanQuery;
 import org.apache.lucene.search.spans.SpanTermQuery;
 import org.apache.lucene.util.BytesRef;
+import org.apache.lucene.util.automaton.Automata;
 import org.apache.lucene.util.automaton.Automaton;
-import org.apache.lucene.util.automaton.BasicAutomata;
-import org.apache.lucene.util.automaton.BasicOperations;
 import org.apache.lucene.util.automaton.LevenshteinAutomata;
+import org.apache.lucene.util.automaton.Operations;
 
 /**
  * Flattens {@link Query}s similarly to Lucene's FieldQuery.
@@ -340,8 +340,8 @@ public class QueryFlattener {
             return;
         }
         Object source = sourceOverride == null ? bytes : sourceOverride;
-        Automaton automaton = BasicAutomata.makeString(bytes.utf8ToString());
-        automaton = BasicOperations.concatenate(automaton, BasicAutomata.makeAnyString());
+        Automaton automaton = Automata.makeString(bytes.utf8ToString());
+        automaton = Operations.concatenate(automaton, Automata.makeAnyString());
         callback.flattened(automaton, boost, source.hashCode());
     }
 
@@ -370,8 +370,8 @@ public class QueryFlattener {
         LevenshteinAutomata automata = new LevenshteinAutomata(fuzzed, query.getTranspositions());
         Automaton automaton = automata.toAutomaton(editDistance);
         if (query.getPrefixLength() > 0) {
-            Automaton prefix = BasicAutomata.makeString(term.substring(0, query.getPrefixLength()));
-            automaton = BasicOperations.concatenate(prefix, automaton);
+            Automaton prefix = Automata.makeString(term.substring(0, query.getPrefixLength()));
+            automaton = Operations.concatenate(prefix, automaton);
         }
         Object source = sourceOverride == null ? key : sourceOverride;
         callback.flattened(automaton, boost, source.hashCode());
