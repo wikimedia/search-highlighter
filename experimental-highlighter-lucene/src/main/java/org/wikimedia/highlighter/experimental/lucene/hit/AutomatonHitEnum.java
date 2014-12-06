@@ -16,7 +16,7 @@ public class AutomatonHitEnum extends AbstractHitEnum {
     }
 
     public static class Factory {
-        private OffsetReturningRunAutomaton run;
+        private final OffsetReturningRunAutomaton run;
 
         private Factory(Automaton automaton) {
             run = new OffsetReturningRunAutomaton(automaton, false);

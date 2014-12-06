@@ -213,7 +213,7 @@ public class ExperimentalHighlighter implements Highlighter {
             }
 
             Boolean skipIfLastMatched = (Boolean) getOption("skip_if_last_matched");
-            return skipIfLastMatched == null ? false : skipIfLastMatched && cache.lastMatched;
+            return skipIfLastMatched != null && skipIfLastMatched && cache.lastMatched;
         }
 
         void cleanup() throws Exception {

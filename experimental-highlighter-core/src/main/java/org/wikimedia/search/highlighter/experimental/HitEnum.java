@@ -65,6 +65,6 @@ public interface HitEnum extends Segment {
                 }
                 return lhs.endOffset() < rhs.endOffset();
             }
-        };
+        }
     }
 }

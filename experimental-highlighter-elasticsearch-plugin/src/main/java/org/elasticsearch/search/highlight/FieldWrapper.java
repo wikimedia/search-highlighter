@@ -339,7 +339,7 @@ public class FieldWrapper {
             return new ConstantTermWeigher<BytesRef>();
         }
         Boolean useDefaultSimilarity = (Boolean) executionContext.getOption("default_similarity");
-        if (useDefaultSimilarity == null || useDefaultSimilarity == true) {
+        if (useDefaultSimilarity == null || useDefaultSimilarity) {
             // Use a top level reader to fetch the frequency information
             TermWeigher<BytesRef> corpusWeigher = new DefaultSimilarityTermWeigher(context.hitContext.topLevelReader(),
                     context.fieldName);

@@ -16,7 +16,6 @@ import org.apache.lucene.analysis.util.CharArraySet;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.memory.MemoryIndex;
 import org.apache.lucene.util.BytesRef;
-import org.apache.lucene.util.Version;
 import org.apache.lucene.util.automaton.Automata;
 import org.apache.lucene.util.automaton.CompiledAutomaton;
 import org.junit.Test;
@@ -82,6 +81,6 @@ public abstract class AbstractDocsAndPositionsHitEnumTestBase extends AbstractLu
     }
 
     protected Analyzer englishStemmingAnalyzer() {
-        return trackAnalyzer(new EnglishAnalyzer(Version.LUCENE_47, CharArraySet.EMPTY_SET));
+        return trackAnalyzer(new EnglishAnalyzer(CharArraySet.EMPTY_SET));
     }
 }

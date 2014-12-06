@@ -12,16 +12,16 @@ import org.wikimedia.search.highlighter.experimental.SourceExtracter;
 abstract class AbstractMultiSourceExtracter<T> implements SourceExtracter<T> {
     interface Builder<T, S extends Builder<T, S>> {
         /**
-         * Add a segmenter.
+         * Add an extracter.
          *
-         * @param segmenter the segmenter to delegate to
-         * @param length the length of the source underlying the segmenter
+         * @param extracter the extracter to delegate to
+         * @param length the length of the source underlying the extracter
          * @return this for chaining
          */
         S add(SourceExtracter<T> extracter, int length);
 
         /**
-         * Build the segmenter.
+         * Build the extracter.
          */
         SourceExtracter<T> build();
     }
@@ -37,7 +37,7 @@ abstract class AbstractMultiSourceExtracter<T> implements SourceExtracter<T> {
     /**
      * Merge all the extracts. Only called when the extracting across boundaries
      * in the constituent extracters.
-     * 
+     *
      * @param extracts extracts from all constituent extracters
      * @return all extracts, merged
      */

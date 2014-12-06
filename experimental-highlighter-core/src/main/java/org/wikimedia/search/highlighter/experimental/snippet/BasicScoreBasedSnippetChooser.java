@@ -168,7 +168,7 @@ public class BasicScoreBasedSnippetChooser extends AbstractBasicSnippetChooser<B
                 }
                 return 0;
             }
-        };
+        }
     }
 
     private class ProtoSnippetQueue extends PriorityQueue<ProtoSnippet> {
