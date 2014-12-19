@@ -1,4 +1,4 @@
-Experimental Highlighter [![Build Status](https://travis-ci.org/wikimedia/search-highlighter.svg?branch=master)](https://travis-ci.org/wikimedia/search-highlighter)
+Experimental Highlighter [![Build Status](https://integration.wikimedia.org/ci/buildStatus/icon?job=search-highlighter)](https://integration.wikimedia.org/ci/job/search-highlighter/)
 ========================
 
 Text highlighter for Java designed to be pluggable enough for easy
