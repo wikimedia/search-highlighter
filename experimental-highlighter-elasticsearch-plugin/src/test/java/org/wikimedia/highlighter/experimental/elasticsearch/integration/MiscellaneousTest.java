@@ -3,6 +3,7 @@ package org.wikimedia.highlighter.experimental.elasticsearch.integration;
 import static org.elasticsearch.index.query.QueryBuilders.boolQuery;
 import static org.elasticsearch.index.query.QueryBuilders.fuzzyQuery;
 import static org.elasticsearch.index.query.QueryBuilders.matchPhrasePrefixQuery;
+import static org.elasticsearch.index.query.QueryBuilders.matchQuery;
 import static org.elasticsearch.index.query.QueryBuilders.prefixQuery;
 import static org.elasticsearch.index.query.QueryBuilders.queryString;
 import static org.elasticsearch.index.query.QueryBuilders.regexpQuery;
@@ -41,9 +42,9 @@ import com.carrotsearch.ant.tasks.junit4.dependencies.com.google.common.base.Cha
 import com.google.common.io.Resources;
 
 /**
- * Miscelaneous integration test that don't really have a good home.
+ * Miscellaneous integration test that don't really have a good home.
  */
-public class MiscelaneousTest extends AbstractExperimentalHighlighterIntegrationTestBase {
+public class MiscellaneousTest extends AbstractExperimentalHighlighterIntegrationTestBase {
     @Test
     public void mixOfAutomataAndNotQueries() throws IOException {
         buildIndex();
@@ -338,6 +339,20 @@ public class MiscelaneousTest extends AbstractExperimentalHighlighterIntegration
             }
         }
         watch.stop();
+    }
+
+    /**
+     * There was a time when highlighting * would blow up because of _size being an empty numeric field.
+     */
+    @Test
+    public void highlightStar() throws IOException {
+        buildIndex();
+        indexTestData();
+
+        SearchResponse response = client().prepareSearch("test").setTypes("test")
+                .setQuery(matchQuery("_all", "very")).setHighlighterType("experimental")
+                .addHighlightedField("*").get();
+        assertHighlight(response, 0, "test", 0, equalTo("tests <em>very</em> simple test"));
     }
 
     // TODO matched_fields with different hit source

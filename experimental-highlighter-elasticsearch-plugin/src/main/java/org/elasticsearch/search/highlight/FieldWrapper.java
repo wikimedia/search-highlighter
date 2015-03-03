@@ -28,6 +28,7 @@ import org.wikimedia.search.highlighter.experimental.HitEnum;
 import org.wikimedia.search.highlighter.experimental.Segmenter;
 import org.wikimedia.search.highlighter.experimental.SourceExtracter;
 import org.wikimedia.search.highlighter.experimental.hit.ConcatHitEnum;
+import org.wikimedia.search.highlighter.experimental.hit.EmptyHitEnum;
 import org.wikimedia.search.highlighter.experimental.hit.PositionBoostingHitEnumWrapper;
 import org.wikimedia.search.highlighter.experimental.hit.ReplayingHitEnum.HitEnumAndLength;
 import org.wikimedia.search.highlighter.experimental.hit.TermWeigher;
@@ -282,7 +283,10 @@ public class FieldWrapper {
         List<String> fieldValues = getFieldValues();
         switch (fieldValues.size()) {
         case 0:
-            return buildTokenStreamHitEnum(analyzer, "");
+            // If there isn't any data then we assume there can't be any hits.
+            // This is more right than building the token stream hit enum
+            // against empty string.
+            return EmptyHitEnum.INSTANCE;
         case 1:
             return buildTokenStreamHitEnum(analyzer, fieldValues.get(0));
         default:
