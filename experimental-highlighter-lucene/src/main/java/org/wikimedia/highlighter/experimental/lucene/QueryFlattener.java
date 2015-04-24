@@ -76,7 +76,7 @@ public class QueryFlattener {
         /**
          * Called to mark the start of a phrase.
          */
-        void startPhrase(int termCount);
+        void startPhrase(int positionCount, float boost);
 
         void startPhrasePosition(int termCount);
 
@@ -85,7 +85,7 @@ public class QueryFlattener {
         /**
          * Called to mark the end of a phrase.
          */
-        void endPhrase(String field, int slop, float weight);
+        void endPhrase(String field, int slop, float boost);
     }
 
     public void flatten(Query query, IndexReader reader, Callback callback) {
@@ -195,7 +195,7 @@ public class QueryFlattener {
                 callback.flattened(term.bytes(), boost, sourceOverride);
             }
         } else {
-            callback.startPhrase(terms.length);
+            callback.startPhrase(terms.length, boost);
             for (Term term : terms) {
                 callback.startPhrasePosition(1);
                 callback.flattened(term.bytes(), 0, sourceOverride);
@@ -255,7 +255,7 @@ public class QueryFlattener {
                 }
             }
         } else {
-            callback.startPhrase(termArrays.size());
+            callback.startPhrase(termArrays.size(), boost);
             String field = null;
             for (Term[] terms : termArrays) {
                 callback.startPhrasePosition(terms.length);

@@ -9,10 +9,22 @@ import org.wikimedia.search.highlighter.experimental.HitEnum;
 
 /**
  * Naive implementation of applying different scores to phrases.
- * 
+ *
  * TODO this weight phrases too low because it doesn't include the default similarity
  */
 public class PhraseHitEnumWrapper implements HitEnum {
+    /**
+     * Expands non-multi-phrase arrays into multi-phrase arrays so we can always
+     * process multi-phrases.
+     */
+    private static int[][] expandPhrase(int[] phrase) {
+        int[][] expanded = new int[phrase.length][];
+        for (int i = 0; i < phrase.length; i++) {
+            expanded[i] = new int[] {phrase[i]};
+        }
+        return expanded;
+    }
+
     private final ReplayingHitEnum replaying = new ReplayingHitEnum();
     private final List<PhraseCandidate> candidates = new LinkedList<PhraseCandidate>();
     private final List<PhraseCandidate> currentMatches = new LinkedList<PhraseCandidate>();
@@ -30,21 +42,17 @@ public class PhraseHitEnumWrapper implements HitEnum {
      * @param phrase source hashcodes for each term
      */
     public PhraseHitEnumWrapper(HitEnum wrapped, int[] phrase, float phraseWeight, int phraseSlop) {
-        this.wrapped = wrapped;
-        this.phraseWeight = phraseWeight;
-        this.phraseSlop = phraseSlop;
-        this.phrase = new int[phrase.length][];
-        for (int i = 0; i < phrase.length; i++) {
-            this.phrase[i] = new int[] {phrase[i]};
-        }
-
-        assert phraseIsSorted();
+        this(wrapped, expandPhrase(phrase), phraseWeight, phraseSlop);
     }
 
     /**
      * @param phrase array of arrays of terms.  Each inner array should be sorted.
      */
     public PhraseHitEnumWrapper(HitEnum wrapped, int[][] phrase, float phraseWeight, int phraseSlop) {
+        if (phrase.length < 2) {
+            throw new IllegalArgumentException("It doesn't make sense to match phrases of length 0 or 1. "
+                    + "And it causes crashes. Just don't do it.");
+        }
         this.wrapped = wrapped;
         this.phrase = phrase;
         this.phraseWeight = phraseWeight;

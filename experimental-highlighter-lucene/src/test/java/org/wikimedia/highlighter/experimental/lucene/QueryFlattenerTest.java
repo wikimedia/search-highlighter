@@ -64,17 +64,16 @@ public class QueryFlattenerTest {
         verify(callback).flattened(bar.bytes(), phraseAsTerms ? 1f : 0, null);
         verify(callback).flattened(baz.bytes(), phraseAsTerms ? 1f : 0, null);
         if (phraseAsTerms) {
-            verify(callback, never()).startPhrase(anyInt());
+            verify(callback, never()).startPhrase(anyInt(), anyFloat());
             verify(callback, never()).startPhrasePosition(anyInt());
             verify(callback, never()).endPhrasePosition();
             verify(callback, never()).endPhrase(anyString(), anyInt(), anyFloat());
         } else {
-            verify(callback).startPhrase(2);
+            verify(callback).startPhrase(2, 1);
             verify(callback, times(2)).startPhrasePosition(1);
             verify(callback, times(2)).endPhrasePosition();
             verify(callback).endPhrase("foo", 0, 1);
         }
-
     }
 
     @Test

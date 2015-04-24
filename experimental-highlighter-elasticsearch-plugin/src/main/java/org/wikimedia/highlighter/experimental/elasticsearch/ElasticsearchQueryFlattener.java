@@ -60,7 +60,7 @@ public class ElasticsearchQueryFlattener extends QueryFlattener {
                 flattenPrefixQuery(term.bytes(), boost, sourceOverride, callback);
             }
         } else {
-            callback.startPhrase(termArrays.size());
+            callback.startPhrase(termArrays.size(), boost);
             for (int i = 0; i < sizeMinus1; i++) {
                 Term[] termArray = termArrays.get(i);
                 callback.startPhrasePosition(termArray.length);

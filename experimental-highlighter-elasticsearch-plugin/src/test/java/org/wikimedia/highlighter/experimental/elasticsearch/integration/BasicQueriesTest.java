@@ -2,6 +2,7 @@ package org.wikimedia.highlighter.experimental.elasticsearch.integration;
 
 import static org.elasticsearch.index.query.QueryBuilders.boolQuery;
 import static org.elasticsearch.index.query.QueryBuilders.fuzzyQuery;
+import static org.elasticsearch.index.query.QueryBuilders.queryString;
 import static org.elasticsearch.index.query.QueryBuilders.rangeQuery;
 import static org.elasticsearch.index.query.QueryBuilders.regexpQuery;
 import static org.elasticsearch.index.query.QueryBuilders.spanFirstQuery;
@@ -63,6 +64,7 @@ public class BasicQueriesTest extends AbstractExperimentalHighlighterIntegration
                     equalTo("<em>tests</em> very simple <em>test</em>"));
         }
     }
+
     @Test
     public void singleRangeQuery() throws IOException {
         buildIndex();
