@@ -64,12 +64,12 @@ public class ElasticsearchQueryFlattenerTest {
                         not(recognises("anoother")), not(recognises("bar"))));
 
         if (phraseAsTerms) {
-            verify(callback, never()).startPhrase(anyInt());
+            verify(callback, never()).startPhrase(anyInt(), anyFloat());
             verify(callback, never()).startPhrasePosition(anyInt());
             verify(callback, never()).endPhrasePosition();
             verify(callback, never()).endPhrase(anyString(), anyInt(), anyFloat());
         } else {
-            verify(callback).startPhrase(3);
+            verify(callback).startPhrase(3, 1);
             verify(callback).startPhrasePosition(1);
             verify(callback, times(2)).startPhrasePosition(2);
             verify(callback, times(3)).endPhrasePosition();

@@ -54,6 +54,12 @@
       <type>test-jar</type>
       <scope>test</scope>
     </dependency>
+    <dependency>
+      <groupId>org.elasticsearch</groupId>
+      <artifactId>elasticsearch-analysis-icu</artifactId>
+      <version>${elasticsearch.icu.version}</version>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 
   <build>

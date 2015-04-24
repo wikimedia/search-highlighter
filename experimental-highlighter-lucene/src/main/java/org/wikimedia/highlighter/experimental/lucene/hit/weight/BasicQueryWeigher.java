@@ -221,9 +221,12 @@ public class BasicQueryWeigher implements TermWeigher<BytesRef>, TermSourceFinde
         private int[][] phrase;
         private int phrasePosition;
         private int phraseTerm;
+        private boolean inSinglePositionPhraseQuery;
+        private float singlePositionPhraseQueryBoost;
 
         @Override
         public void flattened(BytesRef term, float boost, Object rewritten) {
+            boost = inSinglePositionPhraseQuery ? singlePositionPhraseQueryBoost : boost;
             maxTermWeight = Math.max(maxTermWeight, boost);
             int source = rewritten == null ? term.hashCode() : rewritten.hashCode();
             SourceInfo info = termInfos.get(term);
@@ -252,6 +255,7 @@ public class BasicQueryWeigher implements TermWeigher<BytesRef>, TermSourceFinde
 
         @Override
         public void flattened(Automaton automaton, float boost, int source) {
+            boost = inSinglePositionPhraseQuery ? singlePositionPhraseQueryBoost : boost;
             maxTermWeight = Math.max(maxTermWeight, boost);
             AutomatonSourceInfo info = new AutomatonSourceInfo(automaton);
             // Automata don't have a hashcode so we always use the source
@@ -264,13 +268,22 @@ public class BasicQueryWeigher implements TermWeigher<BytesRef>, TermSourceFinde
         }
 
         @Override
-        public void startPhrase(int termCount) {
-            phrase = new int[termCount][];
+        public void startPhrase(int positionCount, float boost) {
+            if (positionCount < 2) {
+                // Single position phrases are just term queries
+                inSinglePositionPhraseQuery = true;
+                singlePositionPhraseQueryBoost = boost;
+                return;
+            }
+            phrase = new int[positionCount][];
             phrasePosition = -1;
         }
 
         @Override
         public void startPhrasePosition(int termCount) {
+            if (inSinglePositionPhraseQuery) {
+                return;
+            }
             phrasePosition++;
             phrase[phrasePosition] = new int[termCount];
             phraseTerm = 0;
@@ -282,6 +295,13 @@ public class BasicQueryWeigher implements TermWeigher<BytesRef>, TermSourceFinde
 
         @Override
         public void endPhrase(String field, int slop, float weight) {
+            if (inSinglePositionPhraseQuery) {
+                /*
+                 * We don't record single phrase queries as phrase queries....
+                 */
+                inSinglePositionPhraseQuery = false;
+                return;
+            }
             // Because terms get the max weight across all fields phrases must as well.
             PhraseKey key = new PhraseKey(phrase);
             PhraseInfo info;

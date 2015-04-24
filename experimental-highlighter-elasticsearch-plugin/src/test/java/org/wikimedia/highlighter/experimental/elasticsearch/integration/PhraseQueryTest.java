@@ -3,6 +3,7 @@ package org.wikimedia.highlighter.experimental.elasticsearch.integration;
 import static org.elasticsearch.index.query.QueryBuilders.boolQuery;
 import static org.elasticsearch.index.query.QueryBuilders.matchPhrasePrefixQuery;
 import static org.elasticsearch.index.query.QueryBuilders.matchPhraseQuery;
+import static org.elasticsearch.index.query.QueryBuilders.queryString;
 import static org.elasticsearch.index.query.QueryBuilders.termQuery;
 import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertHighlight;
 import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertNoFailures;
@@ -302,5 +303,33 @@ public class PhraseQueryTest extends AbstractExperimentalHighlighterIntegrationT
                     equalTo("<em>test</em> very <em>simple</em> <em>test</em>"));
         }
     }
-    
+
+    /**
+     * Single position phrase queries crash the PhraseHitEnumWrapper so we avoid
+     * sending them to it.
+     */
+    @Test
+    public void singlePositionPhraseQueryOnItsOwn() throws IOException {
+        singlePositionPhraseQueryTestCase("forÀ", "forÀ", "for<em>À</em>");
+    }
+
+    @Test
+    public void singlePositionPhraseQueryWithFriends() throws IOException {
+        singlePositionPhraseQueryTestCase("Sju svarta be-hå", "Sju svarta be\\-hå \\(1954 film\\)",
+                "<em>Sju</em> <em>svarta</em> be-<em>hå</em>");
+    }
+
+    private void singlePositionPhraseQueryTestCase(String data, String query, String expected)
+            throws IOException {
+        buildIndex();
+        indexTestData(data);
+
+        SearchRequestBuilder search = testSearch(
+                queryString(query).defaultField("test.cirrus_english").autoGeneratePhraseQueries(
+                        true)).addHighlightedField("test.cirrus_english");
+        for (String hitSource : HIT_SOURCES) {
+            SearchResponse response = setHitSource(search, hitSource).get();
+            assertHighlight(response, 0, "test.cirrus_english", 0, equalTo(expected));
+        }
+    }
 }

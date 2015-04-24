@@ -53,6 +53,8 @@
     <!-- For the Elasticsearch plugin to work this should match the version of Lucene that Elasticsearch 
       uses. -->
     <lucene.version>4.10.2</lucene.version>
+    <!-- Note that this has to be compatible with the Elasticsearch version but won't match it. -->
+    <elasticsearch.icu.version>2.4.1</elasticsearch.icu.version>
   </properties>
 
   <build>
@@ -60,10 +62,16 @@
       <resource>
         <directory>src/main/java</directory>
       </resource>
+      <resource>
+        <directory>src/main/resources</directory>
+      </resource>
     </resources>
     <testResources>
       <testResource>
         <directory>src/test/java</directory>
+      </testResource>
+      <testResource>
+        <directory>src/test/resources</directory>
       </testResource>
     </testResources>
     <pluginManagement>

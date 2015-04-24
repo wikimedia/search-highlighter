@@ -17,9 +17,9 @@ import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.plugins.PluginsService;
 import org.elasticsearch.test.ElasticsearchIntegrationTest;
 
-@ElasticsearchIntegrationTest.ClusterScope(
-        scope = ElasticsearchIntegrationTest.Scope.SUITE, transportClientRatio = 0.0)
-public abstract class AbstractExperimentalHighlighterIntegrationTestBase extends ElasticsearchIntegrationTest {
+@ElasticsearchIntegrationTest.ClusterScope(scope = ElasticsearchIntegrationTest.Scope.SUITE, transportClientRatio = 0.0)
+public abstract class AbstractExperimentalHighlighterIntegrationTestBase extends
+        ElasticsearchIntegrationTest {
     protected static final List<String> HIT_SOURCES = ImmutableList.of("postings", "vectors",
             "analyze");
 
@@ -35,8 +35,7 @@ public abstract class AbstractExperimentalHighlighterIntegrationTestBase extends
      */
     protected SearchRequestBuilder testSearch(QueryBuilder builder) {
         return client().prepareSearch("test").setTypes("test").setQuery(builder)
-                .setHighlighterType("experimental").addHighlightedField("test")
-                .setSize(1);
+                .setHighlighterType("experimental").addHighlightedField("test").setSize(1);
     }
 
     protected SearchRequestBuilder setHitSource(SearchRequestBuilder search, String hitSource) {
@@ -62,13 +61,91 @@ public abstract class AbstractExperimentalHighlighterIntegrationTestBase extends
         settings.field("number_of_shards", shards);
         settings.startObject("analysis");
         settings.startObject("analyzer");
-        settings.startObject("chars").field("tokenizer", "chars").endObject();
+        {
+            settings.startObject("chars").field("tokenizer", "chars").endObject();
+            /*
+             * This is a clone of the English analyzer cirrus uses that we can
+             * use to run down errors that come up in CirrusSearch.
+             */
+            settings.startObject("cirrus_english");
+            {
+                settings.field("tokenizer", "standard");
+                settings.array("filter", //
+                        "standard", //
+                        "aggressive_splitting", //
+                        "possessive_english", //
+                        "icu_normalizer", //
+                        "stop", //
+                        "kstem", //
+                        "custom_stem", //
+                        "asciifolding_preserve" //
+                        );
+                settings.array("char_filter", "word_break_helper");
+            }
+            settings.endObject();
+        }
         settings.endObject();
         settings.startObject("tokenizer");
-        settings.startObject("chars").field("type", "pattern").field("pattern", "(.)")
-                .field("group", 0).endObject();
+        {
+            settings.startObject("chars");
+            {
+                settings.field("type", "pattern");
+                settings.field("pattern", "(.)");
+                settings.field("group", 0);
+            }
+            settings.endObject();
+        }
         settings.endObject();
-        settings.endObject().endObject();
+        settings.startObject("filter");
+        {
+            settings.startObject("possessive_english");
+            {
+                settings.field("type", "stemmer");
+                settings.field("language", "possessive_english");
+            }
+            settings.endObject();
+            settings.startObject("aggressive_splitting");
+            {
+                settings.field("type", "word_delimiter");
+                settings.field("stem_possessive_english", "false");
+                settings.field("preserve_original", "false");
+            }
+            settings.endObject();
+            settings.startObject("custom_stem");
+            {
+                settings.field("type", "stemmer_override");
+                settings.field("rules", "guidelines => guideline");
+            }
+            settings.endObject();
+            settings.startObject("asciifolding_preserve");
+            {
+                settings.field("type", "asciifolding");
+                settings.field("preserve_original", "true");
+            }
+            settings.endObject();
+            settings.startObject("icu_normalizer");
+            {
+                settings.field("type", "icu_normalizer");
+                settings.field("name", "nfkc_cf");
+            }
+            settings.endObject();
+        }
+        settings.endObject();
+        settings.startObject("char_filter");
+        {
+            settings.startObject("word_break_helper");
+            {
+                settings.field("type", "mapping");
+                settings.array("mappings", //
+                        "_=>\\u0020", //
+                        ".=>\\u0020", //
+                        "(=>\\u0020", //
+                        ")=>\\u0020");
+            }
+            settings.endObject();
+        }
+        settings.endObject();
+        settings.endObject();
         assertAcked(prepareCreate("test").setSettings(settings).addMapping("test", mapping));
         ensureYellow();
     }
@@ -81,6 +158,7 @@ public abstract class AbstractExperimentalHighlighterIntegrationTestBase extends
         addSubField(builder, "whitespace", "whitespace", offsetsInPostings, fvhLikeTermVectors);
         addSubField(builder, "english", "english", offsetsInPostings, fvhLikeTermVectors);
         addSubField(builder, "english2", "english", offsetsInPostings, fvhLikeTermVectors);
+        addSubField(builder, "cirrus_english", "cirrus_english", offsetsInPostings, fvhLikeTermVectors);
         addSubField(builder, "chars", "chars", offsetsInPostings, fvhLikeTermVectors);
         builder.endObject().endObject();
     }
