@@ -1,7 +1,11 @@
 package org.wikimedia.highlighter.experimental.elasticsearch.integration;
 
-import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.*;
-import static org.hamcrest.Matchers.*;
+import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertFailures;
+import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertHighlight;
+import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertHitCount;
+import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertNotHighlighted;
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.equalTo;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -221,5 +225,30 @@ public class RegexTest extends AbstractExperimentalHighlighterIntegrationTestBas
                 RestStatus.INTERNAL_SERVER_ERROR, containsString("Determinizing automaton would result in more than 100"));
         // Its unfortunate that this comes back as an INTERNAL_SERVER_ERROR but
         // I can't find any way from here to mark it otherwise.
+    }
+
+    @Test
+    public void overlapMerge() throws IOException {
+        buildIndex();
+        indexTestData("This test has overlapping highlights.");
+
+        Map<String, Object> options = new HashMap<>();
+        options.put("regex", "T.+\\.");
+        SearchRequestBuilder search = testSearch().setHighlighterOptions(options);
+        SearchResponse response = search.get();
+        assertHighlight(response, 0, "test", 0,
+                equalTo("<em>This test has overlapping highlights.</em>"));
+    }
+
+    @Test
+    public void longResultAreNotReturned() throws IOException {
+        buildIndex();
+        indexTestData("This test is much longer than the window but we match all of it. Isn't that a shame?");
+
+        Map<String, Object> options = new HashMap<>();
+        options.put("regex", "T.+shame\\?");
+        SearchRequestBuilder search = testSearch().setHighlighterOptions(options).setHighlighterFragmentSize(30);
+        SearchResponse response = search.get();
+        assertNotHighlighted(response, 0, "test");
     }
 }

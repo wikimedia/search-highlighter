@@ -77,17 +77,17 @@ public class OverlapMergingHitEnumWrapperTest extends RandomizedTest {
     }
 
     @Test
-    public void overlapPicksMaxWeight() {
+    public void overlapPicksMaxWeightAndSize() {
         ReplayingHitEnum replaying = new ReplayingHitEnum();
         // The first overlapping hit has corpus weight of 3
-        replaying.record(0, 0, 2, 2, 3, 1);
+        replaying.record(0, 0, 5, 2, 3, 1);
         // The second has query weight of 3
         replaying.record(0, 1, 3, 3, 2, 2);
         HitEnum e = new OverlapMergingHitEnumWrapper(replaying);
         assertThat(e, advances());
         assertThat(e, allOf(
                 // So together they should have a multiplied weight of 9 (3*3)
-                atWeight(9), atPosition(0), atStartOffset(0), atEndOffset(3), atSource(33)));
+                atWeight(9), atPosition(0), atStartOffset(0), atEndOffset(5), atSource(33)));
         assertThat(e, isEmpty());
     }
 }
