@@ -249,6 +249,7 @@ the locale specified by ```locale```.  Example:
     }
   }
 ```
+If a regex match is wider than the allowed snippet size it won't be returned.
 
 The ```max_determinized_states``` option can be used to limit the complexity
 explosion that comes from compiling Lucene Regular Expressions into DFAs.  It
