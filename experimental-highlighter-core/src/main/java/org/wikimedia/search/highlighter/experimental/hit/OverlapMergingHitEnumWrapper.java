@@ -1,12 +1,13 @@
 package org.wikimedia.search.highlighter.experimental.hit;
 
+import static java.lang.Math.max;
+
 import org.wikimedia.search.highlighter.experimental.HitEnum;
 
 /**
  * HitEnum that merges hits that are "on top" of one another according to start
- * and end offset. Always takes the maximum weight. Delegate must be in order of
- * offsets (startOffset first, endOffset second). Just keeps the first position
- * value.
+ * and end offset. Always takes the maximum weight and end offset. Delegate must
+ * be in order of offsets (startOffset first, endOffset second).
  */
 public class OverlapMergingHitEnumWrapper implements HitEnum {
     /**
@@ -54,11 +55,11 @@ public class OverlapMergingHitEnumWrapper implements HitEnum {
                 break;
             }
             // Merge overlapping hits
-            endOffset = delegate.endOffset();
+            endOffset = max(endOffset, delegate.endOffset());
             assert delegate.startOffset() <= delegate.endOffset();
             assert startOffset <= endOffset;
-            queryWeight = Math.max(queryWeight, delegate.queryWeight());
-            corpusWeight = Math.max(corpusWeight, delegate.corpusWeight());
+            queryWeight = max(queryWeight, delegate.queryWeight());
+            corpusWeight = max(corpusWeight, delegate.corpusWeight());
             /*
              * If both hits can't be traced back to the same source we declare
              * that they are from a new source by merging the hashes. This might
