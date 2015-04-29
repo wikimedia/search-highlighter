@@ -1,10 +1,14 @@
 package org.wikimedia.highlighter.experimental.elasticsearch.integration;
 
+import static org.elasticsearch.index.query.FilterBuilders.idsFilter;
 import static org.elasticsearch.index.query.QueryBuilders.boolQuery;
+import static org.elasticsearch.index.query.QueryBuilders.filteredQuery;
 import static org.elasticsearch.index.query.QueryBuilders.fuzzyQuery;
 import static org.elasticsearch.index.query.QueryBuilders.matchPhrasePrefixQuery;
+import static org.elasticsearch.index.query.QueryBuilders.matchQuery;
 import static org.elasticsearch.index.query.QueryBuilders.prefixQuery;
 import static org.elasticsearch.index.query.QueryBuilders.queryString;
+import static org.elasticsearch.index.query.QueryBuilders.rangeQuery;
 import static org.elasticsearch.index.query.QueryBuilders.regexpQuery;
 import static org.elasticsearch.index.query.QueryBuilders.termQuery;
 import static org.elasticsearch.index.query.QueryBuilders.wildcardQuery;
@@ -19,8 +23,10 @@ import static org.hamcrest.Matchers.equalTo;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
 import org.elasticsearch.action.admin.indices.optimize.OptimizeResponse;
@@ -43,7 +49,7 @@ import com.google.common.io.Resources;
 /**
  * Miscelaneous integration test that don't really have a good home.
  */
-public class MiscelaneousTest extends AbstractExperimentalHighlighterIntegrationTestBase {
+public class MiscellaneousTest extends AbstractExperimentalHighlighterIntegrationTestBase {
     @Test
     public void mixOfAutomataAndNotQueries() throws IOException {
         buildIndex();
@@ -340,6 +346,42 @@ public class MiscelaneousTest extends AbstractExperimentalHighlighterIntegration
         watch.stop();
     }
 
+    /**
+     * There was a time when highlighting * would blow up because of _size being an empty numeric field.
+     */
+    @Test
+    public void highlightStar() throws IOException {
+        buildIndex();
+        indexTestData();
+
+        SearchResponse response = client().prepareSearch("test").setTypes("test")
+                .setQuery(matchQuery("_all", "very")).setHighlighterType("experimental")
+                .addHighlightedField("*").get();
+        assertHighlight(response, 0, "test", 0, equalTo("tests <em>very</em> simple test"));
+    }
+
+    /**
+     * max_expanded_terms should control how many terms we expand multi term
+     * queries into when we expand multi term queries.
+     */
+    @Test
+    public void singleRangeQueryWithSmallRewrites() throws IOException {
+        buildIndex(true, true, 1);
+        client().prepareIndex("test", "test", "2").setSource("test", "test").get();
+        indexTestData();
+
+        Map<String, Object> options = new HashMap<String, Object>();
+        options.put("max_expanded_terms", 1);
+        SearchRequestBuilder search = testSearch(filteredQuery(rangeQuery("test").from("teso").to("tesz"), idsFilter("test").addIds("1")))
+                .setHighlighterOptions(options);
+        for (String hitSource : HIT_SOURCES) {
+            options.put("hit_source", hitSource);
+            SearchResponse response = search.get();
+            assertHighlight(response, 0, "test", 0,
+                    equalTo("tests very simple <em>test</em>"));
+        }
+    }
+
     // TODO matched_fields with different hit source
-    // TODO infer proper hit source    
+    // TODO infer proper hit source
 }

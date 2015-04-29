@@ -1,8 +1,9 @@
 package org.wikimedia.highlighter.experimental.elasticsearch.integration;
 
+import static org.elasticsearch.index.query.FilterBuilders.termFilter;
 import static org.elasticsearch.index.query.QueryBuilders.boolQuery;
+import static org.elasticsearch.index.query.QueryBuilders.functionScoreQuery;
 import static org.elasticsearch.index.query.QueryBuilders.fuzzyQuery;
-import static org.elasticsearch.index.query.QueryBuilders.queryString;
 import static org.elasticsearch.index.query.QueryBuilders.rangeQuery;
 import static org.elasticsearch.index.query.QueryBuilders.regexpQuery;
 import static org.elasticsearch.index.query.QueryBuilders.spanFirstQuery;
@@ -12,6 +13,7 @@ import static org.elasticsearch.index.query.QueryBuilders.spanOrQuery;
 import static org.elasticsearch.index.query.QueryBuilders.spanTermQuery;
 import static org.elasticsearch.index.query.QueryBuilders.termQuery;
 import static org.elasticsearch.index.query.QueryBuilders.wildcardQuery;
+import static org.elasticsearch.index.query.functionscore.ScoreFunctionBuilders.fieldValueFactorFunction;
 import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertHighlight;
 import static org.hamcrest.Matchers.equalTo;
 
@@ -180,6 +182,32 @@ public class BasicQueriesTest extends AbstractExperimentalHighlighterIntegration
             // convert it into a term query
             assertHighlight(response, 0, "test", 0,
                     equalTo("<em>tests</em> very simple <em>test</em>"));
+        }
+    }
+
+    @Test
+    public void functionScoreQueryWithoutFilter() throws IOException {
+        buildIndex();
+        client().prepareIndex("test", "test", "1").setSource("test", "test", "bar", 2).get();
+        refresh();
+
+        SearchRequestBuilder search = testSearch(functionScoreQuery(termQuery("test", "test")).add(fieldValueFactorFunction("bar")));
+        for (String hitSource : HIT_SOURCES) {
+            SearchResponse response = setHitSource(search, hitSource).get();
+            assertHighlight(response, 0, "test", 0, equalTo("<em>test</em>"));
+        }
+    }
+
+    @Test
+    public void functionScoreQueryWithFilter() throws IOException {
+        buildIndex();
+        client().prepareIndex("test", "test", "1").setSource("test", "test", "bar", 2).get();
+        refresh();
+
+        SearchRequestBuilder search = testSearch(functionScoreQuery(termQuery("test", "test")).add(termFilter("test", "test"), fieldValueFactorFunction("bar")));
+        for (String hitSource : HIT_SOURCES) {
+            SearchResponse response = setHitSource(search, hitSource).get();
+            assertHighlight(response, 0, "test", 0, equalTo("<em>test</em>"));
         }
     }
 }

@@ -51,6 +51,7 @@ public abstract class AbstractExperimentalHighlighterIntegrationTestBase extends
             throws IOException {
         XContentBuilder mapping = jsonBuilder().startObject();
         mapping.startObject("test").startObject("properties");
+        mapping.startObject("bar").field("type", "integer").endObject();
         addField(mapping, "test", offsetsInPostings, fvhLikeTermVectors);
         addField(mapping, "test2", offsetsInPostings, fvhLikeTermVectors);
         mapping.startObject("foo").field("type").value("object").startObject("properties");
