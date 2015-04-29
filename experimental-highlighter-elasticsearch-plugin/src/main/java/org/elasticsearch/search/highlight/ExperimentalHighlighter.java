@@ -91,10 +91,15 @@ public class ExperimentalHighlighter implements Highlighter {
 
     static class QueryCacheKey {
         private final Query query;
+        private final int maxExpandedTerms;
         private final boolean phraseAsTerms;
-        public QueryCacheKey(Query query, boolean phraseAsTerms) {
+        private final boolean removeHighFrequencyTermsFromCommonTerms;
+
+        public QueryCacheKey(Query query, int maxExpandedTerms, boolean phraseAsTerms, boolean removeHighFrequencyTermsFromCommonTerms) {
             this.query = query;
+            this.maxExpandedTerms = maxExpandedTerms;
             this.phraseAsTerms = phraseAsTerms;
+            this.removeHighFrequencyTermsFromCommonTerms = removeHighFrequencyTermsFromCommonTerms;
         }
 
         @Override
@@ -102,6 +107,8 @@ public class ExperimentalHighlighter implements Highlighter {
             final int prime = 31;
             int result = 1;
             result = prime * result + (phraseAsTerms ? 1231 : 1237);
+            result = prime * result + maxExpandedTerms;
+            result = prime * result + (removeHighFrequencyTermsFromCommonTerms ? 1231 : 1237);
             result = prime * result + ((query == null) ? 0 : query.hashCode());
             return result;
         }
@@ -115,7 +122,11 @@ public class ExperimentalHighlighter implements Highlighter {
             if (getClass() != obj.getClass())
                 return false;
             QueryCacheKey other = (QueryCacheKey) obj;
+            if (maxExpandedTerms != other.maxExpandedTerms)
+                return false;
             if (phraseAsTerms != other.phraseAsTerms)
+                return false;
+            if (removeHighFrequencyTermsFromCommonTerms != other.removeHighFrequencyTermsFromCommonTerms)
                 return false;
             if (query == null) {
                 if (other.query != null)
@@ -231,7 +242,13 @@ public class ExperimentalHighlighter implements Highlighter {
             }
             return context.field.fieldOptions().options().get(key);
         }
-        
+
+        <T> T getOption(String key, T defaultValue) {
+            @SuppressWarnings("unchecked")
+            T value = (T) getOption(key);
+            return value == null ? defaultValue : value;
+        }
+
         boolean scoreMatters() {
             return scoreMatters;
         }
@@ -240,13 +257,11 @@ public class ExperimentalHighlighter implements Highlighter {
             if (weigher != null) {
                 return;
             }
-            boolean phraseAsTerms = false;
+            boolean phraseAsTerms = getOption("phrase_as_terms", false);
+            boolean removeHighFrequencyTermsFromCommonTerms = getOption("remove_high_freq_terms_from_common_terms", true);
+            int maxExpandedTerms = getOption("max_expanded_terms", 1024);
             // TODO simplify
-            Boolean phraseAsTermsOption = (Boolean) getOption("phrase_as_terms");
-            if (phraseAsTermsOption != null) {
-                phraseAsTerms = phraseAsTermsOption;
-            }
-            QueryCacheKey key = new QueryCacheKey(context.query.originalQuery(), phraseAsTerms);
+            QueryCacheKey key = new QueryCacheKey(context.query.originalQuery(), maxExpandedTerms, phraseAsTerms, removeHighFrequencyTermsFromCommonTerms);
             weigher = cache.queryWeighers.get(key);
             if (weigher != null) {
                 return;
@@ -257,13 +272,13 @@ public class ExperimentalHighlighter implements Highlighter {
                     BigArrays.NON_RECYCLING_INSTANCE);
             // context.context.addReleasable(infos);
             weigher = new BasicQueryWeigher(
-                    new ElasticsearchQueryFlattener(100, phraseAsTerms), infos,
+                    new ElasticsearchQueryFlattener(maxExpandedTerms, phraseAsTerms, removeHighFrequencyTermsFromCommonTerms), infos,
                     context.hitContext.topLevelReader(), context.query.originalQuery());
             // Build the QueryWeigher with the top level reader to get all
             // the frequency information
             cache.queryWeighers.put(key, weigher);
         }
-        
+
         /**
          * Builds the hit enum including any required wrappers.
          */
@@ -307,13 +322,13 @@ public class ExperimentalHighlighter implements Highlighter {
             }
             Boolean caseInsensitiveOption = (Boolean) getOption("regex_case_insensitive");
             boolean caseInsensitive = caseInsensitiveOption == null ? false : caseInsensitiveOption;
-            
+
             List<HitEnum> hitEnums = new ArrayList<>();
             List<String> fieldValues = defaultField.getFieldValues();
             if (fieldValues.size() == 0) {
                 return hitEnums;
             }
-            
+
             for (String regex : getRegexes()) {
                 if (luceneRegex) {
                     if (caseInsensitive) {

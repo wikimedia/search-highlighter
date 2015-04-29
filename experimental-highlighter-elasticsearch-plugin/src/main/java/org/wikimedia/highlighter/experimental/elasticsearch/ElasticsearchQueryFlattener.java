@@ -7,11 +7,20 @@ import org.apache.lucene.index.Term;
 import org.apache.lucene.search.Query;
 import org.elasticsearch.common.lucene.search.MultiPhrasePrefixQuery;
 import org.elasticsearch.common.lucene.search.XFilteredQuery;
+import org.elasticsearch.common.lucene.search.function.FiltersFunctionScoreQuery;
+import org.elasticsearch.common.lucene.search.function.FunctionScoreQuery;
 import org.wikimedia.highlighter.experimental.lucene.QueryFlattener;
 
 public class ElasticsearchQueryFlattener extends QueryFlattener {
-    public ElasticsearchQueryFlattener(int maxMultiTermQueryTerms, boolean phraseAsTerms) {
-        super(maxMultiTermQueryTerms, phraseAsTerms);
+    /**
+     * Default configuration.
+     */
+    public ElasticsearchQueryFlattener() {
+        super();
+    }
+
+    public ElasticsearchQueryFlattener(int maxMultiTermQueryTerms, boolean phraseAsTerms, boolean removeHighFrequencyTermsFromCommonTerms) {
+        super(maxMultiTermQueryTerms, phraseAsTerms, removeHighFrequencyTermsFromCommonTerms);
     }
 
     @Override
@@ -23,6 +32,16 @@ public class ElasticsearchQueryFlattener extends QueryFlattener {
         }
         if (query instanceof MultiPhrasePrefixQuery) {
             flattenQuery((MultiPhrasePrefixQuery) query, pathBoost, sourceOverride, reader,
+                    callback);
+            return true;
+        }
+        if (query instanceof FunctionScoreQuery) {
+            flattenQuery((FunctionScoreQuery) query, pathBoost, sourceOverride, reader,
+                    callback);
+            return true;
+        }
+        if (query instanceof FiltersFunctionScoreQuery) {
+            flattenQuery((FiltersFunctionScoreQuery) query, pathBoost, sourceOverride, reader,
                     callback);
             return true;
         }
@@ -75,6 +94,20 @@ public class ElasticsearchQueryFlattener extends QueryFlattener {
             }
             callback.endPhrasePosition();
             callback.endPhrase(query.getField(), query.getSlop(), boost);
+        }
+    }
+
+    protected void flattenQuery(FunctionScoreQuery query, float pathBoost,
+            Object sourceOverride, IndexReader reader, Callback callback) {
+        if (query.getSubQuery() != null) {
+            flatten(query.getSubQuery(), pathBoost * query.getBoost(), sourceOverride, reader, callback);
+        }
+    }
+
+    protected void flattenQuery(FiltersFunctionScoreQuery query, float pathBoost,
+            Object sourceOverride, IndexReader reader, Callback callback) {
+        if (query.getSubQuery() != null) {
+            flatten(query.getSubQuery(), pathBoost * query.getBoost(), sourceOverride, reader, callback);
         }
     }
 }

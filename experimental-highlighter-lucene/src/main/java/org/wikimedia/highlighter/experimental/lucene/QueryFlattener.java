@@ -7,7 +7,9 @@ import java.util.Set;
 
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.Term;
+import org.apache.lucene.queries.CommonTermsQuery;
 import org.apache.lucene.search.BooleanClause;
+import org.apache.lucene.search.BooleanClause.Occur;
 import org.apache.lucene.search.BooleanQuery;
 import org.apache.lucene.search.ConstantScoreQuery;
 import org.apache.lucene.search.DisjunctionMaxQuery;
@@ -44,16 +46,25 @@ public class QueryFlattener {
     private final Set<Object> sentAutomata = new HashSet<Object>();
     private final int maxMultiTermQueryTerms;
     private final boolean phraseAsTerms;
+    private final boolean removeHighFrequencyTermsFromCommonTerms;
 
-    public QueryFlattener(int maxMultiTermQueryTerms, boolean phraseAsTerms) {
+    /**
+     * Default configuration.
+     */
+    public QueryFlattener() {
+        this(1000, false, true);
+    }
+
+    public QueryFlattener(int maxMultiTermQueryTerms, boolean phraseAsTerms, boolean removeHighFrequencyTermsFromCommonTerms) {
         this.maxMultiTermQueryTerms = maxMultiTermQueryTerms;
         this.phraseAsTerms = phraseAsTerms;
+        this.removeHighFrequencyTermsFromCommonTerms = removeHighFrequencyTermsFromCommonTerms;
     }
 
     public interface Callback {
         /**
          * Called once per query containing the term.
-         * 
+         *
          * @param term the term
          * @param boost weight of the term
          * @param sourceOverride null if the source of the term is the query
@@ -65,7 +76,7 @@ public class QueryFlattener {
         /**
          * Called with each new automaton. QueryFlattener makes an effort to
          * only let the first copy of any duplicate automata through.
-         * 
+         *
          * @param automaton automaton from the query
          * @param boost weight of terms matchign the automaton
          * @param source hashcode of the source. Automata don't have a hashcode
@@ -94,7 +105,7 @@ public class QueryFlattener {
 
     /**
      * Should phrase queries be returned as terms?
-     * 
+     *
      * @return true mean skip startPhrase and endPhrase and give the terms in a
      *         phrase the weight of the whole phrase
      */
@@ -130,19 +141,10 @@ public class QueryFlattener {
             flattenQuery((WildcardQuery) query, pathBoost, sourceOverride, reader, callback);
         } else if (query instanceof PrefixQuery) {
             flattenQuery((PrefixQuery) query, pathBoost, sourceOverride, reader, callback);
+        } else if (query instanceof CommonTermsQuery) {
+            flattenQuery((CommonTermsQuery) query, pathBoost, sourceOverride, reader, callback);
         } else if (!flattenUnknown(query, pathBoost, sourceOverride, reader, callback)) {
-            if (query instanceof MultiTermQuery) {
-                MultiTermQuery copy = (MultiTermQuery) query.clone();
-                copy.setRewriteMethod(new MultiTermQuery.TopTermsScoringBooleanQueryRewrite(
-                        maxMultiTermQueryTerms));
-                query = copy;
-            }
-            Query newRewritten;
-            try {
-                newRewritten = query.rewrite(reader);
-            } catch (IOException e) {
-                throw new WrappedExceptionFromLucene(e);
-            }
+            Query newRewritten = rewriteQuery(query, pathBoost, sourceOverride, reader);
             if (newRewritten != query) {
                 // only rewrite once and then flatten again - the rewritten
                 // query could have a special treatment
@@ -375,6 +377,71 @@ public class QueryFlattener {
         }
         Object source = sourceOverride == null ? key : sourceOverride;
         callback.flattened(automaton, boost, source.hashCode());
+    }
+
+    protected void flattenQuery(CommonTermsQuery query, float pathBoost, Object sourceOverride,
+            IndexReader reader, Callback callback) {
+        Query rewritten = rewriteQuery(query, pathBoost, sourceOverride, reader);
+        if (!removeHighFrequencyTermsFromCommonTerms) {
+            flatten(rewritten, pathBoost, sourceOverride, reader, callback);
+            return;
+        }
+        /*
+         * Try to figure out if the query was rewritten into a list of low and
+         * high frequency terms. If it was, remove the high frequency terms.
+         *
+         * Note that this only works if high frequency terms are set to
+         * Occur.SHOULD and low frequency terms are set to Occur.MUST. That is
+         * usually the way it is done though.
+         */
+        if (!(rewritten instanceof BooleanQuery)) {
+            // Nope - its a term query or something more exotic
+            flatten(rewritten, pathBoost, sourceOverride, reader, callback);
+        }
+        BooleanQuery bq = (BooleanQuery) rewritten;
+        BooleanClause[] clauses = bq.getClauses();
+        if (clauses.length != 2) {
+            // Nope - its just a list of terms.
+            flattenQuery(bq, pathBoost, sourceOverride, reader, callback);
+            return;
+        }
+        if (clauses[0].getOccur() != Occur.SHOULD || clauses[1].getOccur() != Occur.MUST) {
+            // Nope - just a two term query
+            flattenQuery(bq, pathBoost, sourceOverride, reader, callback);
+            return;
+        }
+        if (!(clauses[0].getQuery() instanceof BooleanQuery && clauses[1].getQuery() instanceof BooleanQuery)) {
+            // Nope - terms of the wrong type. not sure how that happened.
+            flattenQuery(bq, pathBoost, sourceOverride, reader, callback);
+            return;
+        }
+        BooleanQuery lowFrequency = (BooleanQuery) clauses[1].getQuery();
+        flattenQuery(lowFrequency, pathBoost, sourceOverride, reader, callback);
+    }
+
+    protected Query rewriteQuery(MultiTermQuery query, float pathBoost, Object sourceOverride, IndexReader reader) {
+        query = (MultiTermQuery) query.clone();
+        query.setRewriteMethod(new MultiTermQuery.TopTermsScoringBooleanQueryRewrite(
+                maxMultiTermQueryTerms));
+        return rewritePreparedQuery(query, pathBoost, sourceOverride, reader);
+    }
+
+    protected Query rewriteQuery(Query query, float pathBoost, Object sourceOverride, IndexReader reader) {
+        if (query instanceof MultiTermQuery) {
+            return rewriteQuery((MultiTermQuery) query, pathBoost, sourceOverride, reader);
+        }
+        return rewritePreparedQuery(query, pathBoost, sourceOverride, reader);
+    }
+
+    /**
+     * Rewrites a query that's already ready for rewriting.
+     */
+    protected Query rewritePreparedQuery(Query query, float pathBoost, Object sourceOverride, IndexReader reader) {
+        try {
+            return query.rewrite(reader);
+        } catch (IOException e) {
+            throw new WrappedExceptionFromLucene(e);
+        }
     }
 
     private static class FuzzyQueryInfo {

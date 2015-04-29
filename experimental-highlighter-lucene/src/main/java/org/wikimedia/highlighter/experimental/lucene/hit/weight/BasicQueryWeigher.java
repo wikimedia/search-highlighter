@@ -37,7 +37,7 @@ public class BasicQueryWeigher implements TermWeigher<BytesRef>, TermSourceFinde
     private CompiledAutomaton acceptable;
 
     public BasicQueryWeigher(IndexReader reader, Query query) {
-        this(new QueryFlattener(1000, false), new HashMapTermInfos(), reader, query);
+        this(new QueryFlattener(1000, false, true), new HashMapTermInfos(), reader, query);
     }
 
     public BasicQueryWeigher(QueryFlattener flattener, final TermInfos termInfos, IndexReader reader, Query query) {

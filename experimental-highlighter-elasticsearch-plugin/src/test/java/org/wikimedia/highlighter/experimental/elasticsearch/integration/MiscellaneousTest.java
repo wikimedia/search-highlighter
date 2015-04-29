@@ -6,6 +6,7 @@ import static org.elasticsearch.index.query.QueryBuilders.matchPhrasePrefixQuery
 import static org.elasticsearch.index.query.QueryBuilders.matchQuery;
 import static org.elasticsearch.index.query.QueryBuilders.prefixQuery;
 import static org.elasticsearch.index.query.QueryBuilders.queryString;
+import static org.elasticsearch.index.query.QueryBuilders.rangeQuery;
 import static org.elasticsearch.index.query.QueryBuilders.regexpQuery;
 import static org.elasticsearch.index.query.QueryBuilders.termQuery;
 import static org.elasticsearch.index.query.QueryBuilders.wildcardQuery;
@@ -20,8 +21,10 @@ import static org.hamcrest.Matchers.equalTo;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
 import org.elasticsearch.action.admin.indices.optimize.OptimizeResponse;
@@ -355,6 +358,27 @@ public class MiscellaneousTest extends AbstractExperimentalHighlighterIntegratio
         assertHighlight(response, 0, "test", 0, equalTo("tests <em>very</em> simple test"));
     }
 
+    /**
+     * max_expanded_terms should control how many terms we expand multi term
+     * queries into when we expand multi term queries.
+     */
+    @Test
+    public void singleRangeQueryWithSmallRewrites() throws IOException {
+        buildIndex();
+        client().prepareIndex("test", "test", "2").setSource("test", "test").get();
+        indexTestData();
+
+        Map<String, Object> options = new HashMap<String, Object>();
+        options.put("max_expanded_terms", 1);
+        SearchRequestBuilder search = testSearch(rangeQuery("test").from("teso").to("tesz")).setHighlighterOptions(options);
+        for (String hitSource : HIT_SOURCES) {
+            options.put("hit_source", hitSource);
+            SearchResponse response = search.get();
+            assertHighlight(response, 0, "test", 0,
+                    equalTo("tests very simple <em>test</em>"));
+        }
+    }
+
     // TODO matched_fields with different hit source
-    // TODO infer proper hit source    
+    // TODO infer proper hit source
 }

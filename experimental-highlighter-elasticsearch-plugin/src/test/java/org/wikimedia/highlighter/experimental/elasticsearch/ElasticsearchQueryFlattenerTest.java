@@ -16,13 +16,22 @@ import static org.wikimedia.highlighter.experimental.lucene.LuceneMatchers.recog
 
 import org.apache.lucene.index.Term;
 import org.apache.lucene.search.Query;
+import org.apache.lucene.search.TermQuery;
 import org.apache.lucene.util.automaton.Automaton;
 import org.elasticsearch.common.lucene.search.MultiPhrasePrefixQuery;
+import org.elasticsearch.common.lucene.search.function.FieldValueFactorFunction;
+import org.elasticsearch.common.lucene.search.function.FiltersFunctionScoreQuery;
+import org.elasticsearch.common.lucene.search.function.FiltersFunctionScoreQuery.FilterFunction;
+import org.elasticsearch.common.lucene.search.function.FunctionScoreQuery;
+import org.elasticsearch.common.lucene.search.function.ScoreFunction;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.wikimedia.highlighter.experimental.lucene.QueryFlattener.Callback;
 
 public class ElasticsearchQueryFlattenerTest {
+    private final Term bar = new Term("foo", "bar");
+    private final ScoreFunction scoreFunction = new FieldValueFactorFunction("foo", 1, FieldValueFactorFunction.Modifier.LN, null);
+
     @Test
     public void phrasePrefixQueryPhraseAsPhrase() {
         phrasePrefixQueryTestCase(false);
@@ -31,6 +40,21 @@ public class ElasticsearchQueryFlattenerTest {
     @Test
     public void phrasePrefixQueryPhraseAsTerms() {
         phrasePrefixQueryTestCase(true);
+    }
+
+    @Test
+    public void functionScoreQuery() {
+        Callback callback = mock(Callback.class);
+        new ElasticsearchQueryFlattener().flatten(new FunctionScoreQuery(new TermQuery(bar), scoreFunction), null, callback);
+        verify(callback).flattened(bar.bytes(), 1f, null);
+    }
+
+    @Test
+    public void filtersFunctionScoreQuery() {
+        Callback callback = mock(Callback.class);
+        Query query = new FiltersFunctionScoreQuery(new TermQuery(bar), null, new FilterFunction[] {}, 1);
+        new ElasticsearchQueryFlattener().flatten(query, null, callback);
+        verify(callback).flattened(bar.bytes(), 1f, null);
     }
 
     private void phrasePrefixQueryTestCase(boolean phraseAsTerms) {
@@ -45,7 +69,7 @@ public class ElasticsearchQueryFlattenerTest {
         query.add(new Term[] { bar, anoth });
 
         Callback callback = mock(Callback.class);
-        new ElasticsearchQueryFlattener(1, phraseAsTerms).flatten(query, null, callback);
+        new ElasticsearchQueryFlattener(1, phraseAsTerms, true).flatten(query, null, callback);
 
         // The first positions are sent as terms
         verify(callback).flattened(foo.bytes(), phraseAsTerms ? 1f : 0, null);

@@ -282,6 +282,20 @@ and title.
 * category will only be highlighted if there isn't a match in section_heading,
 redirect, or title.
 
+The ```remove_high_freq_terms_from_common_terms``` option can be used to
+highlight common terms when using the ```common_terms``` query. It defaults to
+```true``` meaning common terms will not be highlighted. Setting it to
+```false``` will highlight common terms in ```common_terms``` queries. Note
+that this behavior was added in 1.3.1, 1.4.3, and 1.5.0 and before that common
+terms were always highlighted by the ```common_terms``` query.
+
+The ```max_expanded_terms``` option can be used to control how many terms the
+highlighter expands multi term queries into. The default is 1024 which is the
+same as the ```fvh```'s default. Note that the highlighter doesn't need to
+expand all multi term queries because it has special handling for many of them.
+But when it does, this is how many terms it expands them into. This was added
+in 1.3.1, 1.4.3, and 1.5.0 and before the value was hard coded to 100.
+
 Offsets in postings or term vectors
 -----------------------------------
 Since adding offsets to the postings (set ```index_options``` to ```offsets```
