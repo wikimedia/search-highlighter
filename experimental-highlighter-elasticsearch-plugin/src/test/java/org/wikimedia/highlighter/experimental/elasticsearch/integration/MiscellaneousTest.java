@@ -1,6 +1,8 @@
 package org.wikimedia.highlighter.experimental.elasticsearch.integration;
 
+import static org.elasticsearch.index.query.FilterBuilders.idsFilter;
 import static org.elasticsearch.index.query.QueryBuilders.boolQuery;
+import static org.elasticsearch.index.query.QueryBuilders.filteredQuery;
 import static org.elasticsearch.index.query.QueryBuilders.fuzzyQuery;
 import static org.elasticsearch.index.query.QueryBuilders.matchPhrasePrefixQuery;
 import static org.elasticsearch.index.query.QueryBuilders.matchQuery;
@@ -364,13 +366,14 @@ public class MiscellaneousTest extends AbstractExperimentalHighlighterIntegratio
      */
     @Test
     public void singleRangeQueryWithSmallRewrites() throws IOException {
-        buildIndex();
+        buildIndex(true, true, 1);
         client().prepareIndex("test", "test", "2").setSource("test", "test").get();
         indexTestData();
 
         Map<String, Object> options = new HashMap<String, Object>();
         options.put("max_expanded_terms", 1);
-        SearchRequestBuilder search = testSearch(rangeQuery("test").from("teso").to("tesz")).setHighlighterOptions(options);
+        SearchRequestBuilder search = testSearch(filteredQuery(rangeQuery("test").from("teso").to("tesz"), idsFilter("test").addIds("1")))
+                .setHighlighterOptions(options);
         for (String hitSource : HIT_SOURCES) {
             options.put("hit_source", hitSource);
             SearchResponse response = search.get();
