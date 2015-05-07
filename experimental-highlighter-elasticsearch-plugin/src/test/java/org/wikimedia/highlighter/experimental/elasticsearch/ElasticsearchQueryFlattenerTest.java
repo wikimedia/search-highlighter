@@ -52,7 +52,7 @@ public class ElasticsearchQueryFlattenerTest {
     @Test
     public void filtersFunctionScoreQuery() {
         Callback callback = mock(Callback.class);
-        Query query = new FiltersFunctionScoreQuery(new TermQuery(bar), null, new FilterFunction[] {}, 1);
+        Query query = new FiltersFunctionScoreQuery(new TermQuery(bar), null, new FilterFunction[] {}, 1, null);
         new ElasticsearchQueryFlattener().flatten(query, null, callback);
         verify(callback).flattened(bar.bytes(), 1f, null);
     }
