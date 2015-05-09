@@ -30,6 +30,7 @@ import org.wikimedia.highlighter.experimental.elasticsearch.CharScanningSegmente
 import org.wikimedia.highlighter.experimental.elasticsearch.DelayedSegmenter;
 import org.wikimedia.highlighter.experimental.elasticsearch.ElasticsearchQueryFlattener;
 import org.wikimedia.highlighter.experimental.elasticsearch.FetchedFieldIndexPicker;
+import org.wikimedia.highlighter.experimental.elasticsearch.OffsetSnippetFormatter;
 import org.wikimedia.highlighter.experimental.elasticsearch.SegmenterFactory;
 import org.wikimedia.highlighter.experimental.elasticsearch.SentenceIteratorSegmenterFactory;
 import org.wikimedia.highlighter.experimental.elasticsearch.WholeSourceSegmenterFactory;
@@ -518,9 +519,14 @@ public class ExperimentalHighlighter implements Highlighter {
         }
 
         private Text[] formatSnippets(List<Snippet> snippets) throws IOException {
-            SnippetFormatter formatter = new SnippetFormatter(defaultField.buildSourceExtracter(),
+            SnippetFormatter formatter;
+            if (getOption("return_offsets", false)) {
+                formatter = new OffsetSnippetFormatter();
+            } else {
+                formatter = new SnippetFormatter.Default(defaultField.buildSourceExtracter(),
                     context.field.fieldOptions().preTags()[0], context.field.fieldOptions()
                             .postTags()[0]);
+            }
 
             List<FieldWrapper> fetchFields = buildFetchFields();
             if (fetchFields == null) {
