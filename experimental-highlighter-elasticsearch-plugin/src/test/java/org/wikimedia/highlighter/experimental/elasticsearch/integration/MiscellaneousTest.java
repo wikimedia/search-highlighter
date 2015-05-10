@@ -347,6 +347,20 @@ public class MiscellaneousTest extends AbstractExperimentalHighlighterIntegratio
     }
 
     /**
+     * Asking for a matched_field that doesn't exist used to npe.
+     */
+    @Test
+    public void missingMatchedField() throws IOException {
+        buildIndex();
+        indexTestData();
+
+        SearchResponse response = client().prepareSearch("test").setTypes("test")
+                .setQuery(matchQuery("test", "very")).setHighlighterType("experimental")
+                .addHighlightedField(new HighlightBuilder.Field("test").matchedFields("test", "doesntexist")).get();
+        assertHighlight(response, 0, "test", 0, equalTo("tests <em>very</em> simple test"));
+    }
+
+    /**
      * There was a time when highlighting * would blow up because of _size being an empty numeric field.
      */
     @Test

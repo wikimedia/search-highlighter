@@ -56,7 +56,7 @@ public class FieldWrapper {
     /**
      * Build a wrapper around the default field in the context.
      */
-    public FieldWrapper(HighlightExecutionContext executionContext, HighlighterContext context, 
+    public FieldWrapper(HighlightExecutionContext executionContext, HighlighterContext context,
             BasicQueryWeigher weigher) {
         this.executionContext = executionContext;
         this.context = context;
@@ -354,7 +354,7 @@ public class FieldWrapper {
         }
         return new ConstantTermWeigher<BytesRef>();
     }
-    
+
     public int getPositionGap() {
         if (positionGap < 0) {
             if (context.mapper instanceof StringFieldMapper) {
@@ -364,5 +364,12 @@ public class FieldWrapper {
             }
         }
         return positionGap;
+    }
+
+    /**
+     * Does this field exist?
+     */
+    public boolean exists() {
+        return context.mapper != null;
     }
 }

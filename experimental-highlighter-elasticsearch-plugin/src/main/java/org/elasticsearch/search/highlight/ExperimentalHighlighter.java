@@ -452,6 +452,9 @@ public class ExperimentalHighlighter implements Highlighter {
                     wrapper = defaultField;
                 } else {
                     wrapper = new FieldWrapper(this, context, weigher, field);
+                    if (!wrapper.exists()) {
+                        continue;
+                    }
                 }
                 if (wrapper.canProduceHits()) {
                     hitEnums.add(wrapper.buildHitEnum());
