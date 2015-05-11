@@ -302,6 +302,16 @@ expand all multi term queries because it has special handling for many of them.
 But when it does, this is how many terms it expands them into. This was added
 in 1.3.1, 1.4.3, and 1.5.0 and before the value was hard coded to 100.
 
+The ```return_offsets``` option changes the results from a highlighted string
+to the offsets in the highlighted that would have been highlighted. This is
+useful if you need to do client side sanity checking on the highlighting.
+Instead of a marked up snippet you'll get a result like ```0:0-5,18-22:22```.
+The outer numbers are the start and end offset of the snippet. The pairs of
+numbers separated by the ```,```s are the hits. The number before the ```-```
+is the start offset and the number after the ```-``` is the end offset.
+Multi-valued fields have a single character worth of offset between them.
+
+
 Offsets in postings or term vectors
 -----------------------------------
 Since adding offsets to the postings (set ```index_options``` to ```offsets```

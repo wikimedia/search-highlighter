@@ -35,6 +35,7 @@ import org.elasticsearch.action.index.IndexRequestBuilder;
 import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.common.StopWatch;
+import org.elasticsearch.common.collect.ImmutableList;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.json.JsonXContent;
 import org.elasticsearch.index.query.BoolQueryBuilder;
@@ -394,6 +395,29 @@ public class MiscellaneousTest extends AbstractExperimentalHighlighterIntegratio
             assertHighlight(response, 0, "test", 0,
                     equalTo("tests very simple <em>test</em>"));
         }
+    }
+
+    @Test
+    public void returnOffsets() throws IOException {
+        buildIndex();
+        indexTestData();
+        Map<String, Object> options = new HashMap<String, Object>();
+        options.put("return_offsets", true);
+        SearchResponse response = testSearch(matchQuery("test.english", "test"))
+                .setHighlighterOptions(options).addHighlightedField("test.english").get();
+        assertHighlight(response, 0, "test.english", 0, equalTo("0:0-5,18-22:22"));
+    }
+
+    @Test
+    public void returnOffsetsMultiValued() throws IOException {
+        buildIndex();
+        indexTestData(ImmutableList.of("tests very simple test", "with more test"));
+        Map<String, Object> options = new HashMap<String, Object>();
+        options.put("return_offsets", true);
+        SearchResponse response = testSearch(matchQuery("test.english", "test"))
+                .setHighlighterOptions(options).addHighlightedField("test.english").get();
+        assertHighlight(response, 0, "test.english", 0, equalTo("0:0-5,18-22:22"));
+        assertHighlight(response, 0, "test.english", 1, equalTo("23:33-37:37"));
     }
 
     // TODO matched_fields with different hit source
