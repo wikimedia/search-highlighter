@@ -30,7 +30,7 @@ import org.wikimedia.highlighter.experimental.lucene.QueryFlattener.Callback;
 
 public class ElasticsearchQueryFlattenerTest {
     private final Term bar = new Term("foo", "bar");
-    private final ScoreFunction scoreFunction = new FieldValueFactorFunction("foo", 1, FieldValueFactorFunction.Modifier.LN, null);
+    private final ScoreFunction scoreFunction = new FieldValueFactorFunction("foo", 1, FieldValueFactorFunction.Modifier.LN, null, null);
 
     @Test
     public void phrasePrefixQueryPhraseAsPhrase() {

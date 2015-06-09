@@ -23,6 +23,7 @@ import org.elasticsearch.common.text.StringText;
 import org.elasticsearch.common.text.Text;
 import org.elasticsearch.common.util.BigArrays;
 import org.elasticsearch.common.util.LocaleUtils;
+import org.elasticsearch.index.mapper.FieldMapper;
 import org.elasticsearch.search.fetch.FetchPhaseExecutionException;
 import org.elasticsearch.search.highlight.SearchContextHighlight.FieldOptions;
 import org.wikimedia.highlighter.experimental.elasticsearch.BytesRefHashTermInfos;
@@ -60,6 +61,12 @@ public class ExperimentalHighlighter implements Highlighter {
     @Override
     public String[] names() {
         return new String[] { "experimental" };
+    }
+
+    @Override
+    @SuppressWarnings("rawtypes")
+    public boolean canHighlight(FieldMapper field) {
+        return true;
     }
 
     @Override
