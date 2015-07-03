@@ -17,10 +17,7 @@ import org.wikimedia.search.highlighter.experimental.source.StringSourceExtracte
 public class BreakIteratorHitEnumTest extends AbstractHitEnumTestBase {
 	@Override
 	protected HitEnum buildEnum(String str) {
-        BreakIterator itr = BreakIterator.getWordInstance(Locale.ENGLISH);
-        itr.setText(str);
-        return BreakIteratorHitEnum.repair(new BreakIteratorHitEnum(itr),
-                str);
+        return BreakIteratorHitEnum.englishWords(str);
     }
 
     @Test

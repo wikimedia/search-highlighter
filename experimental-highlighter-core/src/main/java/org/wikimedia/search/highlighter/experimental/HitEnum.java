@@ -21,16 +21,6 @@ public interface HitEnum extends Segment {
     int position();
 
     /**
-     * The start offset of the current term within the text.
-     */
-    int startOffset();
-
-    /**
-     * The end offset of the current term within the text.
-     */
-    int endOffset();
-
-    /**
      * Weight of the hit from the query definition. This stores the weight that
      * the user placed on the search term. Only positive numbers are valid.
      */

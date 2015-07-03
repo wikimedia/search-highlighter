@@ -3,7 +3,7 @@ package org.wikimedia.search.highlighter.experimental.hit.weight;
 import org.wikimedia.search.highlighter.experimental.hit.TermSourceFinder;
 
 /**
- * Finds no source (0) for any terms.
+ * Finds no source (0) for all terms.
  */
 public class NoSourceTermSourceFinder<T> implements TermSourceFinder<T> {
     @Override

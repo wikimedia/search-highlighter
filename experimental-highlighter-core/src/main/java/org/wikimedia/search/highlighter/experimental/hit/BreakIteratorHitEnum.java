@@ -1,6 +1,7 @@
 package org.wikimedia.search.highlighter.experimental.hit;
 
 import java.text.BreakIterator;
+import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -23,6 +24,16 @@ public final class BreakIteratorHitEnum extends AbstractHitEnum {
      */
     public static HitEnum repair(HitEnum e, CharSequence source) {
         return new RepairedHitEnum(e, source);
+    }
+
+    /**
+     * Builds a HitEnum that returns one hit per word as segmented by the
+     * BreakIterator for English with a score of 1.
+     */
+    public static HitEnum englishWords(String str) {
+        BreakIterator itr = BreakIterator.getWordInstance(Locale.ENGLISH);
+        itr.setText(str);
+        return repair(new BreakIteratorHitEnum(itr), str);
     }
 
     private final BreakIterator itr;

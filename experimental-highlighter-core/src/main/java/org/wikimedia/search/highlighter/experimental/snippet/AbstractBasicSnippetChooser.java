@@ -7,8 +7,8 @@ import java.util.List;
 import org.wikimedia.search.highlighter.experimental.HitEnum;
 import org.wikimedia.search.highlighter.experimental.Segmenter;
 import org.wikimedia.search.highlighter.experimental.Snippet;
-import org.wikimedia.search.highlighter.experimental.SnippetChooser;
 import org.wikimedia.search.highlighter.experimental.Snippet.Hit;
+import org.wikimedia.search.highlighter.experimental.SnippetChooser;
 
 public abstract class AbstractBasicSnippetChooser<S> implements SnippetChooser {
     private final Snippet.HitBuilder hitBuilder;
