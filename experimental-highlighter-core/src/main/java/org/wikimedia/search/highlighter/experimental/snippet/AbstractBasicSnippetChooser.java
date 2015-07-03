@@ -7,8 +7,8 @@ import java.util.List;
 import org.wikimedia.search.highlighter.experimental.HitEnum;
 import org.wikimedia.search.highlighter.experimental.Segmenter;
 import org.wikimedia.search.highlighter.experimental.Snippet;
-import org.wikimedia.search.highlighter.experimental.SnippetChooser;
 import org.wikimedia.search.highlighter.experimental.Snippet.Hit;
+import org.wikimedia.search.highlighter.experimental.SnippetChooser;
 
 public abstract class AbstractBasicSnippetChooser<S> implements SnippetChooser {
     protected abstract S init(Segmenter segmenter, int max);
@@ -38,7 +38,7 @@ public abstract class AbstractBasicSnippetChooser<S> implements SnippetChooser {
                 boolean done = !e.next();
                 if (done) {
                     snippet(state, startOffset, lastEndOffset, hits);
-                    return results(state);                    
+                    return results(state);
                 }
                 int thisEndOffset = e.endOffset();
                 if (!segmenter.acceptable(startOffset, thisEndOffset)) {

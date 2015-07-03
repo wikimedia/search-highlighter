@@ -7,7 +7,7 @@ package org.wikimedia.search.highlighter.experimental;
 public interface HitEnum extends Segment {
     /**
      * Move the enum to the next hit.
-     * 
+     *
      * @return is there a next hit (true) or was the last one the final hit
      *         (false)
      */
@@ -17,16 +17,6 @@ public interface HitEnum extends Segment {
      * Ordinal position relative to the other terms in the text. Starts at 0.
      */
     int position();
-
-    /**
-     * The start offset of the current term within the text.
-     */
-    int startOffset();
-
-    /**
-     * The end offset of the current term within the text.
-     */
-    int endOffset();
 
     /**
      * Weight of the hit from the query definition. This stores the weight that
@@ -47,7 +37,7 @@ public interface HitEnum extends Segment {
      * of precision is worth the comparison efficiency.
      */
     int source();
-    
+
     public static enum LessThans implements LessThan<HitEnum> {
         /**
          * Sorts ascending by position.

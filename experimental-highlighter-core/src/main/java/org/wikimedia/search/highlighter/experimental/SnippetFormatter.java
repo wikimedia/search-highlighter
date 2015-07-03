@@ -30,6 +30,5 @@ public interface SnippetFormatter {
             b.append(extracter.extract(lastWritten, snippet.endOffset()));
             return b.toString();
         }
-
     }
 }
