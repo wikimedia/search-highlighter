@@ -18,6 +18,7 @@ import org.apache.lucene.util.BytesRef;
 import org.apache.lucene.util.automaton.CompiledAutomaton;
 import org.wikimedia.highlighter.experimental.lucene.WrappedExceptionFromLucene;
 import org.wikimedia.search.highlighter.experimental.HitEnum;
+import org.wikimedia.search.highlighter.experimental.hit.AbstractHitEnum;
 import org.wikimedia.search.highlighter.experimental.hit.EmptyHitEnum;
 import org.wikimedia.search.highlighter.experimental.hit.MergingHitEnum;
 import org.wikimedia.search.highlighter.experimental.hit.TermSourceFinder;
@@ -28,7 +29,7 @@ import org.wikimedia.search.highlighter.experimental.hit.TermWeigher;
  * positioned on the appropriate doc. The hits are in document order in for a
  * single term.
  */
-public class DocsAndPositionsHitEnum implements HitEnum {
+public class DocsAndPositionsHitEnum extends AbstractHitEnum {
     public static HitEnum fromTermVectors(IndexReader reader, int docId, String fieldName,
             CompiledAutomaton acceptable, TermWeigher<BytesRef> queryWeigher,
             TermWeigher<BytesRef> corpusWeigher, TermSourceFinder<BytesRef> sourceFinder)
@@ -65,7 +66,7 @@ public class DocsAndPositionsHitEnum implements HitEnum {
         TermsEnum termsEnum = acceptable.getTermsEnum(terms);
         BytesRef term;
         List<HitEnum> enums = new ArrayList<HitEnum>();
-        
+
         // Last enum that didn't find anything.  We can reuse it.
         DocsAndPositionsEnum dp = null;
         while ((term = termsEnum.next()) != null) {

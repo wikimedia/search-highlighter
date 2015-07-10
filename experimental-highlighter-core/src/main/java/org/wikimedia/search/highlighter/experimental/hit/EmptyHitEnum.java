@@ -1,11 +1,9 @@
 package org.wikimedia.search.highlighter.experimental.hit;
 
-import org.wikimedia.search.highlighter.experimental.HitEnum;
-
 /**
  * A HitEnum that is always empty.
  */
-public final class EmptyHitEnum implements HitEnum {
+public final class EmptyHitEnum extends AbstractHitEnum {
     public static final EmptyHitEnum INSTANCE = new EmptyHitEnum();
 
     private EmptyHitEnum() {

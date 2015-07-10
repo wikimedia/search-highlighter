@@ -2,15 +2,15 @@ package org.wikimedia.search.highlighter.experimental.hit;
 
 import java.util.Iterator;
 
-import org.wikimedia.search.highlighter.experimental.HitEnum;
 import org.wikimedia.search.highlighter.experimental.hit.ReplayingHitEnum.HitEnumAndLength;
+import org.wikimedia.search.highlighter.experimental.tools.GraphvizHitEnumGenerator;
 
 /**
  * HitEnum that concatenates multiple HitEnums. It should behave exactly the
  * same as a lazy version of {@link ReplayingHitEnum#record(Iterator, int, int)}
  * .
  */
-public class ConcatHitEnum implements HitEnum {
+public class ConcatHitEnum extends AbstractHitEnum {
     private final Iterator<HitEnumAndLength> delegates;
     private final int positionGap;
     private final int offsetGap;
@@ -77,5 +77,17 @@ public class ConcatHitEnum implements HitEnum {
     @Override
     public int source() {
         return current.delegate().source();
+    }
+
+    public HitEnumAndLength current() {
+        return current;
+    }
+
+    @Override
+    public void toGraph(GraphvizHitEnumGenerator generator) {
+        super.toGraph(generator);
+        if(current != null) {
+            generator.addChild(this, current.delegate());
+        }
     }
 }

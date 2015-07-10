@@ -2,13 +2,12 @@ package org.wikimedia.search.highlighter.experimental.hit;
 
 import java.util.regex.Matcher;
 
-import org.wikimedia.search.highlighter.experimental.HitEnum;
 import org.wikimedia.search.highlighter.experimental.hit.weight.ConstantHitWeigher;
 
 /**
  * HitEnum implementation based on a Pattern that selects the hits.
  */
-public class RegexHitEnum implements HitEnum {
+public class RegexHitEnum extends AbstractHitEnum {
     private final Matcher matcher;
     private final HitWeigher queryWeigher;
     private final HitWeigher corpusWeigher;

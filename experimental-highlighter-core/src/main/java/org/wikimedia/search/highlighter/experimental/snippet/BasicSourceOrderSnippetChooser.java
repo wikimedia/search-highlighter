@@ -7,12 +7,27 @@ import org.wikimedia.search.highlighter.experimental.Segment;
 import org.wikimedia.search.highlighter.experimental.Segmenter;
 import org.wikimedia.search.highlighter.experimental.Snippet;
 import org.wikimedia.search.highlighter.experimental.Snippet.Hit;
+import org.wikimedia.search.highlighter.experimental.Snippet.HitBuilder;
 
 /**
  * Starts the first snippet on the first hit, the second on the next hit after
  * the first snippet ends, etc.  HitEnum must be in startOffset and endOffset for this to work properly.
  */
 public class BasicSourceOrderSnippetChooser extends AbstractBasicSnippetChooser<BasicSourceOrderSnippetChooser.State> {
+
+    /**
+     * Build the snippet chooser.
+     */
+    public BasicSourceOrderSnippetChooser() {}
+
+    /**
+     * Build the snippet chooser with the hitBuilder provided
+     * @param hitBuilder
+     */
+    public BasicSourceOrderSnippetChooser(HitBuilder hitBuilder) {
+        super(hitBuilder);
+    }
+
     @Override
     protected State init(Segmenter segmenter, int max) {
         State s = new State();
@@ -42,5 +57,5 @@ public class BasicSourceOrderSnippetChooser extends AbstractBasicSnippetChooser<
         private Segmenter segmenter;
         private List<Snippet> results;
 
-    }    
+    }
 }

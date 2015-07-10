@@ -87,4 +87,22 @@ public class Snippet implements Segment {
             return String.format(Locale.ENGLISH, "[%s:%s]", startOffset, endOffset);
         }
     }
+
+    /**
+     * Build a Hit from a HitEnum
+     */
+    public static interface HitBuilder {
+        /**
+         * Build the Hit
+         * @return the Hit
+         */
+        Hit buildHit(HitEnum e);
+    }
+
+    public static Snippet.HitBuilder DEFAULT_HIT_BUILDER = new Snippet.HitBuilder() {
+        @Override
+        public Hit buildHit(HitEnum e) {
+            return new Hit(e.startOffset(), e.endOffset(), e.corpusWeight()*e.queryWeight(), e.source());
+        }
+    };
 }

@@ -3,13 +3,14 @@ package org.wikimedia.search.highlighter.experimental.hit;
 import static java.lang.Math.max;
 
 import org.wikimedia.search.highlighter.experimental.HitEnum;
+import org.wikimedia.search.highlighter.experimental.tools.GraphvizHitEnumGenerator;
 
 /**
  * HitEnum that merges hits that are "on top" of one another according to start
  * and end offset. Always takes the maximum weight and end offset. Delegate must
  * be in order of offsets (startOffset first, endOffset second).
  */
-public class OverlapMergingHitEnumWrapper implements HitEnum {
+public class OverlapMergingHitEnumWrapper extends AbstractHitEnum {
     /**
      * Source of more hits. Always queued to the _next_ hit to check. Null means
      * no more hits.
@@ -100,6 +101,15 @@ public class OverlapMergingHitEnumWrapper implements HitEnum {
     @Override
     public int source() {
         return source;
+    }
+
+
+    @Override
+    public void toGraph(GraphvizHitEnumGenerator generator) {
+        super.toGraph(generator);
+        if(delegate != null) {
+            generator.addChild(this, delegate);
+        }
     }
 
     @Override

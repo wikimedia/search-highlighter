@@ -11,6 +11,7 @@ import static org.hamcrest.Matchers.equalTo;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -160,7 +161,7 @@ public class OptionsTest extends AbstractExperimentalHighlighterIntegrationTestB
             SearchResponse response = setHitSource(search, hitSource).get();
             assertHighlight(response, 0, "test", 0, equalTo("<em>test</em>"));
         }
-        
+
         Map<String, Object> options = new HashMap<String, Object>();
         options.put("default_similarity", false);
         for (String hitSource : HIT_SOURCES) {
@@ -168,7 +169,7 @@ public class OptionsTest extends AbstractExperimentalHighlighterIntegrationTestB
             SearchResponse response = search.setHighlighterOptions(options).get();
             assertHighlight(response, 0, "test", 0, equalTo("<em>foo</em> <em>foo</em>"));
         }
-        
+
         options.put("default_similarity", true);
         for (String hitSource : HIT_SOURCES) {
             options.put("hit_source", hitSource);
@@ -277,7 +278,7 @@ public class OptionsTest extends AbstractExperimentalHighlighterIntegrationTestB
             }
         }
     }
-    
+
     @Test
     public void highlightWithoutOptionsDoesntBlowUp() throws IOException {
         buildIndex();
@@ -286,7 +287,7 @@ public class OptionsTest extends AbstractExperimentalHighlighterIntegrationTestB
         assertNoFailures(testSearch().get());
         assertNoFailures(testSearch().setHighlighterOrder("score").get());
     }
-    
+
     @Test
     public void noMatch() throws IOException {
         String shortString = "Lets segment this thing.  Yay.";
@@ -495,6 +496,24 @@ public class OptionsTest extends AbstractExperimentalHighlighterIntegrationTestB
             SearchResponse response = setHitSource(search, hitSource).get();
             assertHighlight(response, 0, "test", 0, equalTo("<em>foo</em>"));
             assertHighlight(response, 0, "test2", 0, equalTo("<em>bar</em>"));
+        }
+    }
+
+    @Test
+    public void testDebugGraph() throws IOException {
+        buildIndex();
+        client().prepareIndex("test", "test").setSource("test", "foo", "test2", "bar").get();
+        refresh();
+
+        Map<String, Object> options = Collections.<String, Object>singletonMap("return_debug_graph", true);
+
+        SearchRequestBuilder search = testSearch(termQuery("test", "foo"))
+                .addHighlightedField(new HighlightBuilder.Field("test2").highlightQuery(termQuery("test2", "bar"))
+                        .options(options));
+
+        for (String hitSource : HIT_SOURCES) {
+            SearchResponse response = setHitSource(search, hitSource).get();
+            assertHighlight(response, 0, "test2", 0, containsString("digraph HitEnums"));
         }
     }
 

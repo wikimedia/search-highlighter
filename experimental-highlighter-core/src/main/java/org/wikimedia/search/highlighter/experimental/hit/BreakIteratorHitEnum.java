@@ -16,7 +16,7 @@ import org.wikimedia.search.highlighter.experimental.hit.weight.ConstantHitWeigh
  * to throw away the spaces. It might not always be successful or desirable
  * though.
  */
-public final class BreakIteratorHitEnum implements HitEnum {
+public final class BreakIteratorHitEnum extends AbstractHitEnum {
     /**
      * Wraps a HitEnum with another one that attempts to squash away any word
      * breaks returned.

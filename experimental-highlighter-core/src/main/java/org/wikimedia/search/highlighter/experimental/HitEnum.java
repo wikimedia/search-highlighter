@@ -1,5 +1,7 @@
 package org.wikimedia.search.highlighter.experimental;
 
+import org.wikimedia.search.highlighter.experimental.tools.GraphvizHitEnumGenerator;
+
 /**
  * Enumerate matched terms within text. Must call next when first returned. The
  * actual order is implementation dependent.
@@ -7,7 +9,7 @@ package org.wikimedia.search.highlighter.experimental;
 public interface HitEnum extends Segment {
     /**
      * Move the enum to the next hit.
-     * 
+     *
      * @return is there a next hit (true) or was the last one the final hit
      *         (false)
      */
@@ -47,7 +49,14 @@ public interface HitEnum extends Segment {
      * of precision is worth the comparison efficiency.
      */
     int source();
-    
+
+    /**
+     * Inspects HitEnum structure and adds Graphviz nodes
+     * to the GraphvizHitEnumGenerator.
+     * @param generator the generator
+     */
+    void toGraph(GraphvizHitEnumGenerator generator);
+
     public static enum LessThans implements LessThan<HitEnum> {
         /**
          * Sorts ascending by position.

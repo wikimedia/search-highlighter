@@ -6,13 +6,14 @@ import java.util.LinkedList;
 import java.util.List;
 
 import org.wikimedia.search.highlighter.experimental.HitEnum;
+import org.wikimedia.search.highlighter.experimental.tools.GraphvizHitEnumGenerator;
 
 /**
  * Naive implementation of applying different scores to phrases.
  *
  * TODO this weight phrases too low because it doesn't include the default similarity
  */
-public class PhraseHitEnumWrapper implements HitEnum {
+public class PhraseHitEnumWrapper extends AbstractHitEnum {
     /**
      * Expands non-multi-phrase arrays into multi-phrase arrays so we can always
      * process multi-phrases.
@@ -176,6 +177,12 @@ public class PhraseHitEnumWrapper implements HitEnum {
     @Override
     public int source() {
         return pullFrom.source();
+    }
+
+    @Override
+    public void toGraph(GraphvizHitEnumGenerator generator) {
+        super.toGraph(generator);
+        generator.addChild(this, pullFrom);
     }
 
     @Override

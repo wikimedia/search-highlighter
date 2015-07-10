@@ -9,6 +9,7 @@ import org.wikimedia.search.highlighter.experimental.Segment;
 import org.wikimedia.search.highlighter.experimental.Segmenter;
 import org.wikimedia.search.highlighter.experimental.Snippet;
 import org.wikimedia.search.highlighter.experimental.Snippet.Hit;
+import org.wikimedia.search.highlighter.experimental.Snippet.HitBuilder;
 import org.wikimedia.search.highlighter.experimental.SnippetWeigher;
 import org.wikimedia.search.highlighter.experimental.extern.PriorityQueue;
 
@@ -30,6 +31,30 @@ public class BasicScoreBasedSnippetChooser extends AbstractBasicSnippetChooser<B
         this.scoreOrdered = scoreOrdered;
         this.maxSnippetsChecked = maxSnippetsChecked;
         this.snippetWeigher = snippetWeigher;
+    }
+
+    /**
+     * Build the snippet chooser.
+     * @param scoreOrdered should the results come back in score order (true) or source order (false)
+     * @param snippetWeigher figures the weights of the snippets
+     * @param hitBuilder the {@link HitBuilder}
+     * @param maxSnippetsChecked never check more then this many snippets
+     */
+    public BasicScoreBasedSnippetChooser(boolean scoreOrdered, SnippetWeigher snippetWeigher, HitBuilder hitBuilder, int maxSnippetsChecked) {
+        super(hitBuilder);
+        this.scoreOrdered = scoreOrdered;
+        this.maxSnippetsChecked = maxSnippetsChecked;
+        this.snippetWeigher = snippetWeigher;
+    }
+
+    /**
+     * Build the snippet chooser with maxSnippetsChecked defaulted to Integer.MAX_VALUE.
+     * @param scoreOrdered should the results come back in score order (true) or source order (false)
+     * @param snippetWeigher figures the weights of the snippets
+     * @param hitBuilder the HitBuilder
+     */
+    public BasicScoreBasedSnippetChooser(boolean scoreOrdered, SnippetWeigher snippetWeigher, HitBuilder hitBuilder) {
+        this(scoreOrdered, snippetWeigher, hitBuilder, Integer.MAX_VALUE);
     }
 
     /**

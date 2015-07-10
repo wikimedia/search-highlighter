@@ -1,12 +1,13 @@
 package org.wikimedia.search.highlighter.experimental.hit;
 
 import org.wikimedia.search.highlighter.experimental.HitEnum;
+import org.wikimedia.search.highlighter.experimental.tools.GraphvizHitEnumGenerator;
 
 /**
  * Simple base class that can be extended to delegate all behavior to another
  * HitEnum.
  */
-public abstract class AbstractHitEnumWrapper implements HitEnum {
+public abstract class AbstractHitEnumWrapper extends AbstractHitEnum {
     private final HitEnum wrapped;
 
     public AbstractHitEnumWrapper(HitEnum wrapped) {
@@ -50,5 +51,11 @@ public abstract class AbstractHitEnumWrapper implements HitEnum {
     @Override
     public int source() {
         return wrapped.source();
+    }
+
+    @Override
+    public void toGraph(GraphvizHitEnumGenerator generator) {
+        super.toGraph(generator);
+        generator.addChild(this, wrapped);
     }
 }

@@ -42,6 +42,7 @@ import org.wikimedia.search.highlighter.experimental.Snippet;
 import org.wikimedia.search.highlighter.experimental.SnippetChooser;
 import org.wikimedia.search.highlighter.experimental.SnippetFormatter;
 import org.wikimedia.search.highlighter.experimental.SnippetWeigher;
+import org.wikimedia.search.highlighter.experimental.Snippet.HitBuilder;
 import org.wikimedia.search.highlighter.experimental.hit.ConcatHitEnum;
 import org.wikimedia.search.highlighter.experimental.hit.EmptyHitEnum;
 import org.wikimedia.search.highlighter.experimental.hit.MergingHitEnum;
@@ -52,6 +53,9 @@ import org.wikimedia.search.highlighter.experimental.snippet.BasicScoreBasedSnip
 import org.wikimedia.search.highlighter.experimental.snippet.BasicSourceOrderSnippetChooser;
 import org.wikimedia.search.highlighter.experimental.snippet.ExponentialSnippetWeigher;
 import org.wikimedia.search.highlighter.experimental.snippet.SumSnippetWeigher;
+import org.wikimedia.search.highlighter.experimental.tools.GraphvizHit;
+import org.wikimedia.search.highlighter.experimental.tools.GraphvizHitEnum;
+import org.wikimedia.search.highlighter.experimental.tools.GraphvizSnippetFormatter;
 
 public class ExperimentalHighlighter implements Highlighter {
     private static final String CACHE_KEY = "highlight-experimental";
@@ -146,6 +150,7 @@ public class ExperimentalHighlighter implements Highlighter {
     }
 
     static class HighlightExecutionContext {
+        private static final String OPTION_RETURN_DEBUG_GRAPH = "return_debug_graph";
         private static final int DEFAULT_MAX_DETERMINIZED_STATES = 20000;
         private final HighlighterContext context;
         private final CacheEntry cache;
@@ -296,6 +301,10 @@ public class ExperimentalHighlighter implements Highlighter {
             // Merge any overlapping hits to support matched fields and
             // analyzers that make overlaps.
             e = new OverlapMergingHitEnumWrapper(e);
+
+            if(getOption(OPTION_RETURN_DEBUG_GRAPH, false)) {
+                e = new GraphvizHitEnum(e);
+            }
             return e;
         }
 
@@ -476,22 +485,26 @@ public class ExperimentalHighlighter implements Highlighter {
         }
 
         private SnippetChooser buildChooser() {
+            HitBuilder hitBuilder = Snippet.DEFAULT_HIT_BUILDER;
+            if(getOption(OPTION_RETURN_DEBUG_GRAPH, false)) {
+                hitBuilder = GraphvizHit.GRAPHVIZ_HIT_BUILDER;
+            }
             if (context.field.fieldOptions().scoreOrdered()) {
-                return buildScoreBasedSnippetChooser(true);
+                return buildScoreBasedSnippetChooser(true, hitBuilder);
             }
             Boolean topScoring = (Boolean) getOption("top_scoring");
             if (topScoring != null && topScoring) {
-                return buildScoreBasedSnippetChooser(false);
+                return buildScoreBasedSnippetChooser(false, hitBuilder);
             }
-            return new BasicSourceOrderSnippetChooser();
+            return new BasicSourceOrderSnippetChooser(hitBuilder);
         }
 
-        private SnippetChooser buildScoreBasedSnippetChooser(boolean scoreOrdered) {
+        private SnippetChooser buildScoreBasedSnippetChooser(boolean scoreOrdered, HitBuilder hitBuilder) {
             Integer maxFragmentsScored = (Integer) getOption("max_fragments_scored");
             if (maxFragmentsScored == null) {
                 maxFragmentsScored = Integer.MAX_VALUE;
             }
-            return new BasicScoreBasedSnippetChooser(scoreOrdered, buildSnippetWeigher(), maxFragmentsScored);
+            return new BasicScoreBasedSnippetChooser(scoreOrdered, buildSnippetWeigher(), hitBuilder, maxFragmentsScored);
         }
 
         private SnippetWeigher buildSnippetWeigher() {
@@ -529,9 +542,11 @@ public class ExperimentalHighlighter implements Highlighter {
         }
 
         private Text[] formatSnippets(List<Snippet> snippets) throws IOException {
-            SnippetFormatter formatter;
+            final SnippetFormatter formatter;
             if (getOption("return_offsets", false)) {
                 formatter = new OffsetSnippetFormatter();
+            } else if(getOption(OPTION_RETURN_DEBUG_GRAPH, false)){
+                formatter = new GraphvizSnippetFormatter(defaultField.buildSourceExtracter());
             } else {
                 formatter = new SnippetFormatter.Default(defaultField.buildSourceExtracter(),
                     context.field.fieldOptions().preTags()[0], context.field.fieldOptions()

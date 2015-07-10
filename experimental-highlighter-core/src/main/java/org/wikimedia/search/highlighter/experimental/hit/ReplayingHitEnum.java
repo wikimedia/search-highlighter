@@ -12,7 +12,7 @@ import org.wikimedia.search.highlighter.experimental.HitEnum;
  * the normal interface. Even if next has run dry you can add hits and next will
  * start returning results again.
  */
-public class ReplayingHitEnum implements HitEnum {
+public class ReplayingHitEnum extends AbstractHitEnum {
     private final Queue<Hit> hits = new ArrayDeque<Hit>();
     private Hit current;
 
