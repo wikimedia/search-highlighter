@@ -12,8 +12,8 @@ import java.util.Set;
 import java.util.regex.Pattern;
 
 import org.apache.lucene.search.Query;
-import org.apache.lucene.util.automaton.XAutomaton;
 import org.apache.lucene.util.automaton.XRegExp;
+import org.apache.lucene.util.automaton.XTooComplexToDeterminizeException;
 import org.elasticsearch.common.base.Function;
 import org.elasticsearch.common.collect.Iterators;
 import org.elasticsearch.common.logging.ESLogger;
@@ -39,10 +39,10 @@ import org.wikimedia.highlighter.experimental.lucene.hit.AutomatonHitEnum;
 import org.wikimedia.highlighter.experimental.lucene.hit.weight.BasicQueryWeigher;
 import org.wikimedia.search.highlighter.experimental.HitEnum;
 import org.wikimedia.search.highlighter.experimental.Snippet;
+import org.wikimedia.search.highlighter.experimental.Snippet.HitBuilder;
 import org.wikimedia.search.highlighter.experimental.SnippetChooser;
 import org.wikimedia.search.highlighter.experimental.SnippetFormatter;
 import org.wikimedia.search.highlighter.experimental.SnippetWeigher;
-import org.wikimedia.search.highlighter.experimental.Snippet.HitBuilder;
 import org.wikimedia.search.highlighter.experimental.hit.ConcatHitEnum;
 import org.wikimedia.search.highlighter.experimental.hit.EmptyHitEnum;
 import org.wikimedia.search.highlighter.experimental.hit.MergingHitEnum;
@@ -89,8 +89,7 @@ public class ExperimentalHighlighter implements Highlighter {
             }
         } catch (Exception e) {
             log.error("Failed to highlight field [{}]", e, context.fieldName);
-            throw new FetchPhaseExecutionException(context.context, "Failed to highlight field ["
-                    + context.fieldName + "]", e);
+            throw new FetchPhaseExecutionException(context.context, "Failed to highlight field [" + context.fieldName + "]", e);
         }
     }
 
@@ -173,7 +172,8 @@ public class ExperimentalHighlighter implements Highlighter {
                 return null;
             }
 
-            // TODO it might be possible to not build the weigher at all if just using regex highlighting
+            // TODO it might be possible to not build the weigher at all if just
+            // using regex highlighting
             ensureWeigher();
             scoreMatters = context.field.fieldOptions().scoreOrdered();
             if (!scoreMatters) {
@@ -186,8 +186,7 @@ public class ExperimentalHighlighter implements Highlighter {
                 numberOfSnippets = 1;
             }
             segmenter = new DelayedSegmenter(defaultField);
-            List<Snippet> snippets = buildChooser().choose(segmenter, buildHitEnum(),
-                    numberOfSnippets);
+            List<Snippet> snippets = buildChooser().choose(segmenter, buildHitEnum(), numberOfSnippets);
             if (snippets.size() != 0) {
                 cache.lastMatched = true;
                 return new HighlightField(context.fieldName, formatSnippets(snippets));
@@ -201,19 +200,19 @@ public class ExperimentalHighlighter implements Highlighter {
             if (fieldValues.isEmpty()) {
                 return null;
             }
-            Text fragment = new StringText(getSegmenterFactory()
-                    .extractNoMatchFragment(fieldValues.get(0), noMatchSize));
-            return new HighlightField(context.fieldName, new Text[] {fragment});
+            Text fragment = new StringText(getSegmenterFactory().extractNoMatchFragment(fieldValues.get(0), noMatchSize));
+            return new HighlightField(context.fieldName, new Text[] { fragment });
         }
 
         private boolean shouldSkip() {
-            // Maintain lastMatched - it should be false if we shift to a new doc.
+            // Maintain lastMatched - it should be false if we shift to a new
+            // doc.
             if (cache.lastDocId != context.hitContext.docId()) {
                 cache.lastMatched = false;
                 cache.lastDocId = context.hitContext.docId();
             }
 
-            Boolean skipIfLastMatched = (Boolean)getOption("skip_if_last_matched");
+            Boolean skipIfLastMatched = (Boolean) getOption("skip_if_last_matched");
             return skipIfLastMatched == null ? false : skipIfLastMatched && cache.lastMatched;
         }
 
@@ -274,19 +273,18 @@ public class ExperimentalHighlighter implements Highlighter {
             boolean removeHighFrequencyTermsFromCommonTerms = getOption("remove_high_freq_terms_from_common_terms", true);
             int maxExpandedTerms = getOption("max_expanded_terms", 1024);
             // TODO simplify
-            QueryCacheKey key = new QueryCacheKey(context.query.originalQuery(), maxExpandedTerms, phraseAsTerms, removeHighFrequencyTermsFromCommonTerms);
+            QueryCacheKey key = new QueryCacheKey(context.query.originalQuery(), maxExpandedTerms, phraseAsTerms,
+                    removeHighFrequencyTermsFromCommonTerms);
             weigher = cache.queryWeighers.get(key);
             if (weigher != null) {
                 return;
             }
             // TODO recycle. But addReleasble doesn't seem to close it properly
             // later. I believe this is fixed in later Elasticsearch versions.
-            BytesRefHashTermInfos infos = new BytesRefHashTermInfos(
-                    BigArrays.NON_RECYCLING_INSTANCE);
+            BytesRefHashTermInfos infos = new BytesRefHashTermInfos(BigArrays.NON_RECYCLING_INSTANCE);
             // context.context.addReleasable(infos);
-            weigher = new BasicQueryWeigher(
-                    new ElasticsearchQueryFlattener(maxExpandedTerms, phraseAsTerms, removeHighFrequencyTermsFromCommonTerms), infos,
-                    context.hitContext.topLevelReader(), context.query.originalQuery());
+            weigher = new BasicQueryWeigher(new ElasticsearchQueryFlattener(maxExpandedTerms, phraseAsTerms,
+                    removeHighFrequencyTermsFromCommonTerms), infos, context.hitContext.topLevelReader(), context.query.originalQuery());
             // Build the QueryWeigher with the top level reader to get all
             // the frequency information
             cache.queryWeighers.put(key, weigher);
@@ -302,7 +300,7 @@ public class ExperimentalHighlighter implements Highlighter {
             // analyzers that make overlaps.
             e = new OverlapMergingHitEnumWrapper(e);
 
-            if(getOption(OPTION_RETURN_DEBUG_GRAPH, false)) {
+            if (getOption(OPTION_RETURN_DEBUG_GRAPH, false)) {
                 e = new GraphvizHitEnum(e);
             }
             return e;
@@ -353,9 +351,7 @@ public class ExperimentalHighlighter implements Highlighter {
                     }
                     AutomatonHitEnum.Factory factory = cache.automatonHitEnumFactories.get(regex);
                     if (factory == null) {
-                        XRegExp regexp = new XRegExp(regex);
-                        XAutomaton automaton = regexp.toAutomaton(getMaxDeterminizedStates());
-                        factory = AutomatonHitEnum.factory(automaton);
+                        factory = buildFactoryForRegex(new XRegExp(regex));
                         cache.automatonHitEnumFactories.put(regex, factory);
                     }
                     hitEnums.add(buildLuceneRegexHitEnumForRegex(factory, fieldValues, caseInsensitive));
@@ -368,6 +364,23 @@ public class ExperimentalHighlighter implements Highlighter {
                 }
             }
             return hitEnums;
+        }
+
+        private AutomatonHitEnum.Factory buildFactoryForRegex(XRegExp regex) {
+            try {
+                return AutomatonHitEnum.factory(regex.toAutomaton(getMaxDeterminizedStates()));
+            } catch (XTooComplexToDeterminizeException e) {
+                /*
+                 * Elasticsearch forces us to wrap the exception in a fully
+                 * Serializable exception and throw out the stack trace so we
+                 * give our future selves the oportunity to log it when we need
+                 * it.
+                 */
+                if (log.isDebugEnabled()) {
+                    log.debug("Regex too complex", e);
+                }
+                throw new RegexTooComplexException(e);
+            }
         }
 
         private int getMaxDeterminizedStates() {
@@ -395,11 +408,11 @@ public class ExperimentalHighlighter implements Highlighter {
             if (regexes instanceof String) {
                 return Collections.singletonList((String) regexes);
             }
-            return (List<String>)regexes;
+            return (List<String>) regexes;
         }
 
-        private HitEnum buildLuceneRegexHitEnumForRegex(final AutomatonHitEnum.Factory factory,
-                List<String> fieldValues, final boolean caseInsensitive) {
+        private HitEnum buildLuceneRegexHitEnumForRegex(final AutomatonHitEnum.Factory factory, List<String> fieldValues,
+                final boolean caseInsensitive) {
             final int positionGap = defaultField.getPositionGap();
             if (fieldValues.size() == 1) {
                 String fieldValue = fieldValues.get(0);
@@ -408,8 +421,8 @@ public class ExperimentalHighlighter implements Highlighter {
                 }
                 return factory.build(fieldValue);
             } else {
-                Iterator<HitEnumAndLength> hitEnumsFromStreams = Iterators.transform(
-                        fieldValues.iterator(), new Function<String, HitEnumAndLength>() {
+                Iterator<HitEnumAndLength> hitEnumsFromStreams = Iterators.transform(fieldValues.iterator(),
+                        new Function<String, HitEnumAndLength>() {
                             @Override
                             public HitEnumAndLength apply(String fieldValue) {
                                 if (caseInsensitive) {
@@ -427,12 +440,11 @@ public class ExperimentalHighlighter implements Highlighter {
             if (fieldValues.size() == 1) {
                 return new RegexHitEnum(pattern.matcher(fieldValues.get(0)));
             } else {
-                Iterator<HitEnumAndLength> hitEnumsFromStreams = Iterators.transform(
-                        fieldValues.iterator(), new Function<String, HitEnumAndLength>() {
+                Iterator<HitEnumAndLength> hitEnumsFromStreams = Iterators.transform(fieldValues.iterator(),
+                        new Function<String, HitEnumAndLength>() {
                             @Override
                             public HitEnumAndLength apply(String fieldValue) {
-                                return new HitEnumAndLength(new RegexHitEnum(pattern
-                                        .matcher(fieldValue)), fieldValue.length());
+                                return new HitEnumAndLength(new RegexHitEnum(pattern.matcher(fieldValue)), fieldValue.length());
                             }
                         });
                 return new ConcatHitEnum(hitEnumsFromStreams, positionGap, 1);
@@ -486,7 +498,7 @@ public class ExperimentalHighlighter implements Highlighter {
 
         private SnippetChooser buildChooser() {
             HitBuilder hitBuilder = Snippet.DEFAULT_HIT_BUILDER;
-            if(getOption(OPTION_RETURN_DEBUG_GRAPH, false)) {
+            if (getOption(OPTION_RETURN_DEBUG_GRAPH, false)) {
                 hitBuilder = GraphvizHit.GRAPHVIZ_HIT_BUILDER;
             }
             if (context.field.fieldOptions().scoreOrdered()) {
@@ -545,12 +557,11 @@ public class ExperimentalHighlighter implements Highlighter {
             final SnippetFormatter formatter;
             if (getOption("return_offsets", false)) {
                 formatter = new OffsetSnippetFormatter();
-            } else if(getOption(OPTION_RETURN_DEBUG_GRAPH, false)){
+            } else if (getOption(OPTION_RETURN_DEBUG_GRAPH, false)) {
                 formatter = new GraphvizSnippetFormatter(defaultField.buildSourceExtracter());
             } else {
-                formatter = new SnippetFormatter.Default(defaultField.buildSourceExtracter(),
-                    context.field.fieldOptions().preTags()[0], context.field.fieldOptions()
-                            .postTags()[0]);
+                formatter = new SnippetFormatter.Default(defaultField.buildSourceExtracter(), context.field.fieldOptions().preTags()[0],
+                        context.field.fieldOptions().postTags()[0]);
             }
 
             List<FieldWrapper> fetchFields = buildFetchFields();
@@ -570,7 +581,7 @@ public class ExperimentalHighlighter implements Highlighter {
             for (Snippet snippet : snippets) {
                 result[i++] = new StringText(formatter.format(snippet));
                 int index = picker.index(snippet);
-                for (FieldWrapper fetchField: fetchFields) {
+                for (FieldWrapper fetchField : fetchFields) {
                     List<String> values = fetchField.getFieldValues();
                     if (index >= 0 && index < values.size()) {
                         result[i++] = new StringText(values.get(index));
@@ -583,7 +594,8 @@ public class ExperimentalHighlighter implements Highlighter {
         }
 
         /**
-         * Return FieldWrappers for all fetch_fields or null if there aren't any.
+         * Return FieldWrappers for all fetch_fields or null if there aren't
+         * any.
          */
         private List<FieldWrapper> buildFetchFields() {
             @SuppressWarnings("unchecked")
@@ -606,8 +618,7 @@ public class ExperimentalHighlighter implements Highlighter {
                         }
                     }
                     if (!found) {
-                        FieldWrapper fieldWrapper = new FieldWrapper(this, context, weigher,
-                                fetchField);
+                        FieldWrapper fieldWrapper = new FieldWrapper(this, context, weigher, fetchField);
                         newExtraFields.add(fieldWrapper);
                         fetchFieldWrappers.add(fieldWrapper);
                     }
@@ -629,8 +640,7 @@ public class ExperimentalHighlighter implements Highlighter {
             }
             if (options.fragmenter() == null || options.fragmenter().equals("scan")) {
                 // TODO boundaryChars
-                return new CharScanningSegmenterFactory(options.fragmentCharSize(),
-                        options.boundaryMaxScan());
+                return new CharScanningSegmenterFactory(options.fragmentCharSize(), options.boundaryMaxScan());
             }
             if (options.fragmenter().equals("sentence")) {
                 return new SentenceIteratorSegmenterFactory(getLocale(), options.boundaryMaxScan());
@@ -638,8 +648,7 @@ public class ExperimentalHighlighter implements Highlighter {
             if (options.fragmenter().equals("none")) {
                 return new WholeSourceSegmenterFactory();
             }
-            throw new IllegalArgumentException("Unknown fragmenter:  '" + options.fragmenter()
-                    + "'.  Options are 'scan' or 'sentence'.");
+            throw new IllegalArgumentException("Unknown fragmenter:  '" + options.fragmenter() + "'.  Options are 'scan' or 'sentence'.");
         }
 
         private Locale getLocale() {

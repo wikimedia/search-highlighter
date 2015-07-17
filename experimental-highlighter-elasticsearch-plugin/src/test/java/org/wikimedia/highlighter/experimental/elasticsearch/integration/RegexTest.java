@@ -212,7 +212,7 @@ public class RegexTest extends AbstractExperimentalHighlighterIntegrationTestBas
         options.put("regex_case_sensitive", true);
         options.put("regex_flavor", "lucene");
         assertFailures(testSearch().setHighlighterOptions(options),
-                RestStatus.INTERNAL_SERVER_ERROR, containsString("Determinizing automaton would result in more than"));
+                RestStatus.INTERNAL_SERVER_ERROR, containsString("Determinizing [^]]*alt=[^]\\|}]{80,} would result in more than"));
         // Some regexes with explosive state growth still run because they
         // don't explode into too many states.
         options.put("regex", ".*te*s[tabclse]{1,16}.*");
@@ -222,7 +222,7 @@ public class RegexTest extends AbstractExperimentalHighlighterIntegrationTestBas
         options.put("regex", ".*te*s[tabcse]{1,16}.*");
         options.put("max_determinized_states", 100);
         assertFailures(testSearch().setHighlighterOptions(options),
-                RestStatus.INTERNAL_SERVER_ERROR, containsString("Determinizing automaton would result in more than 100"));
+                RestStatus.INTERNAL_SERVER_ERROR, containsString("Determinizing .*te*s[tabcse]{1,16}.* would result in more than 100"));
         // Its unfortunate that this comes back as an INTERNAL_SERVER_ERROR but
         // I can't find any way from here to mark it otherwise.
     }
