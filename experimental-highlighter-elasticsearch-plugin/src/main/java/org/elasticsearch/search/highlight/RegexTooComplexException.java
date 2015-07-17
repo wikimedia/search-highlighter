@@ -1,6 +1,6 @@
 package org.elasticsearch.search.highlight;
 
-import org.apache.lucene.util.automaton.XTooComplexToDeterminizeException;
+import org.apache.lucene.util.automaton.TooComplexToDeterminizeException;
 
 /**
  * Wraps Lucene's XTooComplexToDeterminizeException to be serializable to be
@@ -9,7 +9,7 @@ import org.apache.lucene.util.automaton.XTooComplexToDeterminizeException;
 public class RegexTooComplexException extends RuntimeException {
     private static final long serialVersionUID = -41975279199116247L;
 
-    public RegexTooComplexException(XTooComplexToDeterminizeException e) {
+    public RegexTooComplexException(TooComplexToDeterminizeException e) {
         super(e.getMessage());
     }
 }

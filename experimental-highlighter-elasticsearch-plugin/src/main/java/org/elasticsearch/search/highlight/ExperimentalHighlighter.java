@@ -12,8 +12,8 @@ import java.util.Set;
 import java.util.regex.Pattern;
 
 import org.apache.lucene.search.Query;
-import org.apache.lucene.util.automaton.XRegExp;
-import org.apache.lucene.util.automaton.XTooComplexToDeterminizeException;
+import org.apache.lucene.util.automaton.RegExp;
+import org.apache.lucene.util.automaton.TooComplexToDeterminizeException;
 import org.elasticsearch.common.base.Function;
 import org.elasticsearch.common.collect.Iterators;
 import org.elasticsearch.common.logging.ESLogger;
@@ -351,7 +351,7 @@ public class ExperimentalHighlighter implements Highlighter {
                     }
                     AutomatonHitEnum.Factory factory = cache.automatonHitEnumFactories.get(regex);
                     if (factory == null) {
-                        factory = buildFactoryForRegex(new XRegExp(regex));
+                        factory = buildFactoryForRegex(new RegExp(regex));
                         cache.automatonHitEnumFactories.put(regex, factory);
                     }
                     hitEnums.add(buildLuceneRegexHitEnumForRegex(factory, fieldValues, caseInsensitive));
@@ -366,10 +366,10 @@ public class ExperimentalHighlighter implements Highlighter {
             return hitEnums;
         }
 
-        private AutomatonHitEnum.Factory buildFactoryForRegex(XRegExp regex) {
+        private AutomatonHitEnum.Factory buildFactoryForRegex(RegExp regex) {
             try {
                 return AutomatonHitEnum.factory(regex.toAutomaton(getMaxDeterminizedStates()));
-            } catch (XTooComplexToDeterminizeException e) {
+            } catch (TooComplexToDeterminizeException e) {
                 /*
                  * Elasticsearch forces us to wrap the exception in a fully
                  * Serializable exception and throw out the stack trace so we

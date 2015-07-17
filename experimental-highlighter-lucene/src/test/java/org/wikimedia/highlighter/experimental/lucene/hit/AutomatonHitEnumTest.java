@@ -6,7 +6,7 @@ import static org.wikimedia.search.highlighter.experimental.Matchers.advances;
 import static org.wikimedia.search.highlighter.experimental.Matchers.hit;
 import static org.wikimedia.search.highlighter.experimental.Matchers.isEmpty;
 
-import org.apache.lucene.util.automaton.XRegExp;
+import org.apache.lucene.util.automaton.RegExp;
 import org.junit.Test;
 import org.wikimedia.search.highlighter.experimental.HitEnum;
 import org.wikimedia.search.highlighter.experimental.SourceExtracter;
@@ -14,8 +14,8 @@ import org.wikimedia.search.highlighter.experimental.hit.AbstractHitEnumTestBase
 import org.wikimedia.search.highlighter.experimental.source.StringSourceExtracter;
 
 public class AutomatonHitEnumTest extends AbstractHitEnumTestBase {
-    private final AutomatonHitEnum.Factory factory = AutomatonHitEnum.factory(new XRegExp("[a-zA-Z]+").toAutomaton());
-    
+    private final AutomatonHitEnum.Factory factory = AutomatonHitEnum.factory(new RegExp("[a-zA-Z]+").toAutomaton());
+
     @Override
     protected HitEnum buildEnum(String str) {
         return factory.build(str);
@@ -25,7 +25,7 @@ public class AutomatonHitEnumTest extends AbstractHitEnumTestBase {
     public void specificWords() {
         String source = "hero of legend";
         SourceExtracter<String> extracter = new StringSourceExtracter(source);
-        HitEnum e = AutomatonHitEnum.factory(new XRegExp("hero|legend").toAutomaton()).build(source);
+        HitEnum e = AutomatonHitEnum.factory(new RegExp("hero|legend").toAutomaton()).build(source);
         assertThat(e, advances());
         assertThat(e, hit(0, extracter, equalTo("hero")));
         assertThat(e, advances());
@@ -37,7 +37,7 @@ public class AutomatonHitEnumTest extends AbstractHitEnumTestBase {
     public void wordsNextToOneAnother() {
         String source = "herolegend";
         SourceExtracter<String> extracter = new StringSourceExtracter(source);
-        HitEnum e = AutomatonHitEnum.factory(new XRegExp("hero|legend").toAutomaton()).build(source);
+        HitEnum e = AutomatonHitEnum.factory(new RegExp("hero|legend").toAutomaton()).build(source);
         assertThat(e, advances());
         assertThat(e, hit(0, extracter, equalTo("hero")));
         assertThat(e, advances());
@@ -49,12 +49,12 @@ public class AutomatonHitEnumTest extends AbstractHitEnumTestBase {
     public void partialWithStar() {
         String source = "hero of legend";
         SourceExtracter<String> extracter = new StringSourceExtracter(source);
-        HitEnum e = AutomatonHitEnum.factory(new XRegExp("her.*f").toAutomaton()).build(source);
+        HitEnum e = AutomatonHitEnum.factory(new RegExp("her.*f").toAutomaton()).build(source);
         assertThat(e, advances());
         assertThat(e, hit(0, extracter, equalTo("hero of")));
         assertThat(e, isEmpty());
 
-        e = AutomatonHitEnum.factory(new XRegExp("her.*o").toAutomaton()).build(source);
+        e = AutomatonHitEnum.factory(new RegExp("her.*o").toAutomaton()).build(source);
         assertThat(e, advances());
         assertThat(e, hit(0, extracter, equalTo("hero o")));
         assertThat(e, isEmpty());
@@ -64,12 +64,12 @@ public class AutomatonHitEnumTest extends AbstractHitEnumTestBase {
     public void partialWithQuestion() {
         String source = "hero of legend";
         SourceExtracter<String> extracter = new StringSourceExtracter(source);
-        HitEnum e = AutomatonHitEnum.factory(new XRegExp("her.?").toAutomaton()).build(source);
+        HitEnum e = AutomatonHitEnum.factory(new RegExp("her.?").toAutomaton()).build(source);
         assertThat(e, advances());
         assertThat(e, hit(0, extracter, equalTo("hero")));
         assertThat(e, isEmpty());
 
-        e = AutomatonHitEnum.factory(new XRegExp("her.?o").toAutomaton()).build(source);
+        e = AutomatonHitEnum.factory(new RegExp("her.?o").toAutomaton()).build(source);
         assertThat(e, advances());
         assertThat(e, hit(0, extracter, equalTo("hero")));
         assertThat(e, isEmpty());
@@ -79,12 +79,12 @@ public class AutomatonHitEnumTest extends AbstractHitEnumTestBase {
     public void unicode() {
         String source = "The common Chinese names for the country are Zhōngguó (Chinese: 中国, from zhōng, \"central\"";
         SourceExtracter<String> extracter = new StringSourceExtracter(source);
-        HitEnum e = AutomatonHitEnum.factory(new XRegExp("from").toAutomaton()).build(source);
+        HitEnum e = AutomatonHitEnum.factory(new RegExp("from").toAutomaton()).build(source);
         assertThat(e, advances());
         assertThat(e, hit(0, extracter, equalTo("from")));
         assertThat(e, isEmpty());
 
-        e = AutomatonHitEnum.factory(new XRegExp("国").toAutomaton()).build(source);
+        e = AutomatonHitEnum.factory(new RegExp("国").toAutomaton()).build(source);
         assertThat(e, advances());
         assertThat(e, hit(0, extracter, equalTo("国")));
         assertThat(e, isEmpty());

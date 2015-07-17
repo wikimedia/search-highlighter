@@ -1,18 +1,21 @@
 package org.apache.lucene.util.automaton;
 
+import org.apache.lucene.util.automaton.Automaton;
+import org.apache.lucene.util.automaton.RunAutomaton;
+
 
 
 /**
  * RunAutomaton that returns the end offset of the matching string.
  */
-public class OffsetReturningRunAutomaton extends XRunAutomaton {
-    public OffsetReturningRunAutomaton(XAutomaton a, boolean utf8) {
+public class OffsetReturningRunAutomaton extends RunAutomaton {
+    public OffsetReturningRunAutomaton(Automaton a, boolean utf8) {
         super(a, Character.MAX_CODE_POINT, true);
     }
 
     /**
      * Does s match the automaton?
-     * 
+     *
      * @param s string to check
      * @param offset offset to start checking
      * @param end end offset to end checking
