@@ -1,8 +1,5 @@
 package org.wikimedia.highlighter.experimental.elasticsearch;
 
-import static org.hamcrest.Matchers.allOf;
-import static org.hamcrest.Matchers.not;
-import static org.junit.Assert.assertThat;
 import static org.mockito.Matchers.anyFloat;
 import static org.mockito.Matchers.anyInt;
 import static org.mockito.Matchers.anyString;
@@ -12,20 +9,28 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static org.wikimedia.highlighter.experimental.lucene.LuceneMatchers.recognises;
 
+import java.io.IOException;
+
+import org.apache.lucene.analysis.standard.StandardAnalyzer;
+import org.apache.lucene.document.Field.Store;
+import org.apache.lucene.document.TextField;
+import org.apache.lucene.index.DirectoryReader;
+import org.apache.lucene.index.IndexReader;
+import org.apache.lucene.index.IndexWriter;
+import org.apache.lucene.index.IndexWriterConfig;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.TermQuery;
-import org.apache.lucene.util.automaton.Automaton;
+import org.apache.lucene.store.RAMDirectory;
 import org.elasticsearch.common.lucene.search.MultiPhrasePrefixQuery;
 import org.elasticsearch.common.lucene.search.function.FieldValueFactorFunction;
 import org.elasticsearch.common.lucene.search.function.FiltersFunctionScoreQuery;
 import org.elasticsearch.common.lucene.search.function.FiltersFunctionScoreQuery.FilterFunction;
 import org.elasticsearch.common.lucene.search.function.FunctionScoreQuery;
 import org.elasticsearch.common.lucene.search.function.ScoreFunction;
+import org.elasticsearch.index.mapper.ParseContext.Document;
 import org.junit.Test;
-import org.mockito.ArgumentCaptor;
 import org.wikimedia.highlighter.experimental.lucene.QueryFlattener.Callback;
 
 public class ElasticsearchQueryFlattenerTest {
@@ -58,6 +63,21 @@ public class ElasticsearchQueryFlattenerTest {
     }
 
     private void phrasePrefixQueryTestCase(boolean phraseAsTerms) {
+        final IndexReader ir;
+        try {
+            // Previously MultiPhraseQuery was flattened directly
+            // This is not possible anymore, so we need to rewrite
+            // but to rewrite we need an IndexReader with a doc.
+            RAMDirectory dir = new RAMDirectory();
+            IndexWriter iw = new IndexWriter(dir, new IndexWriterConfig(new StandardAnalyzer()));
+            Document doc = new Document();
+            doc.add(new TextField("test", "foo qux bart foo quux another", Store.NO));
+            iw.addDocument(doc);
+            iw.close();
+            ir = DirectoryReader.open(dir);
+        } catch (IOException ioe) {
+            throw new RuntimeException(ioe);
+        }
         MultiPhrasePrefixQuery query = new MultiPhrasePrefixQuery();
         Term foo = new Term("test", "foo");
         Term qux = new Term("test", "qux");
@@ -68,24 +88,21 @@ public class ElasticsearchQueryFlattenerTest {
         query.add(new Term[] { qux, quux });
         query.add(new Term[] { bar, anoth });
 
+        Term bart = new Term("test", "bart");
+        Term another = new Term("test", "another");
+
         Callback callback = mock(Callback.class);
-        new ElasticsearchQueryFlattener(1, phraseAsTerms, true).flatten(query, null, callback);
+        new ElasticsearchQueryFlattener(1, phraseAsTerms, true).flatten(query, ir, callback);
 
-        // The first positions are sent as terms
-        verify(callback).flattened(foo.bytes(), phraseAsTerms ? 1f : 0, null);
+        verify(callback).flattened(foo.bytes(), phraseAsTerms ? 1f : 0, query);
+        verify(callback).flattened(qux.bytes(), phraseAsTerms ? 1f : 0, query);
+        verify(callback).flattened(quux.bytes(), phraseAsTerms ? 1f : 0, query);
+        verify(callback).flattened(bart.bytes(), phraseAsTerms ? 1f : 0, query);
+        verify(callback).flattened(another.bytes(), phraseAsTerms ? 1f : 0, query);
         verify(callback, never()).flattened(eq(bar.bytes()), anyFloat(), isNull(Query.class));
+        verify(callback, never()).flattened(eq(anoth.bytes()), anyFloat(), isNull(Query.class));
 
-        // The last position is sent as prefix automata
-        ArgumentCaptor<Automaton> a = ArgumentCaptor.forClass(Automaton.class);
-        verify(callback, times(2)).flattened(a.capture(), phraseAsTerms ? eq(1f) : eq(0f), anyInt());
-        assertThat(
-                a.getAllValues().get(0),
-                allOf(recognises("bar"), recognises("barr"), recognises("bart"),
-                        not(recognises("bor")), not(recognises("anoth"))));
-        assertThat(
-                a.getAllValues().get(1),
-                allOf(recognises("anoth"), recognises("anothe"), recognises("another"),
-                        not(recognises("anoother")), not(recognises("bar"))));
+        verify(callback).flattened(another.bytes(), phraseAsTerms ? 1f : 0, query);
 
         if (phraseAsTerms) {
             verify(callback, never()).startPhrase(anyInt(), anyFloat());

@@ -17,10 +17,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
+import com.google.common.collect.ImmutableMap;
+
 import org.elasticsearch.action.index.IndexRequestBuilder;
 import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.common.collect.ImmutableMap;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.rest.RestStatus;
 import org.elasticsearch.search.highlight.HighlightBuilder;
@@ -257,7 +258,7 @@ public class OptionsTest extends AbstractExperimentalHighlighterIntegrationTestB
             } else {
                 // I wish I could throw an HTTP 400 here but I don't believe I
                 // can.
-                assertFailures(search, RestStatus.INTERNAL_SERVER_ERROR,
+                assertFailures(search, RestStatus.BAD_REQUEST,
                         containsString("as a hit source without setting"));
             }
         }
@@ -273,7 +274,7 @@ public class OptionsTest extends AbstractExperimentalHighlighterIntegrationTestB
             } else {
                 // I wish I could throw an HTTP 400 here but I don't believe I
                 // can.
-                assertFailures(search, RestStatus.INTERNAL_SERVER_ERROR,
+                assertFailures(search, RestStatus.BAD_REQUEST,
                         containsString("as a hit source without setting"));
             }
         }

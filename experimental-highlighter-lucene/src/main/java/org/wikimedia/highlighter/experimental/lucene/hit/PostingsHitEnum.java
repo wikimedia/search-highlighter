@@ -5,11 +5,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
-import org.apache.lucene.index.AtomicReader;
-import org.apache.lucene.index.AtomicReaderContext;
-import org.apache.lucene.index.DocsAndPositionsEnum;
 import org.apache.lucene.index.Fields;
 import org.apache.lucene.index.IndexReader;
+import org.apache.lucene.index.LeafReader;
+import org.apache.lucene.index.LeafReaderContext;
+import org.apache.lucene.index.PostingsEnum;
 import org.apache.lucene.index.ReaderUtil;
 import org.apache.lucene.index.Terms;
 import org.apache.lucene.index.TermsEnum;
@@ -25,11 +25,11 @@ import org.wikimedia.search.highlighter.experimental.hit.TermSourceFinder;
 import org.wikimedia.search.highlighter.experimental.hit.TermWeigher;
 
 /**
- * Hit enum that pulls its information from a {@link DocsAndPositionsEnum}
+ * Hit enum that pulls its information from a {@link PostingsEnum}
  * positioned on the appropriate doc. The hits are in document order in for a
  * single term.
  */
-public class DocsAndPositionsHitEnum extends AbstractHitEnum {
+public class PostingsHitEnum extends AbstractHitEnum {
     public static HitEnum fromTermVectors(IndexReader reader, int docId, String fieldName,
             CompiledAutomaton acceptable, TermWeigher<BytesRef> queryWeigher,
             TermWeigher<BytesRef> corpusWeigher, TermSourceFinder<BytesRef> sourceFinder)
@@ -47,10 +47,10 @@ public class DocsAndPositionsHitEnum extends AbstractHitEnum {
             CompiledAutomaton acceptable, TermWeigher<BytesRef> queryWeigher,
             TermWeigher<BytesRef> corpusWeigher, TermSourceFinder<BytesRef> sourceFinder)
             throws IOException {
-        List<AtomicReaderContext> leaves = reader.getContext().leaves();
+        List<LeafReaderContext> leaves = reader.getContext().leaves();
         int leaf = ReaderUtil.subIndex(docId, leaves);
-        AtomicReaderContext subcontext = leaves.get(leaf);
-        AtomicReader atomicReader = subcontext.reader();
+        LeafReaderContext subcontext = leaves.get(leaf);
+        LeafReader atomicReader = subcontext.reader();
         docId -= subcontext.docBase;
         return fromTerms(atomicReader.terms(fieldName), acceptable, reader, docId,
                 queryWeigher, corpusWeigher, sourceFinder);
@@ -68,9 +68,9 @@ public class DocsAndPositionsHitEnum extends AbstractHitEnum {
         List<HitEnum> enums = new ArrayList<HitEnum>();
 
         // Last enum that didn't find anything.  We can reuse it.
-        DocsAndPositionsEnum dp = null;
+        PostingsEnum dp = null;
         while ((term = termsEnum.next()) != null) {
-            dp = termsEnum.docsAndPositions(null, dp, DocsAndPositionsEnum.FLAG_OFFSETS);
+            dp = termsEnum.postings(null, dp, PostingsEnum.OFFSETS);
             if (dp == null) {
                 continue;
             }
@@ -83,7 +83,7 @@ public class DocsAndPositionsHitEnum extends AbstractHitEnum {
                     continue;
                 }
             }
-            HitEnum e = new DocsAndPositionsHitEnum(dp, queryWeigher.weigh(term), corpusWeigher.weigh(term), sourceFinder.source(term));
+            HitEnum e = new PostingsHitEnum(dp, queryWeigher.weigh(term), corpusWeigher.weigh(term), sourceFinder.source(term));
             enums.add(e);
             dp = null;
         }
@@ -96,7 +96,7 @@ public class DocsAndPositionsHitEnum extends AbstractHitEnum {
         return new MergingHitEnum(enums, HitEnum.LessThans.POSITION);
     }
 
-    private final DocsAndPositionsEnum dp;
+    private final PostingsEnum dp;
     private final int freq;
     private final float queryWeight;
     private final float corpusWeight;
@@ -104,7 +104,7 @@ public class DocsAndPositionsHitEnum extends AbstractHitEnum {
     private int current;
     private int position;
 
-    public DocsAndPositionsHitEnum(DocsAndPositionsEnum dp, float queryWeight, float corpusWeight, int source) {
+    public PostingsHitEnum(PostingsEnum dp, float queryWeight, float corpusWeight, int source) {
         this.dp = dp;
         this.queryWeight = queryWeight;
         this.corpusWeight = corpusWeight;

@@ -15,8 +15,8 @@ import org.wikimedia.search.highlighter.experimental.SourceExtracter;
 import org.wikimedia.search.highlighter.experimental.source.StringSourceExtracter;
 
 public class BreakIteratorHitEnumTest extends AbstractHitEnumTestBase {
-	@Override
-	protected HitEnum buildEnum(String str) {
+    @Override
+    protected HitEnum buildEnum(String str) {
         return BreakIteratorHitEnum.englishWords(str);
     }
 

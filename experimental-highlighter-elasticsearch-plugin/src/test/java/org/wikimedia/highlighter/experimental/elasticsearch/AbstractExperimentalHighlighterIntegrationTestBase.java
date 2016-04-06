@@ -8,18 +8,20 @@ import java.io.IOException;
 import java.util.List;
 
 import org.elasticsearch.action.search.SearchRequestBuilder;
-import org.elasticsearch.common.collect.ImmutableList;
-import org.elasticsearch.common.collect.ImmutableMap;
-import org.elasticsearch.common.settings.ImmutableSettings;
+
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.index.query.QueryBuilder;
-import org.elasticsearch.plugins.PluginsService;
-import org.elasticsearch.test.ElasticsearchIntegrationTest;
+import org.elasticsearch.plugin.analysis.icu.AnalysisICUPlugin;
+import org.elasticsearch.test.ESIntegTestCase;
+import org.elasticsearch.test.ESIntegTestCase.ClusterScope;
+import org.wikimedia.highlighter.experimental.elasticsearch.plugin.ExperimentalHighlighterPlugin;
 
-@ElasticsearchIntegrationTest.ClusterScope(scope = ElasticsearchIntegrationTest.Scope.SUITE, transportClientRatio = 0.0)
+@ClusterScope(scope = ESIntegTestCase.Scope.SUITE, transportClientRatio = 0.0)
 public abstract class AbstractExperimentalHighlighterIntegrationTestBase extends
-        ElasticsearchIntegrationTest {
+ESIntegTestCase {
     protected static final List<String> HIT_SOURCES = ImmutableList.of("postings", "vectors",
             "analyze");
 
@@ -197,8 +199,10 @@ public abstract class AbstractExperimentalHighlighterIntegrationTestBase extends
      */
     @Override
     protected Settings nodeSettings(int nodeOrdinal) {
-        return ImmutableSettings.builder().put(super.nodeSettings(nodeOrdinal))
-                .put("plugins." + PluginsService.LOAD_PLUGIN_FROM_CLASSPATH, true).build();
+        return Settings.settingsBuilder()
+                .put("plugin.types",
+                        ExperimentalHighlighterPlugin.class.getName()
+                        + "," + AnalysisICUPlugin.class.getName())
+                .put(super.nodeSettings(nodeOrdinal)).build();
     }
-
 }

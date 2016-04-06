@@ -13,10 +13,11 @@ import java.util.Map;
 
 import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.common.collect.ImmutableList;
 import org.elasticsearch.rest.RestStatus;
 import org.junit.Test;
 import org.wikimedia.highlighter.experimental.elasticsearch.AbstractExperimentalHighlighterIntegrationTestBase;
+
+import com.google.common.collect.ImmutableList;
 
 /**
  * Tests for regex highlighting.

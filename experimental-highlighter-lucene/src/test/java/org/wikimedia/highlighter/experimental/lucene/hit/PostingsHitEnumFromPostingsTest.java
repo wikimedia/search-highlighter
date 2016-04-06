@@ -11,13 +11,13 @@ import org.wikimedia.search.highlighter.experimental.hit.weight.ConstantTermWeig
 import org.wikimedia.search.highlighter.experimental.hit.weight.NoSourceTermSourceFinder;
 
 /**
- * Tests DocsAndPositionsHitEnum using term vectors.
+ * Tests PostingsHitEnum using term vectors.
  */
-public class DocsAndPositionsHitEnumFromTermVectorsTest extends
-        AbstractDocsAndPositionsHitEnumTestBase {
+public class PostingsHitEnumFromPostingsTest extends
+        AbstractPostingsHitEnumTestBase {
     protected HitEnum buildEnum(String source, Analyzer analyzer, CompiledAutomaton acceptable) {
         try {
-            return DocsAndPositionsHitEnum.fromTermVectors(buildIndexReader(source, analyzer), 0,
+            return PostingsHitEnum.fromPostings(buildIndexReader(source, analyzer), 0,
                     "field", acceptable, new ConstantTermWeigher<BytesRef>(),
                     new ConstantTermWeigher<BytesRef>(), new NoSourceTermSourceFinder<BytesRef>());
         } catch (IOException e) {

@@ -42,7 +42,6 @@ public class GraphvizHitEnumGenerator {
     /**
      * Add a node to the current graph
      * @param hitEnum
-     * @return the node id
      */
     public void addNode(HitEnum hitEnum) {
         addNode(hitEnum, Collections.<String, Object>emptyMap());
@@ -106,8 +105,6 @@ public class GraphvizHitEnumGenerator {
 
     /**
      * Add a link between two nodes.
-     * @param from
-     * @param to
      */
     public void addLink(HitEnum parent, HitEnum child) {
         links.add(new Link(getHitEnumId(parent), getHitEnumId(child)));

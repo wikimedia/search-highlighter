@@ -1,13 +1,13 @@
 package org.wikimedia.highlighter.experimental.elasticsearch.integration;
 
-import static org.elasticsearch.index.query.FilterBuilders.idsFilter;
+import static org.elasticsearch.index.query.QueryBuilders.idsQuery;
 import static org.elasticsearch.index.query.QueryBuilders.boolQuery;
 import static org.elasticsearch.index.query.QueryBuilders.filteredQuery;
 import static org.elasticsearch.index.query.QueryBuilders.fuzzyQuery;
 import static org.elasticsearch.index.query.QueryBuilders.matchPhrasePrefixQuery;
 import static org.elasticsearch.index.query.QueryBuilders.matchQuery;
 import static org.elasticsearch.index.query.QueryBuilders.prefixQuery;
-import static org.elasticsearch.index.query.QueryBuilders.queryString;
+import static org.elasticsearch.index.query.QueryBuilders.queryStringQuery;
 import static org.elasticsearch.index.query.QueryBuilders.rangeQuery;
 import static org.elasticsearch.index.query.QueryBuilders.regexpQuery;
 import static org.elasticsearch.index.query.QueryBuilders.termQuery;
@@ -29,13 +29,14 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
+import com.google.common.collect.ImmutableList;
+
 import org.elasticsearch.action.admin.indices.optimize.OptimizeResponse;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.index.IndexRequestBuilder;
 import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.common.StopWatch;
-import org.elasticsearch.common.collect.ImmutableList;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.json.JsonXContent;
 import org.elasticsearch.index.query.BoolQueryBuilder;
@@ -44,7 +45,7 @@ import org.elasticsearch.search.highlight.HighlightBuilder;
 import org.junit.Test;
 import org.wikimedia.highlighter.experimental.elasticsearch.AbstractExperimentalHighlighterIntegrationTestBase;
 
-import com.carrotsearch.ant.tasks.junit4.dependencies.com.google.common.base.Charsets;
+import com.google.common.base.Charsets;
 import com.google.common.io.Resources;
 
 /**
@@ -212,7 +213,7 @@ public class MiscellaneousTest extends AbstractExperimentalHighlighterIntegratio
         buildIndex();
         indexTestData("What-a-Mess is a series of children's books written by British comedy writer Frank Muir and illustrated by Joseph Wright. It was later made into an animated series in the UK in 1990 and again in 1995 by DIC Entertainment and aired on ABC in the United States. It aired on YTV from 1995 to 1999 in Canada. The title character is a disheveled (hence his nickname), accident-prone Afghan Hound puppy, whose real name was Prince Amir of Kinjan. Central Independent Television, the Independent Television contractor for the Midlands, created following the restructuring of ATV and commencing broadcast on 1 January 1982, Link Licensing & Bevanfield Films produced the first series and DIC Entertainment produced the second series. Both of them were narrated by Frank Muir.   What-a-Mess - A scruffy Afghan puppy in which is the main character of the entire franchise. His Breed name is Prince Amir of Kinjan, and has a yellow duck sitting on top of his head. In the US animated version, the duck was coloured blue, as if his character was merged with the blue bird in the UK animated version and books, and was also given a name by What-A-Mess called Baldwin. In the US animated version, What-A-Mess is voiced by Ryan O'Donohue. What-a-Mess's Mother - Also known as The Duchess of Kinjan is a beautiful pedigree Afghan Hound mother to What-a-Mess, and is voiced by Miriam Flynn in the US version. Archbishop of Canterbury - A scruffy dark blue dog with brown patches which What-A-Mess met and befriended in What-A-Mess Goes to the Seaside. He's named this way because when What-A-Mess introduces himself with his breed name he sarcastically replies \"Sure, and I'm the Archbishop of Canterbury!\", which the naive pup takes as his actual name. His name was changed to Norton in the US Animated Version, and he was voiced by Dana Hill. The Cat Next Door - Also known as Felicia in the US animated version, is a brown Siamese Cat that loves to tease What-A-Mess at times. In the US animated version, she was coloured blue and she was voiced by Jo Ann Harris Belson. Cynthia - A Hedgehog which What-A-Mess befriended in What-A-Mess Goes to School. Her character was redesigned to become a mole named Ramona in the US animated version, due to the fact that Hedgehogs aren't native to America. In the US animated version, she is voiced by Candi Milo. Trash - Only in the US animated version, Trash is a Bull Terrier who is a real trouble maker to What-A-Mess. His real name is actually Francis He is voiced by Joe Nipote. Frank - An Old English Sheepdog that narrates the US animated version of What-A-Mess, voiced by Frank Muir himself!   What-a-Mess What-a-Mess The Good What-a-Mess at the Seaside What-a-Mess Goes to School Prince What-a-Mess Super What-a-Mess What-a-Mess and the Cat Next Door What-a-Mess and the Hairy Monster  Four Seasons What-a-Mess in Spring What-a-Mess in Summer What-a-Mess in Autumn What-a-Mess in Winter Four Square Meals What-a-Mess has Breakfast What-a-Mess has Lunch What-a-Mess has Tea What-a-Mess has Supper Mini Books What-a-Mess has a Brain Wave What-a-Mess and Little Poppet What-a-Mess and a trip to the Vet What-a-Mess the Beautiful What-a-Mess Goes to Town What-a-Mess Goes on Television What-a-Mess Goes Camping   What-a-Mess Goes to the Seaside / 1990.03.26 What-a-Mess Goes to School / 1990.04.02 Prince What-a-Mess / 1990.04.09 Super What-a-Mess / 1990.04.16 What-a-Mess Keeps Cool / 1990.04.30 What-a-Mess and Cynthia the Hedgehog / 1990.05.14 What-a-Mess Has a Brain Wave! / 1990.05.21 What-a-Mess and the Cat Next Door / 1990.06.04 What-a-Mess and Little Poppet / 1990.06.18 What-a-Mess Goes Camping / 1990.07.02 What-a-Mess The Beautiful / 1990.07.09 What-a-Mess Goes to Town / 1990.07.16 What-a-Mess Goes to the Vet / 1990.07.23   Talkin' Trash (September 16, 1995) A Bone to Pick Midnight Snack Schoolin' Around The Legend of Junkyard Jones It's Raining Cats and Dogs Home Alone...Almost Super What-A-Mess The Recliner Afghan Holiday The Bone Tree Just Four More Left The Ropes What-A-Mess Has Breakfast Prize Puppy The Great Eascape The Scarecrow and Prince Amir Shampooed Show and Tail I Spy, I Cry, I Try What-A-Mess and the Hairy Monster Trick Or Treat My Teatime with Frank Out With the Garbage Dr. What-A-Mess Ultimate What-A-Mess This Hydrant Is Mine His Majesty, Prince What-A-Mess Trash's Wonderful Life Snowbound The Thanksgiving Turkey Santa What-A-Mess Here Comes Santa Paws All Around the Mallberry Bush What-A-Mess At the Movies His Royal Highness, Prince What-A-Mess Party at Poppet's Take Me Out to the Dog Park The Watch Out Dog Molenapped! Pound Pals Taste Test Slobber on a Stick Scout's Honor Seein' Double Luck on His Side What-A-Mess Keeps the Doctor Away There's No Business like Shoe Business Joy Rider Baldwin's Family Reunion Do the Mess Around On Vacation Messy Encounters Dog Days of Summer Fetch! Real Puppies Don't Meow Invasion of the Puppy Snatchers The Ballad of El Pero What-a-Mess Has Lunch Walking the Boy    Russell Williams, Imogen (4 July 2007). \"Whatever happened to What-a-mess?\". London: The Guardian. Retrieved 3 January 2011.   \"IMDB What-a-mess\". Retrieved 3 January 2011.   1990 series episode guide at the Big Cartoon DataBase");
 
-        SearchRequestBuilder search = testSearch(queryString("what love?"));
+        SearchRequestBuilder search = testSearch(queryStringQuery("what love?"));
         for (String hitSource : HIT_SOURCES) {
             SearchResponse response = setHitSource(search, hitSource).get();
             assertNoFailures(response);
@@ -292,7 +293,7 @@ public class MiscellaneousTest extends AbstractExperimentalHighlighterIntegratio
         lotsOfTermsTestCase(watch, "phrase prefix and term", boolQuery()
                 .should(matchPhrasePrefixQuery("test", "zooma zoomb zoo"))
                 .should(termQuery("test", "zooma")));
-        lotsOfTermsTestCase(watch, "phrase prefix and term", queryString("test:\"zoooo\" OR test2:\"zaaap\""));
+        lotsOfTermsTestCase(watch, "phrase prefix and term", queryStringQuery("test:\"zoooo\" OR test2:\"zaaap\""));
 
         logger.info(watch.prettyPrint());
     }
@@ -387,7 +388,7 @@ public class MiscellaneousTest extends AbstractExperimentalHighlighterIntegratio
 
         Map<String, Object> options = new HashMap<String, Object>();
         options.put("max_expanded_terms", 1);
-        SearchRequestBuilder search = testSearch(filteredQuery(rangeQuery("test").from("teso").to("tesz"), idsFilter("test").addIds("1")))
+        SearchRequestBuilder search = testSearch(filteredQuery(rangeQuery("test").from("teso").to("tesz"), idsQuery("test").addIds("1")))
                 .setHighlighterOptions(options);
         for (String hitSource : HIT_SOURCES) {
             options.put("hit_source", hitSource);

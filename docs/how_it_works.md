@@ -27,7 +27,7 @@ HitEnum
 -------
 Comes in two flavors:
 * Source ```HitEnums``` pulls hits from the source document. Examples are
-```DocsAndPositionsHitEnum```, ```TokenStreamHitEnum```, and
+```PostingsHitEnum```, ```TokenStreamHitEnum```, and
 ```BreakIteratorHitEnum```.
 * Transforming ```HitEnums``` wrap and transform one or more ```HitEnums```.
 Some transforms are simple like ```WeightFilterHitEnumWrapper``` or
@@ -70,7 +70,7 @@ The idea is that you make one or more source ```HitEnums``` and wrap them in
 transforming ```HitEnums```. For testing most things we use
 ```BreakIteraorHitEnum``` for the source ```HitEnum``` because it's simple. In
 the Elasticsearch plugin we use ```TokenStreamHitEnum``` when we have to
-reanalyze a string and ```DocsAndPositionsHitEnum``` when we can read the hits
+reanalyze a string and ```PostingsHitEnum``` when we can read the hits
 from term vectors or the postings list. It also uses ```RegexHitEnum``` and
 ```AutomatonHitEnum``` for regular expression highlighting.
 
@@ -104,8 +104,8 @@ they are only for a single term. So it looks like this:
 
 ```java
 // Note real constructors are more complex. Sorry.
-HitEnum l = new DocsAndPositionsHitEnum(reader, docId, field, "like");
-HitEnum c = new DocsAndPositionsHitEnum(reader, docId, field, "cats");
+HitEnum l = new PostingsHitEnum(reader, docId, field, "like");
+HitEnum c = new PostingsHitEnum(reader, docId, field, "cats");
 HitEnum m = new MergingHitEnum(ImmutableList.of(likeEnum, catsEnum),
     HitEnum.LessThans.POSITION);
 HitEnum p = new PhraseHitEnumWrapper(e, 10, "like", "cats");

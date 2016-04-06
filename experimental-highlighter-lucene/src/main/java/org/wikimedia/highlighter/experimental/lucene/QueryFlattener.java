@@ -210,7 +210,13 @@ public class QueryFlattener {
     protected void flattenQuery(BooleanQuery query, float pathBoost, Object sourceOverride,
             IndexReader reader, Callback callback) {
         for (BooleanClause clause : query) {
-            if (!clause.isProhibited()) {
+            // Exclude FILTER clauses with isScoring(), before lucene 5 most of
+            // these queries were wrapped inside a FitleredQuery
+            // but now the prefered way is to add a boolean clause with
+            // Occur.FILTER
+            // e.g. the _type filter with elasticsearch now uses this type of
+            // construct.
+            if (!clause.isProhibited() && clause.isScoring()) {
                 flatten(clause.getQuery(), pathBoost * query.getBoost(), sourceOverride, reader,
                         callback);
             }

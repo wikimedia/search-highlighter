@@ -9,10 +9,8 @@ import java.util.TreeMap;
 
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.TokenStream;
-import org.apache.lucene.index.FieldInfo;
+import org.apache.lucene.index.IndexOptions;
 import org.apache.lucene.util.BytesRef;
-import org.elasticsearch.common.base.Function;
-import org.elasticsearch.common.collect.Iterators;
 import org.elasticsearch.common.util.BigArrays;
 import org.elasticsearch.index.mapper.FieldMapper;
 import org.elasticsearch.index.mapper.core.StringFieldMapper;
@@ -20,7 +18,7 @@ import org.elasticsearch.search.highlight.ExperimentalHighlighter.HighlightExecu
 import org.elasticsearch.search.highlight.SearchContextHighlight.FieldOptions;
 import org.wikimedia.highlighter.experimental.elasticsearch.BytesRefTermWeigherCache;
 import org.wikimedia.highlighter.experimental.elasticsearch.SegmenterFactory;
-import org.wikimedia.highlighter.experimental.lucene.hit.DocsAndPositionsHitEnum;
+import org.wikimedia.highlighter.experimental.lucene.hit.PostingsHitEnum;
 import org.wikimedia.highlighter.experimental.lucene.hit.TokenStreamHitEnum;
 import org.wikimedia.highlighter.experimental.lucene.hit.weight.BasicQueryWeigher;
 import org.wikimedia.highlighter.experimental.lucene.hit.weight.DefaultSimilarityTermWeigher;
@@ -38,6 +36,9 @@ import org.wikimedia.search.highlighter.experimental.hit.weight.ConstantTermWeig
 import org.wikimedia.search.highlighter.experimental.snippet.MultiSegmenter;
 import org.wikimedia.search.highlighter.experimental.source.NonMergingMultiSourceExtracter;
 import org.wikimedia.search.highlighter.experimental.source.StringSourceExtracter;
+
+import com.google.common.base.Function;
+import com.google.common.collect.Iterators;
 
 public class FieldWrapper {
     private final HighlightExecutionContext executionContext;
@@ -70,7 +71,7 @@ public class FieldWrapper {
     public FieldWrapper(HighlightExecutionContext executionContext, HighlighterContext context,
             BasicQueryWeigher weigher, String fieldName) {
         assert !context.fieldName.equals(fieldName);
-        FieldMapper<?> mapper = context.context.smartNameFieldMapper(fieldName);
+        FieldMapper mapper = context.context.mapperService().documentMapper(context.hitContext.hit().type()).mappers().smartNameFieldMapper(fieldName);
         this.executionContext = executionContext;
         this.context = new HighlighterContext(fieldName, context.field, mapper, context.context,
                 context.hitContext, context.query);
@@ -250,7 +251,7 @@ public class FieldWrapper {
     }
 
     private boolean canUsePostingsHitEnum() {
-        return context.mapper.fieldType().indexOptions() == FieldInfo.IndexOptions.DOCS_AND_FREQS_AND_POSITIONS_AND_OFFSETS;
+        return context.mapper.fieldType().indexOptions() == IndexOptions.DOCS_AND_FREQS_AND_POSITIONS_AND_OFFSETS;
     }
 
     private boolean canUseVectorsHitEnum() {
@@ -260,19 +261,19 @@ public class FieldWrapper {
     }
 
     private HitEnum buildPostingsHitEnum() throws IOException {
-        return DocsAndPositionsHitEnum.fromPostings(context.hitContext.reader(),
-                context.hitContext.docId(), context.mapper.names().indexName(),
+        return PostingsHitEnum.fromPostings(context.hitContext.reader(),
+                context.hitContext.docId(), context.mapper.fieldType().names().indexName(),
                 weigher.acceptableTerms(), getQueryWeigher(false), getCorpusWeigher(false), weigher);
     }
 
     private HitEnum buildTermVectorsHitEnum() throws IOException {
-        return DocsAndPositionsHitEnum.fromTermVectors(context.hitContext.reader(),
-                context.hitContext.docId(), context.mapper.names().indexName(),
+        return PostingsHitEnum.fromTermVectors(context.hitContext.reader(),
+                context.hitContext.docId(), context.mapper.fieldType().names().indexName(),
                 weigher.acceptableTerms(), getQueryWeigher(false), getCorpusWeigher(false), weigher);
     }
 
     private HitEnum buildTokenStreamHitEnum() throws IOException {
-        Analyzer analyzer = context.mapper.indexAnalyzer();
+        Analyzer analyzer = context.mapper.fieldType().indexAnalyzer();
         if (analyzer == null) {
             analyzer = context.context.analysisService().defaultIndexAnalyzer();
         }
@@ -358,7 +359,7 @@ public class FieldWrapper {
     public int getPositionGap() {
         if (positionGap < 0) {
             if (context.mapper instanceof StringFieldMapper) {
-                positionGap = ((StringFieldMapper) context.mapper).getPositionOffsetGap();
+                positionGap = ((StringFieldMapper) context.mapper).getPositionIncrementGap();
             } else {
                 positionGap = 1;
             }

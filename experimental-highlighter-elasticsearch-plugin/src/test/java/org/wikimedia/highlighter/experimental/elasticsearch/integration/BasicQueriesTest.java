@@ -1,6 +1,5 @@
 package org.wikimedia.highlighter.experimental.elasticsearch.integration;
 
-import static org.elasticsearch.index.query.FilterBuilders.termFilter;
 import static org.elasticsearch.index.query.QueryBuilders.boolQuery;
 import static org.elasticsearch.index.query.QueryBuilders.functionScoreQuery;
 import static org.elasticsearch.index.query.QueryBuilders.fuzzyQuery;
@@ -204,7 +203,7 @@ public class BasicQueriesTest extends AbstractExperimentalHighlighterIntegration
         client().prepareIndex("test", "test", "1").setSource("test", "test", "bar", 2).get();
         refresh();
 
-        SearchRequestBuilder search = testSearch(functionScoreQuery(termQuery("test", "test")).add(termFilter("test", "test"), fieldValueFactorFunction("bar")));
+        SearchRequestBuilder search = testSearch(functionScoreQuery(termQuery("test", "test")).add(termQuery("test", "test"), fieldValueFactorFunction("bar")));
         for (String hitSource : HIT_SOURCES) {
             SearchResponse response = setHitSource(search, hitSource).get();
             assertHighlight(response, 0, "test", 0, equalTo("<em>test</em>"));

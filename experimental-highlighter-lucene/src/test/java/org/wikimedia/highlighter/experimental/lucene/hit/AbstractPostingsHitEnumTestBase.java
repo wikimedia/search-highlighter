@@ -23,7 +23,7 @@ import org.wikimedia.search.highlighter.experimental.HitEnum;
 import org.wikimedia.search.highlighter.experimental.SourceExtracter;
 import org.wikimedia.search.highlighter.experimental.source.StringSourceExtracter;
 
-public abstract class AbstractDocsAndPositionsHitEnumTestBase extends AbstractLuceneHitEnumTestBase {
+public abstract class AbstractPostingsHitEnumTestBase extends AbstractLuceneHitEnumTestBase {
     protected abstract HitEnum buildEnum(String source, Analyzer analyzer,
             CompiledAutomaton acceptable);
 

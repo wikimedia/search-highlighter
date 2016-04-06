@@ -1,6 +1,6 @@
 package org.wikimedia.highlighter.experimental.elasticsearch.integration;
 
-import static org.elasticsearch.index.query.FilterBuilders.idsFilter;
+import static org.elasticsearch.index.query.QueryBuilders.idsQuery;
 import static org.elasticsearch.index.query.QueryBuilders.filteredQuery;
 import static org.elasticsearch.index.query.QueryBuilders.multiMatchQuery;
 import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertHighlight;
@@ -89,7 +89,7 @@ public class MultimatchTest extends AbstractExperimentalHighlighterIntegrationTe
         indexTestData();
 
         SearchRequestBuilder search = testSearch(filteredQuery(multiMatchQuery("very test", "test").cutoffFrequency(1f),
-                idsFilter("test").addIds("1")));
+                idsQuery("test").addIds("1")));
         for (String hitSource : HIT_SOURCES) {
             SearchResponse response = setHitSource(search, hitSource).get();
             assertHighlight(response, 0, "test", 0, equalTo("tests <em>very</em> simple <em>test</em>"));

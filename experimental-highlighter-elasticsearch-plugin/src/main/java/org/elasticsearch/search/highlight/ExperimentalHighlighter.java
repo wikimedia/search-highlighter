@@ -14,8 +14,6 @@ import java.util.regex.Pattern;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.util.automaton.RegExp;
 import org.apache.lucene.util.automaton.TooComplexToDeterminizeException;
-import org.elasticsearch.common.base.Function;
-import org.elasticsearch.common.collect.Iterators;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.ESLoggerFactory;
 import org.elasticsearch.common.text.StringAndBytesText;
@@ -57,18 +55,16 @@ import org.wikimedia.search.highlighter.experimental.tools.GraphvizHit;
 import org.wikimedia.search.highlighter.experimental.tools.GraphvizHitEnum;
 import org.wikimedia.search.highlighter.experimental.tools.GraphvizSnippetFormatter;
 
+import com.google.common.base.Function;
+import com.google.common.collect.Iterators;
+
 public class ExperimentalHighlighter implements Highlighter {
+    public static final String NAME = "experimental";
     private static final String CACHE_KEY = "highlight-experimental";
     private static final Text EMPTY_STRING = new StringAndBytesText("");
     private static final ESLogger log = ESLoggerFactory.getLogger(ExperimentalHighlighter.class.getName());
 
     @Override
-    public String[] names() {
-        return new String[] { "experimental" };
-    }
-
-    @Override
-    @SuppressWarnings("rawtypes")
     public boolean canHighlight(FieldMapper field) {
         return true;
     }
@@ -273,7 +269,7 @@ public class ExperimentalHighlighter implements Highlighter {
             boolean removeHighFrequencyTermsFromCommonTerms = getOption("remove_high_freq_terms_from_common_terms", true);
             int maxExpandedTerms = getOption("max_expanded_terms", 1024);
             // TODO simplify
-            QueryCacheKey key = new QueryCacheKey(context.query.originalQuery(), maxExpandedTerms, phraseAsTerms,
+            QueryCacheKey key = new QueryCacheKey(context.query, maxExpandedTerms, phraseAsTerms,
                     removeHighFrequencyTermsFromCommonTerms);
             weigher = cache.queryWeighers.get(key);
             if (weigher != null) {
@@ -284,7 +280,7 @@ public class ExperimentalHighlighter implements Highlighter {
             BytesRefHashTermInfos infos = new BytesRefHashTermInfos(BigArrays.NON_RECYCLING_INSTANCE);
             // context.context.addReleasable(infos);
             weigher = new BasicQueryWeigher(new ElasticsearchQueryFlattener(maxExpandedTerms, phraseAsTerms,
-                    removeHighFrequencyTermsFromCommonTerms), infos, context.hitContext.topLevelReader(), context.query.originalQuery());
+                    removeHighFrequencyTermsFromCommonTerms), infos, context.hitContext.topLevelReader(), context.query);
             // Build the QueryWeigher with the top level reader to get all
             // the frequency information
             cache.queryWeighers.put(key, weigher);
