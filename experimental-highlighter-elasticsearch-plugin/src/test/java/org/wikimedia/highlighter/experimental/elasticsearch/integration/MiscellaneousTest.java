@@ -31,7 +31,7 @@ import java.util.concurrent.ExecutionException;
 
 import com.google.common.collect.ImmutableList;
 
-import org.elasticsearch.action.admin.indices.optimize.OptimizeResponse;
+import org.elasticsearch.action.admin.indices.forcemerge.ForceMergeResponse;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.index.IndexRequestBuilder;
 import org.elasticsearch.action.search.SearchRequestBuilder;
@@ -262,7 +262,7 @@ public class MiscellaneousTest extends AbstractExperimentalHighlighterIntegratio
         refresh();
         // Optimizing to one segment makes the timing more consistent
         waitForRelocation();
-        OptimizeResponse actionGet = client().admin().indices().prepareOptimize().setMaxNumSegments(1).execute().actionGet();
+        ForceMergeResponse actionGet = client().admin().indices().prepareForceMerge().setMaxNumSegments(1).execute().actionGet();
         assertNoFailures(actionGet);
         watch.stop();
 

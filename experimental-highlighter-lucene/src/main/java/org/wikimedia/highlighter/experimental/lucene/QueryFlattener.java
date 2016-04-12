@@ -405,23 +405,32 @@ public class QueryFlattener {
             flatten(rewritten, pathBoost, sourceOverride, reader, callback);
         }
         BooleanQuery bq = (BooleanQuery) rewritten;
-        BooleanClause[] clauses = bq.getClauses();
-        if (clauses.length != 2) {
+        List<BooleanClause> clauses = bq.clauses();
+        if (clauses.size() != 2) {
             // Nope - its just a list of terms.
             flattenQuery(bq, pathBoost, sourceOverride, reader, callback);
             return;
         }
-        if (clauses[0].getOccur() != Occur.SHOULD || clauses[1].getOccur() != Occur.MUST) {
+        BooleanClause first = clauses.get(0);
+        BooleanClause second = clauses.get(1);
+        if ((first.getOccur() != Occur.SHOULD || second.getOccur() != Occur.MUST)
+                && (first.getOccur() != Occur.MUST || second.getOccur() != Occur.SHOULD)) {
             // Nope - just a two term query
             flattenQuery(bq, pathBoost, sourceOverride, reader, callback);
             return;
         }
-        if (!(clauses[0].getQuery() instanceof BooleanQuery && clauses[1].getQuery() instanceof BooleanQuery)) {
+        if (!(first.getQuery() instanceof BooleanQuery && second.getQuery() instanceof BooleanQuery)) {
             // Nope - terms of the wrong type. not sure how that happened.
             flattenQuery(bq, pathBoost, sourceOverride, reader, callback);
             return;
         }
-        BooleanQuery lowFrequency = (BooleanQuery) clauses[1].getQuery();
+
+        final BooleanQuery lowFrequency;
+        if(first.getOccur() == Occur.MUST) {
+            lowFrequency = (BooleanQuery) first.getQuery();
+        } else {
+            lowFrequency = (BooleanQuery) second.getQuery();
+        }
         flattenQuery(lowFrequency, pathBoost, sourceOverride, reader, callback);
     }
 

@@ -25,7 +25,6 @@ public class TokenStreamHitEnum extends AbstractHitEnum {
     private final PositionIncrementAttribute positionIncr;
     private final OffsetAttribute offsets;
     private final TermToBytesRefAttribute termRef;
-    private final BytesRef term;
     private int position = -1;
     private float queryWeight;
     private float corpusWeight;
@@ -43,7 +42,7 @@ public class TokenStreamHitEnum extends AbstractHitEnum {
         positionIncr = tokenStream.addAttribute(PositionIncrementAttribute.class);
         offsets = tokenStream.addAttribute(OffsetAttribute.class);
         termRef = tokenStream.addAttribute(TermToBytesRefAttribute.class);
-        term = termRef.getBytesRef();
+
         try {
             tokenStream.reset();
         } catch (IOException e) {
@@ -57,7 +56,7 @@ public class TokenStreamHitEnum extends AbstractHitEnum {
             if (!tokenStream.incrementToken()) {
                 return false;
             }
-            termRef.fillBytesRef();
+            BytesRef term = termRef.getBytesRef();
             position += positionIncr.getPositionIncrement();
             queryWeight = queryWeigher.weigh(term);
             corpusWeight = corpusWeigher.weigh(term);

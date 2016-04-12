@@ -70,7 +70,7 @@ public class PostingsHitEnum extends AbstractHitEnum {
         // Last enum that didn't find anything.  We can reuse it.
         PostingsEnum dp = null;
         while ((term = termsEnum.next()) != null) {
-            dp = termsEnum.postings(null, dp, PostingsEnum.OFFSETS);
+            dp = termsEnum.postings(dp, PostingsEnum.OFFSETS);
             if (dp == null) {
                 continue;
             }

@@ -5,16 +5,19 @@ import static org.elasticsearch.index.query.QueryBuilders.termQuery;
 import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertAcked;
 
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 
 import org.elasticsearch.action.search.SearchRequestBuilder;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.plugin.analysis.icu.AnalysisICUPlugin;
+import org.elasticsearch.plugins.Plugin;
 import org.elasticsearch.test.ESIntegTestCase;
 import org.elasticsearch.test.ESIntegTestCase.ClusterScope;
 import org.wikimedia.highlighter.experimental.elasticsearch.plugin.ExperimentalHighlighterPlugin;
@@ -198,11 +201,8 @@ ESIntegTestCase {
      * Enable plugin loading.
      */
     @Override
-    protected Settings nodeSettings(int nodeOrdinal) {
-        return Settings.settingsBuilder()
-                .put("plugin.types",
-                        ExperimentalHighlighterPlugin.class.getName()
-                        + "," + AnalysisICUPlugin.class.getName())
-                .put(super.nodeSettings(nodeOrdinal)).build();
+    protected Collection<Class<? extends Plugin>> nodePlugins() {
+        return Collections.unmodifiableCollection(
+                Arrays.asList(ExperimentalHighlighterPlugin.class, AnalysisICUPlugin.class));
     }
 }

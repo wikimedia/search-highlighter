@@ -73,10 +73,10 @@ public class QueryFlattenerTest extends LuceneTestCase {
 
     private void phraseQueryTestCase(boolean phraseAsTerms) {
         Callback callback = mock(Callback.class);
-        PhraseQuery q = new PhraseQuery();
+        PhraseQuery.Builder q = new PhraseQuery.Builder();
         q.add(bar);
         q.add(baz);
-        new QueryFlattener(1, phraseAsTerms, true).flatten(q, null, callback);
+        new QueryFlattener(1, phraseAsTerms, true).flatten(q.build(), null, callback);
         verify(callback).flattened(bar.bytes(), phraseAsTerms ? 1f : 0, null);
         verify(callback).flattened(baz.bytes(), phraseAsTerms ? 1f : 0, null);
         if (phraseAsTerms) {
@@ -95,10 +95,10 @@ public class QueryFlattenerTest extends LuceneTestCase {
     @Test
     public void booleanQuery() {
         Callback callback = mock(Callback.class);
-        BooleanQuery bq = new BooleanQuery();
+        BooleanQuery.Builder bq = new BooleanQuery.Builder();
         bq.add(new BooleanClause(new TermQuery(bar), Occur.MUST));
         bq.add(new BooleanClause(new TermQuery(baz), Occur.MUST_NOT));
-        new QueryFlattener().flatten(bq, null, callback);
+        new QueryFlattener().flatten(bq.build(), null, callback);
         verify(callback).flattened(bar.bytes(), 1f, null);
         verify(callback, never()).flattened(eq(baz.bytes()), anyFloat(), isNull(Query.class));
     }
