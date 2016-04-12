@@ -1,5 +1,7 @@
 package org.wikimedia.search.highlighter.experimental.source;
 
+import static org.junit.Assert.fail;
+
 import org.junit.Test;
 import org.wikimedia.search.highlighter.experimental.source.NonMergingMultiSourceExtracter;
 import org.wikimedia.search.highlighter.experimental.source.AbstractMultiSourceExtracter.Builder;

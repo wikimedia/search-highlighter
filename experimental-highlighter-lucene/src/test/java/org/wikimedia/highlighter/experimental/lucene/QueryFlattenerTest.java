@@ -31,6 +31,7 @@ import org.apache.lucene.queries.CommonTermsQuery;
 import org.apache.lucene.search.BooleanClause;
 import org.apache.lucene.search.BooleanClause.Occur;
 import org.apache.lucene.search.BooleanQuery;
+import org.apache.lucene.search.BoostQuery;
 import org.apache.lucene.search.FuzzyQuery;
 import org.apache.lucene.search.PhraseQuery;
 import org.apache.lucene.search.PrefixQuery;
@@ -101,6 +102,14 @@ public class QueryFlattenerTest extends LuceneTestCase {
         new QueryFlattener().flatten(bq.build(), null, callback);
         verify(callback).flattened(bar.bytes(), 1f, null);
         verify(callback, never()).flattened(eq(baz.bytes()), anyFloat(), isNull(Query.class));
+    }
+
+    @Test
+    public void boostQuery() {
+        Callback callback = mock(Callback.class);
+        BoostQuery bq = new BoostQuery(new TermQuery(bar), 2f);
+        new QueryFlattener().flatten(bq, null, callback);
+        verify(callback).flattened(bar.bytes(), 2f, null);
     }
 
     @Test

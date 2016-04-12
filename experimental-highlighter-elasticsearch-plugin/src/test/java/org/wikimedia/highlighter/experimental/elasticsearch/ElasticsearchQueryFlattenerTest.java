@@ -1,14 +1,14 @@
 package org.wikimedia.highlighter.experimental.elasticsearch;
 
-import static org.mockito.Matchers.anyFloat;
-import static org.mockito.Matchers.anyInt;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.eq;
-import static org.mockito.Matchers.isNull;
-import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.anyFloat;
+import static org.mockito.Mockito.anyInt;
+import static org.mockito.Mockito.anyString;
+import static org.mockito.Mockito.eq;
+import static org.mockito.Mockito.isNull;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.mock;
 
 import java.io.IOException;
 
@@ -33,6 +33,12 @@ import org.elasticsearch.index.mapper.ParseContext.Document;
 import org.junit.Test;
 import org.wikimedia.highlighter.experimental.lucene.QueryFlattener.Callback;
 
+/**
+ * NOTE: This test may fail because of the security manager.
+ * If it's the case check that the securemock version included
+ * in the parent pom matches the elasticsearch test framework version.
+ * (see comments in the parent pom)
+ */
 public class ElasticsearchQueryFlattenerTest {
     private final Term bar = new Term("foo", "bar");
     private final ScoreFunction scoreFunction = new FieldValueFactorFunction("foo", 1, FieldValueFactorFunction.Modifier.LN, null, null);

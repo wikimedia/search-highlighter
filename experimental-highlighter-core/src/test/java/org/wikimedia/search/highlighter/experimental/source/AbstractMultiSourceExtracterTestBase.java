@@ -1,5 +1,8 @@
 package org.wikimedia.search.highlighter.experimental.source;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
+
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.wikimedia.search.highlighter.experimental.SourceExtracter;

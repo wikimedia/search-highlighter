@@ -16,8 +16,6 @@ import org.apache.lucene.util.automaton.RegExp;
 import org.apache.lucene.util.automaton.TooComplexToDeterminizeException;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.ESLoggerFactory;
-import org.elasticsearch.common.text.StringAndBytesText;
-import org.elasticsearch.common.text.StringText;
 import org.elasticsearch.common.text.Text;
 import org.elasticsearch.common.util.BigArrays;
 import org.elasticsearch.common.util.LocaleUtils;
@@ -61,7 +59,7 @@ import com.google.common.collect.Iterators;
 public class ExperimentalHighlighter implements Highlighter {
     public static final String NAME = "experimental";
     private static final String CACHE_KEY = "highlight-experimental";
-    private static final Text EMPTY_STRING = new StringAndBytesText("");
+    private static final Text EMPTY_STRING = new Text("");
     private static final ESLogger log = ESLoggerFactory.getLogger(ExperimentalHighlighter.class.getName());
 
     @Override
@@ -196,7 +194,7 @@ public class ExperimentalHighlighter implements Highlighter {
             if (fieldValues.isEmpty()) {
                 return null;
             }
-            Text fragment = new StringText(getSegmenterFactory().extractNoMatchFragment(fieldValues.get(0), noMatchSize));
+            Text fragment = new Text(getSegmenterFactory().extractNoMatchFragment(fieldValues.get(0), noMatchSize));
             return new HighlightField(context.fieldName, new Text[] { fragment });
         }
 
@@ -565,7 +563,7 @@ public class ExperimentalHighlighter implements Highlighter {
                 Text[] result = new Text[snippets.size()];
                 int i = 0;
                 for (Snippet snippet : snippets) {
-                    result[i++] = new StringText(formatter.format(snippet));
+                    result[i++] = new Text(formatter.format(snippet));
                 }
                 return result;
             }
@@ -575,12 +573,12 @@ public class ExperimentalHighlighter implements Highlighter {
             FetchedFieldIndexPicker picker = segmenter.buildFetchedFieldIndexPicker();
             int i = 0;
             for (Snippet snippet : snippets) {
-                result[i++] = new StringText(formatter.format(snippet));
+                result[i++] = new Text(formatter.format(snippet));
                 int index = picker.index(snippet);
                 for (FieldWrapper fetchField : fetchFields) {
                     List<String> values = fetchField.getFieldValues();
                     if (index >= 0 && index < values.size()) {
-                        result[i++] = new StringText(values.get(index));
+                        result[i++] = new Text(values.get(index));
                     } else {
                         result[i++] = EMPTY_STRING;
                     }

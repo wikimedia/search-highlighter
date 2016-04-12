@@ -11,7 +11,6 @@ import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.util.automaton.CharacterRunAutomaton;
 import org.apache.lucene.util.automaton.RegExp;
 import org.junit.After;
-import org.wikimedia.highlighter.experimental.lucene.WrappedExceptionFromLucene;
 import org.wikimedia.search.highlighter.experimental.hit.AbstractHitEnumTestBase;
 
 /**
@@ -34,13 +33,9 @@ public abstract class AbstractLuceneHitEnumTestBase extends AbstractHitEnumTestB
     }
 
     protected TokenStream buildTokenStream(String source, Analyzer analyzer) {
-        try {
-            TokenStream stream = analyzer.tokenStream("doesn'tmatter", source);
-            builtStreams.add(stream);
-            return stream;
-        } catch (IOException e) {
-            throw new WrappedExceptionFromLucene(e);
-        }
+        TokenStream stream = analyzer.tokenStream("doesn'tmatter", source);
+        builtStreams.add(stream);
+        return stream;
     }
 
     @After

@@ -1,6 +1,8 @@
 package org.wikimedia.search.highlighter.experimental.hit;
 
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.allOf;
+import static org.junit.Assert.assertEquals;
 import static org.wikimedia.search.highlighter.experimental.Matchers.advances;
 import static org.wikimedia.search.highlighter.experimental.Matchers.atEndOffset;
 import static org.wikimedia.search.highlighter.experimental.Matchers.atPosition;

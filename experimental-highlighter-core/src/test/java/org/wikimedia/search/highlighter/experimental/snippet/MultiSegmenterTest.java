@@ -1,5 +1,8 @@
 package org.wikimedia.search.highlighter.experimental.snippet;
 
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.wikimedia.search.highlighter.experimental.Matchers.extracted;
 

@@ -11,6 +11,7 @@ import org.apache.lucene.queries.CommonTermsQuery;
 import org.apache.lucene.search.BooleanClause;
 import org.apache.lucene.search.BooleanClause.Occur;
 import org.apache.lucene.search.BooleanQuery;
+import org.apache.lucene.search.BoostQuery;
 import org.apache.lucene.search.ConstantScoreQuery;
 import org.apache.lucene.search.DisjunctionMaxQuery;
 import org.apache.lucene.search.FilteredQuery;
@@ -117,6 +118,8 @@ public class QueryFlattener {
             Callback callback) {
         if (query instanceof TermQuery) {
             flattenQuery((TermQuery) query, pathBoost, sourceOverride, reader, callback);
+        } else if (query instanceof BoostQuery) {
+            flattenQuery((BoostQuery) query, pathBoost, sourceOverride, reader, callback);
         } else if (query instanceof PhraseQuery) {
             flattenQuery((PhraseQuery) query, pathBoost, sourceOverride, reader, callback);
         } else if (query instanceof BooleanQuery) {
@@ -183,6 +186,11 @@ public class QueryFlattener {
     protected void flattenQuery(TermQuery query, float pathBoost, Object sourceOverride,
             IndexReader reader, Callback callback) {
         callback.flattened(query.getTerm().bytes(), pathBoost * query.getBoost(), sourceOverride);
+    }
+
+    protected void flattenQuery(BoostQuery query, float pathBoost, Object sourceOverride,
+            IndexReader reader, Callback callback) {
+        flatten(query.getQuery(), query.getBoost() * pathBoost, sourceOverride, reader, callback);
     }
 
     protected void flattenQuery(PhraseQuery query, float pathBoost, Object sourceOverride,
@@ -419,19 +427,29 @@ public class QueryFlattener {
             flattenQuery(bq, pathBoost, sourceOverride, reader, callback);
             return;
         }
-        if (!(first.getQuery() instanceof BooleanQuery && second.getQuery() instanceof BooleanQuery)) {
+
+        Query firstQ = first.getQuery();
+        Query secondQ = second.getQuery();
+
+        // The query can be wrapped inside a BoostQuery
+        if (firstQ instanceof BoostQuery && secondQ instanceof BoostQuery) {
+            firstQ = ((BoostQuery)firstQ).getQuery();
+            secondQ = ((BoostQuery)secondQ).getQuery();
+        }
+
+        if (!(firstQ instanceof BooleanQuery && secondQ instanceof BooleanQuery)) {
             // Nope - terms of the wrong type. not sure how that happened.
             flattenQuery(bq, pathBoost, sourceOverride, reader, callback);
             return;
         }
 
-        final BooleanQuery lowFrequency;
+        final Query lowFrequency;
         if(first.getOccur() == Occur.MUST) {
-            lowFrequency = (BooleanQuery) first.getQuery();
+            lowFrequency = first.getQuery();
         } else {
-            lowFrequency = (BooleanQuery) second.getQuery();
+            lowFrequency = second.getQuery();
         }
-        flattenQuery(lowFrequency, pathBoost, sourceOverride, reader, callback);
+        flatten(lowFrequency, pathBoost, sourceOverride, reader, callback);
     }
 
     protected Query rewriteQuery(MultiTermQuery query, float pathBoost, Object sourceOverride, IndexReader reader) {
