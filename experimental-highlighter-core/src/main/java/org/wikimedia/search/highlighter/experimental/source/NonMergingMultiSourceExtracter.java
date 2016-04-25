@@ -10,8 +10,9 @@ import org.wikimedia.search.highlighter.experimental.SourceExtracter;
  * at a time. The reasons it can't do more then one extracter at a time are:
  * <ul>
  * <li>Its reasonably common to only ever have to do one at a time
- * <li>Without knowing what <T> is we won't know how to merge it
+ * <li>Without knowing what <i>T</i> is we won't know how to merge it
  * </ul>
+ * @param <T> the type of highlighted framents (in general String)
  */
 public class NonMergingMultiSourceExtracter<T> extends AbstractMultiSourceExtracter<T> {
     /**
