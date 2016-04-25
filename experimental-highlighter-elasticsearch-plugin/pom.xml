@@ -9,6 +9,10 @@
   <packaging>jar</packaging>
 
   <name>Elasticsearch plugin for experimental highlighter</name>
+  <description>Experimental Highlighter plugin</description>
+  <properties>
+    <elasticsearch.plugin.name>experimental-highlighter</elasticsearch.plugin.name>
+  </properties>
 
   <dependencies>
     <dependency>

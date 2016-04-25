@@ -8,6 +8,8 @@ import org.wikimedia.search.highlighter.experimental.hit.TermWeigher;
 /**
  * Caches results from another TermWeigher. Obviously, this is only
  * useful if the wrapped TermWeigher is slow.
+ *
+ * @param <T> the type holding the terms
  */
 public class CachingTermWeigher<T> implements TermWeigher<T> {
     private final Cache<T> cache;
@@ -19,6 +21,7 @@ public class CachingTermWeigher<T> implements TermWeigher<T> {
      * A note for Lucene users: This constructor won't work with BytesRef
      * because it doesn't clone the BytesRef.
      * </p>
+     * @param next the weigher to cache
      */
     public CachingTermWeigher(TermWeigher<T> next) {
         this(new MapCache<T>(new HashMap<T, Float>()), next);
@@ -26,6 +29,8 @@ public class CachingTermWeigher<T> implements TermWeigher<T> {
 
     /**
      * Build with a provided cache.
+     * @param cache the cache backend to use
+     * @param next the term weigher to cache
      */
     public CachingTermWeigher(Cache<T> cache, TermWeigher<T> next) {
         this.cache = cache;
@@ -50,13 +55,13 @@ public class CachingTermWeigher<T> implements TermWeigher<T> {
         /**
          * Get a cached weight if there is one.
          * @param term to lookup
-         * @return if >= 0 then the cached weight, otherwise a signal that the weight is not found
+         * @return if ≥ 0 then the cached weight, otherwise a signal that the weight is not found
          */
         float get(T term);
         /**
          * Add a weight to the cache.
          * @param term the term
-         * @param weight the weight, will be >= 0
+         * @param weight the weight, will be ≥ 0
          */
         void put(T term, float weight);
     }
