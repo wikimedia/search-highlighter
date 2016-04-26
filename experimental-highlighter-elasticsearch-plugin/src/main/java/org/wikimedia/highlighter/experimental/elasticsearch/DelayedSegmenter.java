@@ -3,7 +3,6 @@ package org.wikimedia.highlighter.experimental.elasticsearch;
 import java.io.IOException;
 
 import org.elasticsearch.ElasticsearchException;
-import org.elasticsearch.search.highlight.FieldWrapper;
 import org.wikimedia.search.highlighter.experimental.Segmenter;
 import org.wikimedia.search.highlighter.experimental.snippet.MultiSegmenter;
 
