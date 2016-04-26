@@ -1,7 +1,8 @@
-package org.elasticsearch.search.highlight;
+package org.wikimedia.highlighter.experimental.elasticsearch;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -12,12 +13,16 @@ import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.index.IndexOptions;
 import org.apache.lucene.util.BytesRef;
 import org.elasticsearch.common.util.BigArrays;
+import org.elasticsearch.index.fieldvisitor.CustomFieldsVisitor;
 import org.elasticsearch.index.mapper.FieldMapper;
 import org.elasticsearch.index.mapper.core.StringFieldMapper;
-import org.elasticsearch.search.highlight.ExperimentalHighlighter.HighlightExecutionContext;
+import org.elasticsearch.search.fetch.FetchSubPhase;
+import org.elasticsearch.search.highlight.HighlighterContext;
+import org.elasticsearch.search.highlight.SearchContextHighlight;
 import org.elasticsearch.search.highlight.SearchContextHighlight.FieldOptions;
-import org.wikimedia.highlighter.experimental.elasticsearch.BytesRefTermWeigherCache;
-import org.wikimedia.highlighter.experimental.elasticsearch.SegmenterFactory;
+import org.elasticsearch.search.internal.SearchContext;
+import org.elasticsearch.search.lookup.SourceLookup;
+import org.wikimedia.highlighter.experimental.elasticsearch.ExperimentalHighlighter.HighlightExecutionContext;
 import org.wikimedia.highlighter.experimental.lucene.hit.PostingsHitEnum;
 import org.wikimedia.highlighter.experimental.lucene.hit.TokenStreamHitEnum;
 import org.wikimedia.highlighter.experimental.lucene.hit.weight.BasicQueryWeigher;
@@ -38,6 +43,7 @@ import org.wikimedia.search.highlighter.experimental.source.NonMergingMultiSourc
 import org.wikimedia.search.highlighter.experimental.source.StringSourceExtracter;
 
 import com.google.common.base.Function;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterators;
 
 public class FieldWrapper {
@@ -105,7 +111,7 @@ public class FieldWrapper {
 
     public List<String> getFieldValues() throws IOException {
         if (values == null) {
-            List<Object> objs = HighlightUtils.loadFieldValues(context.field, context.mapper,
+            List<Object> objs = loadFieldValues(context.field, context.mapper,
                     context.context, context.hitContext);
             values = new ArrayList<String>(objs.size());
             for (Object obj : objs) {
@@ -113,6 +119,30 @@ public class FieldWrapper {
             }
         }
         return values;
+    }
+
+    /*
+     * XXX: Copy/Pasted from HighlightUtils#loadFieldValues
+     */
+    static List<Object> loadFieldValues(SearchContextHighlight.Field field, FieldMapper mapper, SearchContext searchContext, FetchSubPhase.HitContext hitContext) throws IOException {
+        //percolator needs to always load from source, thus it sets the global force source to true
+        boolean forceSource = searchContext.highlight().forceSource(field);
+        List<Object> textsToHighlight;
+        if (!forceSource && mapper.fieldType().stored()) {
+            CustomFieldsVisitor fieldVisitor = new CustomFieldsVisitor(ImmutableSet.of(mapper.fieldType().names().indexName()), false);
+            hitContext.reader().document(hitContext.docId(), fieldVisitor);
+            textsToHighlight = fieldVisitor.fields().get(mapper.fieldType().names().indexName());
+            if (textsToHighlight == null) {
+                // Can happen if the document doesn't have the field to highlight
+                textsToHighlight = Collections.emptyList();
+            }
+        } else {
+            SourceLookup sourceLookup = searchContext.lookup().source();
+            sourceLookup.setSegmentAndDocument(hitContext.readerContext(), hitContext.docId());
+            textsToHighlight = sourceLookup.extractRawValues(hitContext.getSourcePath(mapper.fieldType().names().fullName()));
+        }
+        assert textsToHighlight != null;
+        return textsToHighlight;
     }
 
     public SourceExtracter<String> buildSourceExtracter() throws IOException {
