@@ -1,4 +1,4 @@
-package org.elasticsearch.search.highlight;
+package org.wikimedia.highlighter.experimental.elasticsearch;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -13,7 +13,6 @@ import java.util.regex.Pattern;
 
 import org.apache.lucene.search.Query;
 import org.apache.lucene.util.automaton.RegExp;
-import org.apache.lucene.util.automaton.TooComplexToDeterminizeException;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.ESLoggerFactory;
 import org.elasticsearch.common.text.StringAndBytesText;
@@ -23,16 +22,10 @@ import org.elasticsearch.common.util.BigArrays;
 import org.elasticsearch.common.util.LocaleUtils;
 import org.elasticsearch.index.mapper.FieldMapper;
 import org.elasticsearch.search.fetch.FetchPhaseExecutionException;
+import org.elasticsearch.search.highlight.HighlightField;
+import org.elasticsearch.search.highlight.Highlighter;
+import org.elasticsearch.search.highlight.HighlighterContext;
 import org.elasticsearch.search.highlight.SearchContextHighlight.FieldOptions;
-import org.wikimedia.highlighter.experimental.elasticsearch.BytesRefHashTermInfos;
-import org.wikimedia.highlighter.experimental.elasticsearch.CharScanningSegmenterFactory;
-import org.wikimedia.highlighter.experimental.elasticsearch.DelayedSegmenter;
-import org.wikimedia.highlighter.experimental.elasticsearch.ElasticsearchQueryFlattener;
-import org.wikimedia.highlighter.experimental.elasticsearch.FetchedFieldIndexPicker;
-import org.wikimedia.highlighter.experimental.elasticsearch.OffsetSnippetFormatter;
-import org.wikimedia.highlighter.experimental.elasticsearch.SegmenterFactory;
-import org.wikimedia.highlighter.experimental.elasticsearch.SentenceIteratorSegmenterFactory;
-import org.wikimedia.highlighter.experimental.elasticsearch.WholeSourceSegmenterFactory;
 import org.wikimedia.highlighter.experimental.lucene.hit.AutomatonHitEnum;
 import org.wikimedia.highlighter.experimental.lucene.hit.weight.BasicQueryWeigher;
 import org.wikimedia.search.highlighter.experimental.HitEnum;
@@ -363,20 +356,7 @@ public class ExperimentalHighlighter implements Highlighter {
         }
 
         private AutomatonHitEnum.Factory buildFactoryForRegex(RegExp regex) {
-            try {
-                return AutomatonHitEnum.factory(regex.toAutomaton(getMaxDeterminizedStates()));
-            } catch (TooComplexToDeterminizeException e) {
-                /*
-                 * Elasticsearch forces us to wrap the exception in a fully
-                 * Serializable exception and throw out the stack trace so we
-                 * give our future selves the oportunity to log it when we need
-                 * it.
-                 */
-                if (log.isDebugEnabled()) {
-                    log.debug("Regex too complex", e);
-                }
-                throw new RegexTooComplexException(e);
-            }
+            return AutomatonHitEnum.factory(regex.toAutomaton(getMaxDeterminizedStates()));
         }
 
         private int getMaxDeterminizedStates() {
