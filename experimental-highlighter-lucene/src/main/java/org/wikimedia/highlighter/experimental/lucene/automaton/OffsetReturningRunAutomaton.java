@@ -1,4 +1,4 @@
-package org.apache.lucene.util.automaton;
+package org.wikimedia.highlighter.experimental.lucene.automaton;
 
 import org.apache.lucene.util.automaton.Automaton;
 import org.apache.lucene.util.automaton.RunAutomaton;
@@ -22,7 +22,7 @@ public class OffsetReturningRunAutomaton extends RunAutomaton {
      * @return the end offset of the matching string or -1 if no match
      */
     public int run(String s, int offset, int end) {
-        int p = initial;
+        int p = getInitialState();
         int i;
         int cp;
         int lastMatch = -1;
@@ -35,7 +35,7 @@ public class OffsetReturningRunAutomaton extends RunAutomaton {
                 // luck.
                 return lastMatch;
             }
-            if (accept[p]) {
+            if (isAccept(p)) {
                 // We're matching right now so if we ever fail to match the rest
                 // of the string then we can roll back to here.
                 lastMatch = i + 1;
@@ -45,6 +45,6 @@ public class OffsetReturningRunAutomaton extends RunAutomaton {
         // its not acceptable then we're half way through a potential match that
         // we'll never finish. If we have a last match then that was it -
         // otherwise no match.
-        return accept[p] ? i : lastMatch;
+        return isAccept(p) ? i : lastMatch;
     }
 }

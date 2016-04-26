@@ -1,7 +1,7 @@
 package org.wikimedia.highlighter.experimental.lucene.hit;
 
 import org.apache.lucene.util.automaton.Automaton;
-import org.apache.lucene.util.automaton.OffsetReturningRunAutomaton;
+import org.wikimedia.highlighter.experimental.lucene.automaton.OffsetReturningRunAutomaton;
 import org.wikimedia.search.highlighter.experimental.hit.AbstractHitEnum;
 import org.wikimedia.search.highlighter.experimental.hit.HitWeigher;
 import org.wikimedia.search.highlighter.experimental.hit.weight.ConstantHitWeigher;
