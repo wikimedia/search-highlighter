@@ -35,6 +35,9 @@ Elasticsearch installation
 | Experimental Highlighter Plugin |  ElasticSearch  |
 |---------------------------------|-----------------|
 | 2.3.3, master branch            | 2.3.3           |
+| 2.2.2, 2.2 branch               | 2.2.2           |
+| 2.1.2, 2.1 branch               | 2.1.2           |
+| 2.0.2, 2.0 branch               | 2.0.2           |
 | 1.7.0 -> 1.7.1, 1.7 branch      | 1.7.X           |
 | 1.6.0, 1.6 branch               | 1.6.X           |
 | 1.5.0 -> 1.5.1, 1.5 branch      | 1.5.X           |
@@ -43,29 +46,14 @@ Elasticsearch installation
 | 0.0.10                          | 1.2.X           |
 | 0.0.1 -> 0.0.9                  | 1.1.X           |
 
+Install it like so for Elasticsearch 2.x.x:
+```bash
+./bin/plugin install org.wikimedia.search.highlighter/experimental-highlighter-elasticsearch-plugin/2.x.x
+```
+
 Install it like so for Elasticsearch 1.7.x:
 ```bash
 ./bin/plugin --install org.wikimedia.search.highlighter/experimental-highlighter-elasticsearch-plugin/1.7.0
-```
-
-Install it like so for Elasticsearch 1.6.x:
-```bash
-./bin/plugin --install org.wikimedia.search.highlighter/experimental-highlighter-elasticsearch-plugin/1.6.0
-```
-
-Install it like so for Elasticsearch 1.5.x:
-```bash
-./bin/plugin --install org.wikimedia.search.highlighter/experimental-highlighter-elasticsearch-plugin/1.5.1
-```
-
-Install it like so for Elasticsearch 1.4.x:
-```bash
-./bin/plugin --install org.wikimedia.search.highlighter/experimental-highlighter-elasticsearch-plugin/1.4.2
-```
-
-and for Elasticsearch 1.3.x:
-```bash
-./bin/plugin --install org.wikimedia.search.highlighter/experimental-highlighter-elasticsearch-plugin/1.3.0
 ```
 
 Then you can use it by searching like so:
