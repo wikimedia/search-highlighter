@@ -1,10 +1,8 @@
 package org.wikimedia.highlighter.experimental.elasticsearch.plugin;
 
-import java.util.Collection;
-import java.util.Collections;
-
-import org.elasticsearch.common.inject.Module;
 import org.elasticsearch.plugins.Plugin;
+import org.elasticsearch.search.SearchModule;
+import org.wikimedia.highlighter.experimental.elasticsearch.ExperimentalHighlighter;
 
 public class ExperimentalHighlighterPlugin extends Plugin {
 
@@ -18,8 +16,7 @@ public class ExperimentalHighlighterPlugin extends Plugin {
         return "experimental highlighter";
     }
 
-    @Override
-    public Collection<Module> nodeModules() {
-        return Collections.<Module>singleton(new ExperimentalHighlighterModule());
+    public void onModule(SearchModule module) {
+        module.registerHighlighter(ExperimentalHighlighter.NAME, ExperimentalHighlighter.class);
     }
 }
