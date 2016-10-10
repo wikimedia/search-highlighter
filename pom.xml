@@ -50,7 +50,7 @@
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <elasticsearch.version>2.4.0</elasticsearch.version>
+    <elasticsearch.version>2.4.1</elasticsearch.version>
     <!-- For the Elasticsearch plugin to work this should match the version of Lucene that Elasticsearch
       uses. -->
     <lucene.version>5.5.2</lucene.version>
@@ -294,7 +294,7 @@
       <artifactId>securemock</artifactId>
 	<!-- NOTE: make sure that this version is the same granted by elasticsearch
 		test framework. e.g. : https://github.com/elastic/elasticsearch/blob/v2.2.1/core/src/main/resources/org/elasticsearch/bootstrap/test-framework.policy -->
-      <version>1.1</version>
+      <version>1.2</version>
       <scope>test</scope>
     </dependency>
     <dependency>
