@@ -196,7 +196,9 @@ public class FieldWrapper {
      * this field.
      */
     public boolean canProduceHits() {
-        return weigher.maxTermWeight() > 0 || weigher.areTherePhrasesOnField(context.fieldName);
+		return weigher.maxTermWeight() > 0
+				|| weigher.areTherePhrasesOnField(context.fieldName)
+				|| weigher.areThereSpansOnField(context.fieldName);
     }
 
     public HitEnum buildHitEnum() throws IOException {

@@ -3,11 +3,17 @@ package org.wikimedia.highlighter.experimental.lucene.hit.weight;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Stack;
 
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.search.Query;
+import org.apache.lucene.search.spans.SpanMultiTermQueryWrapper;
+import org.apache.lucene.search.spans.SpanNearQuery;
+import org.apache.lucene.search.spans.SpanOrQuery;
+import org.apache.lucene.search.spans.SpanTermQuery;
 import org.apache.lucene.util.BytesRef;
 import org.apache.lucene.util.CollectionUtil;
 import org.apache.lucene.util.automaton.Automata;
@@ -16,6 +22,12 @@ import org.apache.lucene.util.automaton.ByteRunAutomaton;
 import org.apache.lucene.util.automaton.CompiledAutomaton;
 import org.apache.lucene.util.automaton.Operations;
 import org.wikimedia.highlighter.experimental.lucene.QueryFlattener;
+import org.wikimedia.highlighter.experimental.lucene.hit.SpanHitEnumWrapper;
+import org.wikimedia.highlighter.experimental.lucene.spanvalidation.SpanMultiTermQueryValidator;
+import org.wikimedia.highlighter.experimental.lucene.spanvalidation.SpanNearValidator;
+import org.wikimedia.highlighter.experimental.lucene.spanvalidation.SpanOrValidator;
+import org.wikimedia.highlighter.experimental.lucene.spanvalidation.SpanTermValidator;
+import org.wikimedia.highlighter.experimental.lucene.spanvalidation.SpanValidator;
 import org.wikimedia.search.highlighter.experimental.HitEnum;
 import org.wikimedia.search.highlighter.experimental.hit.PhraseHitEnumWrapper;
 import org.wikimedia.search.highlighter.experimental.hit.TermSourceFinder;
@@ -35,6 +47,10 @@ public class BasicQueryWeigher implements TermWeigher<BytesRef>, TermSourceFinde
     private Map<String, List<PhraseInfo>> phrases;
     private Map<PhraseKey, PhraseInfo> allPhrases;
     private CompiledAutomaton acceptable;
+	private Map<String, List<SpanValidator>> fieldToSpanValidators = new HashMap<String, List<SpanValidator>>();
+	private Stack<List<SpanValidator>> currentSpanValidatorLists = new Stack<List<SpanValidator>>();
+	private boolean inSpanMultiTermQuery = false;
+	private int spanMultiTermQuerySource;
 
     public BasicQueryWeigher(IndexReader reader, Query query) {
         this(new QueryFlattener(1000, false, true), new HashMapTermInfos(), reader, query);
@@ -67,17 +83,29 @@ public class BasicQueryWeigher implements TermWeigher<BytesRef>, TermSourceFinde
      * Wrap the hit enum if required to support things like phrases.
      */
     public HitEnum wrap(String field, HitEnum e) {
-        if (phrases == null) {
-            return e;
-        }
-        List<PhraseInfo> phraseList = phrases.get(field);
-        if (phraseList == null) {
-            return e;
-        }
-        for (PhraseInfo phrase: phraseList) {
-            e = new PhraseHitEnumWrapper(e, phrase.phrase, phrase.weight, phrase.slop);
-        }
-        return e;
+		List<SpanValidator> spanValidators = fieldToSpanValidators.get(field);
+		if (phrases == null
+				&& (spanValidators == null || spanValidators.isEmpty())) {
+			return e;
+		}
+
+		if (phrases != null) {
+			List<PhraseInfo> phraseList = phrases.get(field);
+			if (phraseList != null) {
+				for (PhraseInfo phrase : phraseList) {
+					e = new PhraseHitEnumWrapper(e, phrase.phrase,
+							phrase.weight, phrase.slop);
+				}
+			}
+		}
+
+		if (spanValidators != null) {
+			for (SpanValidator spanValidator : spanValidators) {
+				e = new SpanHitEnumWrapper(e, spanValidator);
+			}
+		}
+
+		return e;
     }
 
     /**
@@ -100,6 +128,13 @@ public class BasicQueryWeigher implements TermWeigher<BytesRef>, TermSourceFinde
         }
         return !phraseList.isEmpty();
     }
+
+	/**
+	 * Are there span queries on the provided field?
+	 */
+	public boolean areThereSpansOnField(String field) {
+		return fieldToSpanValidators.get(field) != null;
+	}
 
     public CompiledAutomaton acceptableTerms() {
         if (acceptable == null) {
@@ -225,8 +260,15 @@ public class BasicQueryWeigher implements TermWeigher<BytesRef>, TermSourceFinde
         private float singlePositionPhraseQueryBoost;
 
         @Override
-        public void flattened(BytesRef term, float boost, Object rewritten) {
+        public int flattened(BytesRef term, float boost, Object rewritten) {
             boost = inSinglePositionPhraseQuery ? singlePositionPhraseQueryBoost : boost;
+
+			// if this is nested within a span query don't automatically boost
+			// let the span validator boost it
+			if (currentSpanValidatorLists.size() > 0) {
+				boost = 0;
+			}
+
             maxTermWeight = Math.max(maxTermWeight, boost);
             int source = rewritten == null ? term.hashCode() : rewritten.hashCode();
             SourceInfo info = termInfos.get(term);
@@ -251,11 +293,24 @@ public class BasicQueryWeigher implements TermWeigher<BytesRef>, TermSourceFinde
             if (phrase != null) {
                 phrase[phrasePosition][phraseTerm++] = info.source;
             }
+
+			if (inSpanMultiTermQuery) {
+				spanMultiTermQuerySource = source;
+			}
+
+			return source;
         }
 
         @Override
         public void flattened(Automaton automaton, float boost, int source) {
             boost = inSinglePositionPhraseQuery ? singlePositionPhraseQueryBoost : boost;
+
+			// if this is nested within a span query don't automatically boost
+			// let the span validator boost it
+			if (currentSpanValidatorLists.size() > 0) {
+				boost = 0;
+			}
+
             maxTermWeight = Math.max(maxTermWeight, boost);
             AutomatonSourceInfo info = new AutomatonSourceInfo(automaton);
             // Automata don't have a hashcode so we always use the source
@@ -265,6 +320,10 @@ public class BasicQueryWeigher implements TermWeigher<BytesRef>, TermSourceFinde
             if (phrase != null) {
                 phrase[phrasePosition][phraseTerm++] = info.source;
             }
+
+			if (inSpanMultiTermQuery) {
+				spanMultiTermQuerySource = source;
+			}
         }
 
         @Override
@@ -334,6 +393,74 @@ public class BasicQueryWeigher implements TermWeigher<BytesRef>, TermSourceFinde
             phraseList.add(info);
             phrase = null;
         }
+
+		private List<SpanValidator> getCurrentOrRootSpanValidatorList(
+				String field) {
+			List<SpanValidator> spanValidators;
+			if (currentSpanValidatorLists.isEmpty()) {
+				spanValidators = getOrCreateRootSpanValidatorList(field);
+			} else {
+				spanValidators = currentSpanValidatorLists.peek();
+			}
+			return spanValidators;
+		}
+
+		private List<SpanValidator> getOrCreateRootSpanValidatorList(
+				String field) {
+			List<SpanValidator> spanValidators = fieldToSpanValidators
+					.get(field);
+			if (spanValidators == null) {
+				spanValidators = new LinkedList<SpanValidator>();
+				fieldToSpanValidators.put(field, spanValidators);
+			}
+			return spanValidators;
+		}
+
+		@Override
+		public void endSpanTermQuery(SpanTermQuery query, int source) {
+			getCurrentOrRootSpanValidatorList(query.getField()).add(
+					new SpanTermValidator(query, source));
+		}
+
+		@Override
+		public void startSpanMultiQuery(SpanMultiTermQueryWrapper<?> query) {
+			inSpanMultiTermQuery = true;
+		}
+
+		@Override
+		public void endSpanMultiQuery(SpanMultiTermQueryWrapper<?> query) {
+			inSpanMultiTermQuery = false;
+
+			getCurrentOrRootSpanValidatorList(query.getField()).add(
+					new SpanMultiTermQueryValidator(query,
+							spanMultiTermQuerySource));
+		}
+
+		@Override
+		public void startSpanNearQuery(SpanNearQuery query) {
+			currentSpanValidatorLists.push(new LinkedList<SpanValidator>());
+		}
+
+		@Override
+		public void endSpanNearQuery(SpanNearQuery query) {
+			List<SpanValidator> currentSpanValidatorList = currentSpanValidatorLists
+					.pop();
+			getCurrentOrRootSpanValidatorList(query.getField()).add(
+					new SpanNearValidator(query, currentSpanValidatorList));
+		}
+
+		@Override
+		public void startSpanOrQuery(SpanOrQuery query) {
+			currentSpanValidatorLists.push(new LinkedList<SpanValidator>());
+		}
+
+		@Override
+		public void endSpanOrQuery(SpanOrQuery query) {
+			List<SpanValidator> currentSpanValidatorList = currentSpanValidatorLists
+					.pop();
+			getCurrentOrRootSpanValidatorList(query.getField()).add(
+					new SpanOrValidator(query, currentSpanValidatorList));
+		}
     }
 
     private static class PhraseKey {

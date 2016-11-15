@@ -24,6 +24,7 @@ import org.apache.lucene.search.Query;
 import org.apache.lucene.search.RegexpQuery;
 import org.apache.lucene.search.TermQuery;
 import org.apache.lucene.search.WildcardQuery;
+import org.apache.lucene.search.spans.SpanMultiTermQueryWrapper;
 import org.apache.lucene.search.spans.SpanNearQuery;
 import org.apache.lucene.search.spans.SpanNotQuery;
 import org.apache.lucene.search.spans.SpanOrQuery;
@@ -72,7 +73,7 @@ public class QueryFlattener {
          *            containing it, not null if the term query came from some
          *            rewritten query
          */
-        void flattened(BytesRef term, float boost, Object sourceOverride);
+        int flattened(BytesRef term, float boost, Object sourceOverride);
 
         /**
          * Called with each new automaton. QueryFlattener makes an effort to
@@ -98,6 +99,24 @@ public class QueryFlattener {
          * Called to mark the end of a phrase.
          */
         void endPhrase(String field, int slop, float boost);
+
+		/**
+		 * Span query callbacks.
+		 */
+		void endSpanTermQuery(SpanTermQuery query, int source);
+
+		void startSpanNearQuery(SpanNearQuery query);
+
+		void endSpanNearQuery(SpanNearQuery query);
+
+		void startSpanMultiQuery(SpanMultiTermQueryWrapper<?> query);
+
+		void endSpanMultiQuery(SpanMultiTermQueryWrapper<?> query);
+
+		void startSpanOrQuery(SpanOrQuery query);
+
+		void endSpanOrQuery(SpanOrQuery query);
+
     }
 
     public void flatten(Query query, IndexReader reader, Callback callback) {
@@ -172,7 +191,12 @@ public class QueryFlattener {
             flattenQuery((SpanNotQuery) query, pathBoost, sourceOverride, reader, callback);
             return true;
         } else if (query instanceof SpanOrQuery) {
-            flattenQuery((SpanOrQuery) query, pathBoost, sourceOverride, reader, callback);
+			flattenQuery((SpanOrQuery) query, pathBoost, sourceOverride,
+					reader, callback);
+			return true;
+		} else if (query instanceof SpanMultiTermQueryWrapper<?>) {
+			flattenQuery((SpanMultiTermQueryWrapper<?>) query, pathBoost,
+					sourceOverride, reader, callback);
             return true;
         }
         return false;
@@ -289,9 +313,11 @@ public class QueryFlattener {
         }
     }
 
-    protected void flattenQuery(SpanTermQuery query, float pathBoost, Object sourceOverride,
-            IndexReader reader, Callback callback) {
-        callback.flattened(query.getTerm().bytes(), query.getBoost() * pathBoost, sourceOverride);
+	protected void flattenQuery(SpanTermQuery query, float pathBoost,
+			Object sourceOverride, IndexReader reader, Callback callback) {
+		int source = callback.flattened(query.getTerm().bytes(), 0,
+				sourceOverride); // weight was query.getBoost() * pathBoost
+		callback.endSpanTermQuery(query, source);
     }
 
     protected void flattenQuery(SpanPositionCheckQuery query, float pathBoost,
@@ -303,23 +329,37 @@ public class QueryFlattener {
     protected void flattenQuery(SpanNearQuery query, float pathBoost, Object sourceOverride,
             IndexReader reader, Callback callback) {
         pathBoost *= query.getBoost();
+		callback.startSpanNearQuery(query);
         for (SpanQuery clause : query.getClauses()) {
             flattenSpan(clause, pathBoost, sourceOverride, reader, callback);
         }
+		callback.endSpanNearQuery(query);
     }
 
-    protected void flattenQuery(SpanNotQuery query, float pathBoost, Object sourceOverride,
-            IndexReader reader, Callback callback) {
-        flattenSpan(query.getInclude(), query.getBoost() * pathBoost, sourceOverride, reader,
+	protected void flattenQuery(SpanMultiTermQueryWrapper<?> query,
+			float pathBoost, Object sourceOverride, IndexReader reader,
+			Callback callback) {
+		pathBoost *= query.getBoost();
+		callback.startSpanMultiQuery(query);
+		flatten(query.getWrappedQuery(), pathBoost, sourceOverride, reader,
                 callback);
+		callback.endSpanMultiQuery(query);
     }
 
-    protected void flattenQuery(SpanOrQuery query, float pathBoost, Object sourceOverride,
-            IndexReader reader, Callback callback) {
+	protected void flattenQuery(SpanNotQuery query, float pathBoost,
+			Object sourceOverride, IndexReader reader, Callback callback) {
+		flattenSpan(query.getInclude(), query.getBoost() * pathBoost,
+				sourceOverride, reader, callback);
+	}
+
+	protected void flattenQuery(SpanOrQuery query, float pathBoost,
+			Object sourceOverride, IndexReader reader, Callback callback) {
         pathBoost *= query.getBoost();
+		callback.startSpanOrQuery(query);
         for (SpanQuery clause : query.getClauses()) {
             flattenSpan(clause, pathBoost, sourceOverride, reader, callback);
         }
+		callback.endSpanOrQuery(query);
     }
 
     protected void flattenQuery(RegexpQuery query, float pathBoost, Object sourceOverride,
