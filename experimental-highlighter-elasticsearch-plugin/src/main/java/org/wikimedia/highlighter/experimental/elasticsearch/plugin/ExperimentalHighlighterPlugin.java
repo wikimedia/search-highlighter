@@ -1,22 +1,16 @@
 package org.wikimedia.highlighter.experimental.elasticsearch.plugin;
 
+import java.util.Collections;
+import java.util.Map;
+
 import org.elasticsearch.plugins.Plugin;
-import org.elasticsearch.search.SearchModule;
+import org.elasticsearch.plugins.SearchPlugin;
+import org.elasticsearch.search.fetch.subphase.highlight.Highlighter;
 import org.wikimedia.highlighter.experimental.elasticsearch.ExperimentalHighlighter;
 
-public class ExperimentalHighlighterPlugin extends Plugin {
-
+public class ExperimentalHighlighterPlugin extends Plugin implements SearchPlugin {
     @Override
-    public String description() {
-        return "Elasticsearch Highlighter designed for easy tinkering.";
-    }
-
-    @Override
-    public String name() {
-        return "experimental highlighter";
-    }
-
-    public void onModule(SearchModule module) {
-        module.registerHighlighter(ExperimentalHighlighter.NAME, ExperimentalHighlighter.class);
+    public Map<String, Highlighter> getHighlighters() {
+        return Collections.singletonMap(ExperimentalHighlighter.NAME, new ExperimentalHighlighter());
     }
 }

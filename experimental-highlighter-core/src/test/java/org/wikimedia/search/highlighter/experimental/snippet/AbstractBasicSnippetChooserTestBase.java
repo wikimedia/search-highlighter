@@ -23,7 +23,6 @@ import org.wikimedia.search.highlighter.experimental.hit.WeightFilteredHitEnumWr
 import org.wikimedia.search.highlighter.experimental.hit.weight.ConstantHitWeigher;
 import org.wikimedia.search.highlighter.experimental.hit.weight.ExactMatchTermWeigher;
 import org.wikimedia.search.highlighter.experimental.hit.weight.SourceExtractingHitWeigher;
-import org.wikimedia.search.highlighter.experimental.snippet.CharScanningSegmenter;
 import org.wikimedia.search.highlighter.experimental.source.StringSourceExtracter;
 
 public abstract class AbstractBasicSnippetChooserTestBase {

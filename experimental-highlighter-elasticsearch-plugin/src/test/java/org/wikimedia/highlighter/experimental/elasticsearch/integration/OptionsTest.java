@@ -11,10 +11,9 @@ import static org.hamcrest.Matchers.equalTo;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
 import com.google.common.collect.ImmutableMap;
@@ -23,8 +22,9 @@ import org.elasticsearch.action.index.IndexRequestBuilder;
 import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.common.xcontent.XContentBuilder;
+import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.rest.RestStatus;
-import org.elasticsearch.search.highlight.HighlightBuilder;
+import org.elasticsearch.search.fetch.subphase.highlight.HighlightBuilder;
 import org.junit.Test;
 import org.wikimedia.highlighter.experimental.elasticsearch.AbstractExperimentalHighlighterIntegrationTestBase;
 
@@ -37,10 +37,10 @@ public class OptionsTest extends AbstractExperimentalHighlighterIntegrationTestB
         buildIndex();
         indexTestData("The quick brown fox jumped over the lazy test.  And some other test sentence.");
 
-        SearchRequestBuilder search = testSearch().addHighlightedField(
-                new HighlightBuilder.Field("test").fragmenter("sentence").numOfFragments(3));
         for (String hitSource : HIT_SOURCES) {
-            SearchResponse response = setHitSource(search, hitSource).get();
+            SearchResponse response = testSearch(
+                    field(new HighlightBuilder.Field("test").fragmenter("sentence").numOfFragments(3))
+                    .andThen(hitSource(hitSource))).get();
             assertHighlight(response, 0, "test", 0, equalTo("The quick brown fox jumped over the lazy <em>test</em>.  "));
             assertHighlight(response, 0, "test", 1, equalTo("And some other <em>test</em> sentence."));
         }
@@ -51,10 +51,10 @@ public class OptionsTest extends AbstractExperimentalHighlighterIntegrationTestB
         buildIndex();
         indexTestData("The quick brown fox jumped over the lazy test.  And some other test sentence.");
 
-        SearchRequestBuilder search = testSearch().addHighlightedField(
-                new HighlightBuilder.Field("test").fragmenter("none").numOfFragments(3));
         for (String hitSource : HIT_SOURCES) {
-            SearchResponse response = setHitSource(search, hitSource).get();
+            SearchResponse response = testSearch(
+                    field(new HighlightBuilder.Field("test").fragmenter("none").numOfFragments(3))
+                    .andThen(hitSource(hitSource))).get();
             assertHighlight(response, 0, "test", 0,
                     equalTo("The quick brown fox jumped over the lazy <em>test</em>.  "
                             + "And some other <em>test</em> sentence."));
@@ -67,34 +67,37 @@ public class OptionsTest extends AbstractExperimentalHighlighterIntegrationTestB
         indexTestData("The quick brown fox jumped over the lazy test.  And some other test test.  " +
                 "Junk junk junk junk junk junk junk junk junk junk junk test test test.");
 
-        SearchRequestBuilder search = testSearch(
-                boolQuery().should(termQuery("test", "test")).should(termQuery("test", "foo")))
-                .addHighlightedField(new HighlightBuilder.Field("test").fragmenter("sentence").numOfFragments(2))
-                .setHighlighterOrder("score");
-        Map<String, Object> options = new HashMap<String, Object>();
+        QueryBuilder q = boolQuery().should(termQuery("test", "test")).should(termQuery("test", "foo"));
         for (String hitSource : HIT_SOURCES) {
-            options.put("hit_source", hitSource);
-            SearchResponse response = search.setHighlighterOptions(options).get();
+            SearchResponse response = testSearch(
+                    q,
+                    field(new HighlightBuilder.Field("test").fragmenter("sentence").numOfFragments(2))
+                    .andThen(order("score"))
+                    .andThen(hitSource(hitSource))).get();
             assertHighlight(response, 0, "test", 0, equalTo("Junk junk junk junk junk junk junk "
                     + "junk junk junk junk <em>test</em> <em>test</em> <em>test</em>."));
             assertHighlight(response, 0, "test", 1,
                     equalTo("And some other <em>test</em> <em>test</em>.  "));
         }
 
-        search.setHighlighterOrder("source");
         for (String hitSource : HIT_SOURCES) {
-            options.put("hit_source", hitSource);
-            SearchResponse response = search.setHighlighterOptions(options).get();
+            SearchResponse response = testSearch(
+                    q,
+                    field(new HighlightBuilder.Field("test").fragmenter("sentence").numOfFragments(2))
+                    .andThen(order("source"))
+                    .andThen(hitSource(hitSource))).get();
             assertHighlight(response, 0, "test", 0,
                     equalTo("The quick brown fox jumped over the lazy <em>test</em>.  "));
             assertHighlight(response, 0, "test", 1,
                     equalTo("And some other <em>test</em> <em>test</em>.  "));
         }
 
-        options.put("top_scoring", true);
         for (String hitSource : HIT_SOURCES) {
-            options.put("hit_source", hitSource);
-            SearchResponse response = search.setHighlighterOptions(options).get();
+            SearchResponse response = testSearch(
+                    q,
+                    field(new HighlightBuilder.Field("test").fragmenter("sentence").numOfFragments(2))
+                    .andThen(option("top_scoring", true))
+                    .andThen(hitSource(hitSource))).get();
             assertHighlight(response, 0, "test", 0,
                     equalTo("And some other <em>test</em> <em>test</em>.  "));
             assertHighlight(response, 0, "test", 1, equalTo("Junk junk junk junk junk junk junk "
@@ -108,37 +111,45 @@ public class OptionsTest extends AbstractExperimentalHighlighterIntegrationTestB
         indexTestData("The quick brown fox jumped over the lazy test.  And some other test.  " +
                 "Junk junk junk junk junk junk junk junk junk junk junk test test test.");
 
-        SearchRequestBuilder search = testSearch(
-                boolQuery().should(termQuery("test", "test")).should(termQuery("test", "foo")))
-                .addHighlightedField(new HighlightBuilder.Field("test").fragmenter("sentence").numOfFragments(2))
-                .setHighlighterOrder("score");
-        Map<String, Object> options = new HashMap<String, Object>();
-        options.put("boost_before", ImmutableMap.of("10", 4, "20", 2f));
-        options.put("fragment_weigher", "sum");
+        QueryBuilder qb = boolQuery().should(termQuery("test", "test")).should(termQuery("test", "foo"));
         for (String hitSource : HIT_SOURCES) {
-            options.put("hit_source", hitSource);
-            SearchResponse response = search.setHighlighterOptions(options).get();
+
+            SearchResponse response = testSearch(qb,
+                    hitSource(hitSource)
+                        .andThen(option("boost_before", ImmutableMap.of("10", 4, "20", 2f)))
+                        .andThen(option("fragment_weigher", "sum"))
+                        .andThen(field(new HighlightBuilder.Field("test").fragmenter("sentence").numOfFragments(2)))
+                        .andThen(order("score")))
+                    .get();
             assertHighlight(response, 0, "test", 0, equalTo("The quick brown fox jumped over the lazy <em>test</em>.  "));
             assertHighlight(response, 0, "test", 1, equalTo("Junk junk junk junk junk junk junk " +
                     "junk junk junk junk <em>test</em> <em>test</em> <em>test</em>."));
         }
 
         // Should also apply when sorting by source using top_scoring
-        search.setHighlighterOrder("source");
-        options.put("top_scoring", true);
         for (String hitSource : HIT_SOURCES) {
-            options.put("hit_source", hitSource);
-            SearchResponse response = search.setHighlighterOptions(options).get();
+            SearchResponse response = testSearch(qb,
+                    hitSource(hitSource)
+                        .andThen(option("boost_before", ImmutableMap.of("10", 4, "20", 2f)))
+                        .andThen(option("fragment_weigher", "sum"))
+                        .andThen(option("top_scoring", true))
+                        .andThen(field(new HighlightBuilder.Field("test").fragmenter("sentence").numOfFragments(2)))
+                        .andThen(order("source")))
+                    .get();
             assertHighlight(response, 0, "test", 0, equalTo("The quick brown fox jumped over the lazy <em>test</em>.  "));
             assertHighlight(response, 0, "test", 1, equalTo("Junk junk junk junk junk junk junk " +
                     "junk junk junk junk <em>test</em> <em>test</em> <em>test</em>."));
         }
 
-        options.put("boost_before", ImmutableMap.of("10", 4, Integer.toString(Integer.MAX_VALUE), 0f));
-        options.put("fragment_weigher", "sum");
         for (String hitSource : HIT_SOURCES) {
-            options.put("hit_source", hitSource);
-            SearchResponse response = search.setHighlighterOptions(options).get();
+            SearchResponse response = testSearch(qb,
+                    hitSource(hitSource)
+                        .andThen(option("boost_before", ImmutableMap.of("10", 4, Integer.toString(Integer.MAX_VALUE), 0f)))
+                        .andThen(option("fragment_weigher", "sum"))
+                        .andThen(option("top_scoring", true))
+                        .andThen(field(new HighlightBuilder.Field("test").fragmenter("sentence").numOfFragments(2)))
+                        .andThen(order("source")))
+                    .get();
             assertHighlight(response, 0, "test", 0, /* total fragments */1,
                     equalTo("The quick brown fox jumped over the lazy <em>test</em>.  "));
         }
@@ -155,36 +166,38 @@ public class OptionsTest extends AbstractExperimentalHighlighterIntegrationTestB
         }
         indexRandom(true, indexes);
 
-        SearchRequestBuilder search = testSearch(
-                boolQuery().should(termQuery("test", "test")).should(termQuery("test", "foo")))
-                .setHighlighterOrder("score");
+        QueryBuilder qb = boolQuery().should(termQuery("test", "test")).should(termQuery("test", "foo"));
         for (String hitSource : HIT_SOURCES) {
-            SearchResponse response = setHitSource(search, hitSource).get();
+            SearchResponse response = testSearch(qb, hitSource(hitSource).andThen(order("score"))).get();
             assertHighlight(response, 0, "test", 0, equalTo("<em>test</em>"));
         }
 
-        Map<String, Object> options = new HashMap<String, Object>();
-        options.put("default_similarity", false);
         for (String hitSource : HIT_SOURCES) {
-            options.put("hit_source", hitSource);
-            SearchResponse response = search.setHighlighterOptions(options).get();
+            SearchResponse response = testSearch(qb,
+                    hitSource(hitSource)
+                        .andThen(order("score"))
+                        .andThen(option("default_similarity", false)))
+                    .get();
             assertHighlight(response, 0, "test", 0, equalTo("<em>foo</em> <em>foo</em>"));
         }
 
-        options.put("default_similarity", true);
         for (String hitSource : HIT_SOURCES) {
-            options.put("hit_source", hitSource);
-            SearchResponse response = search.setHighlighterOptions(options).get();
+            SearchResponse response = testSearch(qb,
+                    hitSource(hitSource)
+                        .andThen(order("score"))
+                        .andThen(option("default_similarity", true)))
+                    .get();
             assertHighlight(response, 0, "test", 0, equalTo("<em>test</em>"));
         }
 
         // And it still works when using top_scoring
-        options.put("default_similarity", true);
-        options.put("top_scoring", true);
-        search.setHighlighterOrder("source");
         for (String hitSource : HIT_SOURCES) {
-            options.put("hit_source", hitSource);
-            SearchResponse response = search.setHighlighterOptions(options).get();
+            SearchResponse response = testSearch(qb,
+                    hitSource(hitSource)
+                        .andThen(order("source"))
+                        .andThen(option("top_scoring", true))
+                        .andThen(option("default_similarity", true)))
+                    .get();
             assertHighlight(response, 0, "test", 0, equalTo("<em>test</em>"));
         }
     }
@@ -194,29 +207,32 @@ public class OptionsTest extends AbstractExperimentalHighlighterIntegrationTestB
         buildIndex();
         indexTestData();
 
-        SearchRequestBuilder search = testSearch().addHighlightedField(
-                new HighlightBuilder.Field("test").matchedFields("test.english"));
         // One matched field
         for (String hitSource : HIT_SOURCES) {
-            SearchResponse response = setHitSource(search, hitSource).get();
+            SearchResponse response = testSearch(
+                    hitSource(hitSource)
+                        .andThen(field(new HighlightBuilder.Field("test").matchedFields("test.english"))))
+                    .get();
             assertHighlight(response, 0, "test", 0,
                     equalTo("<em>tests</em> very simple <em>test</em>"));
         }
 
         // Two matched fields
-        search = testSearch().addHighlightedField(
-                new HighlightBuilder.Field("test").matchedFields("test", "test.english"));
         for (String hitSource : HIT_SOURCES) {
-            SearchResponse response = setHitSource(search, hitSource).get();
+            SearchResponse response = testSearch(
+                    hitSource(hitSource)
+                        .andThen(field(new HighlightBuilder.Field("test").matchedFields("test", "test.english"))))
+                    .get();
             assertHighlight(response, 0, "test", 0,
                     equalTo("<em>tests</em> very simple <em>test</em>"));
         }
 
-        search = testSearch().addHighlightedField(
-                new HighlightBuilder.Field("test").matchedFields("test", "test.english",
-                        "test.whitespace"));
         for (String hitSource : HIT_SOURCES) {
-            SearchResponse response = setHitSource(search, hitSource).get();
+            SearchResponse response = testSearch(
+                    hitSource(hitSource)
+                        .andThen(field(new HighlightBuilder.Field("test").matchedFields("test", "test.english",
+                                "test.whitespace"))))
+                    .get();
             assertHighlight(response, 0, "test", 0,
                     equalTo("<em>tests</em> very simple <em>test</em>"));
         }
@@ -226,11 +242,11 @@ public class OptionsTest extends AbstractExperimentalHighlighterIntegrationTestB
     public void matchedFieldsSameAnalyzer() throws IOException {
         buildIndex();
         indexTestData();
-        SearchRequestBuilder search = testSearch().addHighlightedField(
-                new HighlightBuilder.Field("test").matchedFields("test.english", "test.english2"));
 
         for (String hitSource : HIT_SOURCES) {
-            setHitSource(search, hitSource);
+            SearchRequestBuilder search = testSearch(
+                    hitSource(hitSource)
+                        .andThen(field(new HighlightBuilder.Field("test").matchedFields("test.english", "test.english2"))));
             if (hitSource.equals("analyze")) {
                 // I wish I could throw an HTTP 400 here but I don't believe I
                 // can.
@@ -249,9 +265,8 @@ public class OptionsTest extends AbstractExperimentalHighlighterIntegrationTestB
         buildIndex(false, false, between(1, 5));
         indexTestData();
 
-        SearchRequestBuilder search = testSearch();
         for (String hitSource : HIT_SOURCES) {
-            setHitSource(search, hitSource);
+            SearchRequestBuilder search = testSearch(hitSource(hitSource));
             if (hitSource.equals("analyze")) {
                 SearchResponse response = search.get();
                 assertNoFailures(response);
@@ -264,10 +279,10 @@ public class OptionsTest extends AbstractExperimentalHighlighterIntegrationTestB
         }
 
         // Now with matched fields!
-        search = testSearch().addHighlightedField(
-                new HighlightBuilder.Field("test").matchedFields("test", "test.english"));
         for (String hitSource : HIT_SOURCES) {
-            setHitSource(search, hitSource);
+            SearchRequestBuilder search = testSearch(
+                    hitSource(hitSource)
+                    .andThen(field(new HighlightBuilder.Field("test").matchedFields("test", "test.english"))));
             if (hitSource.equals("analyze")) {
                 SearchResponse response = search.get();
                 assertNoFailures(response);
@@ -286,7 +301,7 @@ public class OptionsTest extends AbstractExperimentalHighlighterIntegrationTestB
         indexTestData();
 
         assertNoFailures(testSearch().get());
-        assertNoFailures(testSearch().setHighlighterOrder("score").get());
+        assertNoFailures(testSearch(order("score")).get());
     }
 
     @Test
@@ -305,8 +320,7 @@ public class OptionsTest extends AbstractExperimentalHighlighterIntegrationTestB
 
         // No match on a short string
         HighlightBuilder.Field field = new HighlightBuilder.Field("test").noMatchSize(10);
-        SearchRequestBuilder search = testSearch(termQuery("find_me", "shortstring")).addHighlightedField(
-                field);
+        SearchRequestBuilder search = testSearch(termQuery("find_me", "shortstring"), field(field));
         field.fragmenter("scan");
         assertHighlight(search.get(), 0, "test", 0, equalTo("Lets segment"));
         field.fragmenter("sentence");
@@ -315,8 +329,7 @@ public class OptionsTest extends AbstractExperimentalHighlighterIntegrationTestB
         assertHighlight(search.get(), 0, "test", 0, equalTo(shortString));
 
         // No match on a longer one
-        search = testSearch(termQuery("find_me", "longstring")).addHighlightedField(
-                field);
+        search = testSearch(termQuery("find_me", "longstring"), field(field));
         field.fragmenter("scan");
         assertHighlight(search.get(), 0, "test", 0, equalTo("Lets segment"));
         field.fragmenter("sentence");
@@ -326,8 +339,7 @@ public class OptionsTest extends AbstractExperimentalHighlighterIntegrationTestB
 
         // No match size > string size
         field.noMatchSize(1000);
-        search = testSearch(termQuery("find_me", "shortstring")).addHighlightedField(
-                field);
+        search = testSearch(termQuery("find_me", "shortstring"), field(field));
         field.fragmenter("scan");
         assertHighlight(search.get(), 0, "test", 0, equalTo(shortString));
         field.fragmenter("sentence");
@@ -337,8 +349,7 @@ public class OptionsTest extends AbstractExperimentalHighlighterIntegrationTestB
 
         // boundaryMaxScan + size > string size but size < string size
         field.noMatchSize(10).boundaryMaxScan(10000);
-        search = testSearch(termQuery("find_me", "shortstring")).addHighlightedField(
-                field);
+        search = testSearch(termQuery("find_me", "shortstring"), field(field));
         field.fragmenter("scan");
         assertHighlight(search.get(), 0, "test", 0, equalTo("Lets segment"));
         field.fragmenter("sentence");
@@ -352,8 +363,8 @@ public class OptionsTest extends AbstractExperimentalHighlighterIntegrationTestB
         buildIndex();
         indexTestData("This test is long enough to demonstrate that we switched to the whole field segmenter.");
 
-        SearchRequestBuilder search = testSearch().addHighlightedField(
-                new HighlightBuilder.Field("test").numOfFragments(0).fragmentSize(10));
+        SearchRequestBuilder search = testSearch(field(
+                new HighlightBuilder.Field("test").numOfFragments(0).fragmentSize(10)));
         assertHighlight(search.get(), 0, "test", 0, equalTo("This <em>test</em> is "
                 + "long enough to demonstrate that we switched to the whole field segmenter."));
     }
@@ -364,26 +375,28 @@ public class OptionsTest extends AbstractExperimentalHighlighterIntegrationTestB
         indexTestData("The quick brown fox jumped over the lazy test.  And some other test.  " +
                 "Junk junk junk junk junk junk junk junk junk junk junk test test test.");
 
-        SearchRequestBuilder search = testSearch(termQuery("test", "test"))
-                .addHighlightedField(new HighlightBuilder.Field("test").fragmenter("sentence").numOfFragments(2))
-                .setHighlighterOrder("score");
-        Map<String, Object> options = new HashMap<String, Object>();
 
         // We find the top scoring fragment if it is within max_fragments_scored
-        options.put("max_fragments_scored", 10);
         for (String hitSource : HIT_SOURCES) {
-            options.put("hit_source", hitSource);
-            SearchResponse response = search.setHighlighterOptions(options).get();
+            SearchResponse response = testSearch(termQuery("test", "test"),
+                    field(new HighlightBuilder.Field("test").fragmenter("sentence").numOfFragments(2))
+                        .andThen(order("score"))
+                        .andThen(option("max_fragments_scored", 10))
+                        .andThen(hitSource(hitSource))
+                    ).get();
             assertHighlight(response, 0, "test", 0, equalTo("Junk junk junk junk junk junk junk " +
                     "junk junk junk junk <em>test</em> <em>test</em> <em>test</em>."));
             assertHighlight(response, 0, "test", 1, equalTo("And some other <em>test</em>.  "));
         }
 
         // We don't if it isn't
-        options.put("max_fragments_scored", 2);
         for (String hitSource : HIT_SOURCES) {
-            options.put("hit_source", hitSource);
-            SearchResponse response = search.setHighlighterOptions(options).get();
+            SearchResponse response = testSearch(termQuery("test", "test"),
+                    field(new HighlightBuilder.Field("test").fragmenter("sentence").numOfFragments(2))
+                        .andThen(order("score"))
+                        .andThen(option("max_fragments_scored", 2))
+                        .andThen(hitSource(hitSource))
+                    ).get();
             assertHighlight(response, 0, "test", 0, equalTo("The quick brown fox jumped over the lazy <em>test</em>.  "));
             assertHighlight(response, 0, "test", 1, equalTo("And some other <em>test</em>.  "));
         }
@@ -413,47 +426,55 @@ public class OptionsTest extends AbstractExperimentalHighlighterIntegrationTestB
         nested.endArray().endObject();
         client().prepareIndex("test", "test", "4").setSource(nested).get();
         refresh();
-
-        SearchRequestBuilder search = testSearch(termQuery("test", "one"));
-        Map<String, Object> options = new HashMap<String, Object>();
-        options.put("fetch_fields", new String[] {"fetched"});
+        QueryBuilder qb = termQuery("test", "one");
         for (String hitSource : HIT_SOURCES) {
-            options.put("hit_source", hitSource);
-            SearchResponse response = search.setHighlighterOptions(options).get();
+            SearchResponse response = testSearch(qb,
+                    hitSource(hitSource)
+                        .andThen(option("fetch_fields", Collections.singletonList("fetched"))))
+                    .get();
             assertHighlight(response, 0, "test", 0, equalTo("this <em>one</em>"));
             assertHighlight(response, 0, "test", 1, equalTo("1"));
         }
 
-        search = testSearch(termQuery("test", "firstplace"));
+        qb = termQuery("test", "firstplace");
         for (String hitSource : HIT_SOURCES) {
-            options.put("hit_source", hitSource);
-            SearchResponse response = search.setHighlighterOptions(options).get();
+            SearchResponse response = testSearch(qb,
+                    hitSource(hitSource)
+                        .andThen(option("fetch_fields", Collections.singletonList("fetched"))))
+                    .get();
             assertHighlight(response, 0, "test", 0, equalTo("<em>firstplace</em>"));
             assertHighlight(response, 0, "test", 1, equalTo("0"));
         }
 
-        search = testSearch(termQuery("test", "nobuddy"));
+        qb = termQuery("test", "nobuddy");
         for (String hitSource : HIT_SOURCES) {
-            options.put("hit_source", hitSource);
-            SearchResponse response = search.setHighlighterOptions(options).get();
+            SearchResponse response = testSearch(qb,
+                    hitSource(hitSource)
+                        .andThen(option("fetch_fields", Collections.singletonList("fetched"))))
+                    .get();
             assertHighlight(response, 0, "test", 0, equalTo("<em>nobuddy</em>"));
             assertHighlight(response, 0, "test", 1, equalTo(""));
         }
 
-        search = testSearch(termQuery("foo.test", "nested99")).addHighlightedField("foo.test");
-        options.put("fetch_fields", new String[] {"foo.fetched"});
+        qb = termQuery("foo.test", "nested99");
         for (String hitSource : HIT_SOURCES) {
-            options.put("hit_source", hitSource);
-            SearchResponse response = search.setHighlighterOptions(options).get();
+            SearchResponse response = testSearch(qb,
+                    hitSource(hitSource)
+                        .andThen(option("fetch_fields", Collections.singletonList("foo.fetched")))
+                        .andThen(field("foo.test")))
+                    .get();
             assertHighlight(response, 0, "foo.test", 0, equalTo("<em>nested99</em>"));
             assertHighlight(response, 0, "foo.test", 1, equalTo("99"));
         }
 
-        search = testSearch(boolQuery().should(termQuery("foo.test", "nested99"))
-                .should(termQuery("foo.test", "nested54"))).addHighlightedField("foo.test");
+        qb = boolQuery().should(termQuery("foo.test", "nested99"))
+                .should(termQuery("foo.test", "nested54"));
         for (String hitSource : HIT_SOURCES) {
-            options.put("hit_source", hitSource);
-            SearchResponse response = search.setHighlighterOptions(options).get();
+            SearchResponse response = testSearch(qb,
+                    hitSource(hitSource)
+                        .andThen(field("foo.test"))
+                        .andThen(option("fetch_fields", Collections.singletonList("foo.fetched"))))
+                    .get();
             // Score Ordered
             assertHighlight(response, 0, "foo.test", 0, equalTo("<em>nested54</em>"));
             assertHighlight(response, 0, "foo.test", 1, equalTo("54"));
@@ -461,11 +482,14 @@ public class OptionsTest extends AbstractExperimentalHighlighterIntegrationTestB
             assertHighlight(response, 0, "foo.test", 3, equalTo("99"));
         }
 
-        search = testSearch(boolQuery().should(termQuery("foo.test", "nested54"))
-                .should(termQuery("foo.test", "nested123"))).addHighlightedField("foo.test");
+        qb = boolQuery().should(termQuery("foo.test", "nested54"))
+                .should(termQuery("foo.test", "nested123"));
         for (String hitSource : HIT_SOURCES) {
-            options.put("hit_source", hitSource);
-            SearchResponse response = search.setHighlighterOptions(options).get();
+            SearchResponse response = testSearch(qb,
+                    hitSource(hitSource)
+                        .andThen(field("foo.test"))
+                        .andThen(option("fetch_fields", Collections.singletonList("foo.fetched"))))
+                    .get();
             // Score Ordered
             assertHighlight(response, 0, "foo.test", 0, equalTo("<em>nested54</em>"));
             assertHighlight(response, 0, "foo.test", 1, equalTo("54"));
@@ -473,11 +497,13 @@ public class OptionsTest extends AbstractExperimentalHighlighterIntegrationTestB
             assertHighlight(response, 0, "foo.test", 3, equalTo(""));
         }
 
-        search = testSearch(termQuery("foo.test", "nested99")).addHighlightedField("foo.test");
-        options.put("fetch_fields", new String[] {"foo.fetched", "foo.fetched2"});
+        qb = termQuery("foo.test", "nested99");
         for (String hitSource : HIT_SOURCES) {
-            options.put("hit_source", hitSource);
-            SearchResponse response = search.setHighlighterOptions(options).get();
+            SearchResponse response = testSearch(qb,
+                    hitSource(hitSource)
+                        .andThen(field("foo.test"))
+                        .andThen(option("fetch_fields", Arrays.asList(new String[] {"foo.fetched", "foo.fetched2"}))))
+                    .get();
             assertHighlight(response, 0, "foo.test", 0, equalTo("<em>nested99</em>"));
             assertHighlight(response, 0, "foo.test", 1, equalTo("99"));
             assertHighlight(response, 0, "foo.test", 2, equalTo("1099"));
@@ -490,11 +516,12 @@ public class OptionsTest extends AbstractExperimentalHighlighterIntegrationTestB
         client().prepareIndex("test", "test").setSource("test", "foo", "test2", "bar").get();
         refresh();
 
-        SearchRequestBuilder search = testSearch(termQuery("test", "foo")).addHighlightedField(
-                new HighlightBuilder.Field("test2").highlightQuery(termQuery("test2", "bar")));
-
         for (String hitSource : HIT_SOURCES) {
-            SearchResponse response = setHitSource(search, hitSource).get();
+            SearchResponse response = testSearch(termQuery("test", "foo"),
+                    hitSource(hitSource)
+                        .andThen(field(new HighlightBuilder.Field("test2")
+                                .highlightQuery(termQuery("test2", "bar")))))
+                    .get();
             assertHighlight(response, 0, "test", 0, equalTo("<em>foo</em>"));
             assertHighlight(response, 0, "test2", 0, equalTo("<em>bar</em>"));
         }
@@ -506,14 +533,12 @@ public class OptionsTest extends AbstractExperimentalHighlighterIntegrationTestB
         client().prepareIndex("test", "test").setSource("test", "foo", "test2", "bar").get();
         refresh();
 
-        Map<String, Object> options = Collections.<String, Object>singletonMap("return_debug_graph", true);
-
-        SearchRequestBuilder search = testSearch(termQuery("test", "foo"))
-                .addHighlightedField(new HighlightBuilder.Field("test2").highlightQuery(termQuery("test2", "bar"))
-                        .options(options));
-
         for (String hitSource : HIT_SOURCES) {
-            SearchResponse response = setHitSource(search, hitSource).get();
+            SearchResponse response = testSearch(termQuery("test", "foo"),
+                    hitSource(hitSource)
+                        .andThen(field(new HighlightBuilder.Field("test2").highlightQuery(termQuery("test2", "bar"))))
+                        .andThen(option("return_debug_graph", true)))
+                    .get();
             assertHighlight(response, 0, "test2", 0, containsString("digraph HitEnums"));
         }
     }

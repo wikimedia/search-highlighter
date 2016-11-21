@@ -2,7 +2,6 @@ package org.wikimedia.highlighter.experimental.elasticsearch.integration;
 
 import static org.elasticsearch.index.query.QueryBuilders.idsQuery;
 import static org.elasticsearch.index.query.QueryBuilders.boolQuery;
-import static org.elasticsearch.index.query.QueryBuilders.filteredQuery;
 import static org.elasticsearch.index.query.QueryBuilders.fuzzyQuery;
 import static org.elasticsearch.index.query.QueryBuilders.matchPhrasePrefixQuery;
 import static org.elasticsearch.index.query.QueryBuilders.matchQuery;
@@ -37,11 +36,12 @@ import org.elasticsearch.action.index.IndexRequestBuilder;
 import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.common.StopWatch;
+import org.elasticsearch.common.unit.Fuzziness;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.json.JsonXContent;
 import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilder;
-import org.elasticsearch.search.highlight.HighlightBuilder;
+import org.elasticsearch.search.fetch.subphase.highlight.HighlightBuilder;
 import org.junit.Test;
 import org.wikimedia.highlighter.experimental.elasticsearch.AbstractExperimentalHighlighterIntegrationTestBase;
 
@@ -57,26 +57,51 @@ public class MiscellaneousTest extends AbstractExperimentalHighlighterIntegratio
         buildIndex();
         indexTestData();
 
-        SearchRequestBuilder search = testSearch(boolQuery().should(fuzzyQuery("test", "test"))
-                .should(fuzzyQuery("test", "simpl")));
         for (String hitSource : HIT_SOURCES) {
-            SearchResponse response = setHitSource(search, hitSource).get();
+            SearchResponse response = testSearch(boolQuery().should(fuzzyQuery("test", "test"))
+                    .should(fuzzyQuery("test", "simpl")), hitSource(hitSource)).get();
             assertHighlight(response, 0, "test", 0,
                     equalTo("<em>tests</em> very <em>simple</em> <em>test</em>"));
         }
 
-        search = testSearch(boolQuery().should(fuzzyQuery("test", "test"))
-                .should(termQuery("test", "simple")));
         for (String hitSource : HIT_SOURCES) {
-            SearchResponse response = setHitSource(search, hitSource).get();
+            SearchResponse response = testSearch(boolQuery()
+                        .should(matchQuery("test", "test").fuzziness(Fuzziness.TWO))
+                        .should(matchQuery("test", "simpl").fuzziness(Fuzziness.TWO)),
+                    hitSource(hitSource)).get();
             assertHighlight(response, 0, "test", 0,
                     equalTo("<em>tests</em> very <em>simple</em> <em>test</em>"));
         }
 
-        search = testSearch(boolQuery().should(fuzzyQuery("test", "test"))
-                .should(termQuery("test", "simple")).should(termQuery("test", "very")));
         for (String hitSource : HIT_SOURCES) {
-            SearchResponse response = setHitSource(search, hitSource).get();
+            SearchResponse response = testSearch(boolQuery().should(fuzzyQuery("test", "test"))
+                    .should(termQuery("test", "simple")), hitSource(hitSource)).get();
+            assertHighlight(response, 0, "test", 0,
+                    equalTo("<em>tests</em> very <em>simple</em> <em>test</em>"));
+        }
+
+        for (String hitSource : HIT_SOURCES) {
+            SearchResponse response = testSearch(boolQuery()
+                        .should(matchQuery("test", "test").fuzziness(Fuzziness.TWO))
+                        .should(matchQuery("test", "simple").fuzziness(Fuzziness.TWO)),
+                    hitSource(hitSource)).get();
+            assertHighlight(response, 0, "test", 0,
+                    equalTo("<em>tests</em> very <em>simple</em> <em>test</em>"));
+        }
+
+        for (String hitSource : HIT_SOURCES) {
+            SearchResponse response = testSearch(boolQuery().should(fuzzyQuery("test", "test"))
+                    .should(termQuery("test", "simple")).should(termQuery("test", "very")), hitSource(hitSource)).get();
+            assertHighlight(response, 0, "test", 0,
+                    equalTo("<em>tests</em> <em>very</em> <em>simple</em> <em>test</em>"));
+        }
+
+        for (String hitSource : HIT_SOURCES) {
+            SearchResponse response = testSearch(boolQuery()
+                        .should(matchQuery("test", "test").fuzziness(Fuzziness.TWO))
+                        .should(termQuery("test", "simple"))
+                        .should(termQuery("test", "very")),
+                    hitSource(hitSource)).get();
             assertHighlight(response, 0, "test", 0,
                     equalTo("<em>tests</em> <em>very</em> <em>simple</em> <em>test</em>"));
         }
@@ -92,46 +117,46 @@ public class MiscellaneousTest extends AbstractExperimentalHighlighterIntegratio
             .setSource("test", new String[] {"sentences.", "two sentences."}, "fetched", new Integer[] {0, 1}).get();
         refresh();
 
-        SearchRequestBuilder search = testSearch();
         for (String hitSource : HIT_SOURCES) {
-            SearchResponse response = setHitSource(search, hitSource).get();
+            SearchResponse response = testSearch(termQuery("test", "test"), hitSource(hitSource)).get();
             assertHighlight(response, 0, "test", 0, equalTo("tests very simple <em>test</em>"));
             assertHighlight(response, 0, "test", 1, equalTo("with two fields to <em>test</em>"));
         }
 
-        search = testSearch().addHighlightedField(
-                new HighlightBuilder.Field("test").matchedFields("test.english"));
+
         for (String hitSource : HIT_SOURCES) {
-            SearchResponse response = setHitSource(search, hitSource).get();
+            SearchResponse response = testSearch(termQuery("test", "test"), hitSource(hitSource))
+                    .highlighter(newHLBuilder().field(
+                            new HighlightBuilder.Field("test").matchedFields("test.english"))
+            ).get();
             assertHighlight(response, 0, "test", 0,
                     equalTo("<em>tests</em> very simple <em>test</em>"));
             assertHighlight(response, 0, "test", 1, equalTo("with two fields to <em>test</em>"));
         }
 
-        search = testSearch().addHighlightedField(
-                new HighlightBuilder.Field("test").matchedFields("test.english").order("score"));
         for (String hitSource : HIT_SOURCES) {
-            SearchResponse response = setHitSource(search, hitSource).get();
+            SearchResponse response = testSearch(
+                    hitSource(hitSource)
+                        .andThen(x -> x.field(new HighlightBuilder.Field("test").matchedFields("test.english")))
+                        .andThen(x -> x.order("score"))
+                    ).get();
             assertHighlight(response, 0, "test", 0,
                     equalTo("<em>tests</em> very simple <em>test</em>"));
             assertHighlight(response, 0, "test", 1, equalTo("with two fields to <em>test</em>"));
         }
 
-        search = testSearch(termQuery("test", "one"));
         for (String hitSource : HIT_SOURCES) {
-            SearchResponse response = setHitSource(search, hitSource).get();
+            SearchResponse response = testSearch(termQuery("test", "one"), hitSource(hitSource)).get();
             assertHighlight(response, 0, "test", 0, equalTo("this <em>one</em>"));
         }
 
-        search = testSearch(termQuery("test", "this"));
         for (String hitSource : HIT_SOURCES) {
-            SearchResponse response = setHitSource(search, hitSource).get();
+            SearchResponse response = testSearch(termQuery("test", "this"), hitSource(hitSource)).get();
             assertHighlight(response, 0, "test", 0, equalTo("<em>this</em> one"));
         }
 
-        search = testSearch(termQuery("test", "sentences"));
         for (String hitSource : HIT_SOURCES) {
-            SearchResponse response = setHitSource(search, hitSource).get();
+            SearchResponse response = testSearch(termQuery("test", "sentences"), hitSource(hitSource)).get();
             assertHighlight(response, 0, "test", 0, equalTo("<em>sentences</em>."));
             assertHighlight(response, 0, "test", 1, equalTo("two <em>sentences</em>."));
         }
@@ -147,9 +172,8 @@ public class MiscellaneousTest extends AbstractExperimentalHighlighterIntegratio
                         "break me maybe?  lets make this pretty long tests").get();
         refresh();
 
-        SearchRequestBuilder search = testSearch();
         for (String hitSource : HIT_SOURCES) {
-            SearchResponse response = setHitSource(search, hitSource).get();
+            SearchResponse response = testSearch(hitSource(hitSource)).get();
             assertHighlight(response, 0, "test", 0, equalTo("tests very simple <em>test</em>"));
         }
     }
@@ -161,9 +185,8 @@ public class MiscellaneousTest extends AbstractExperimentalHighlighterIntegratio
                 .setSource("test", "break me maybe?  lets make this pretty long tests").get();
         indexTestData();
 
-        SearchRequestBuilder search = testSearch();
         for (String hitSource : HIT_SOURCES) {
-            SearchResponse response = setHitSource(search, hitSource).get();
+            SearchResponse response = testSearch(hitSource(hitSource)).get();
             assertHighlight(response, 0, "test", 0, equalTo("tests very simple <em>test</em>"));
         }
     }
@@ -185,9 +208,8 @@ public class MiscellaneousTest extends AbstractExperimentalHighlighterIntegratio
         }
         indexRandom(true, extra);
 
-        SearchRequestBuilder search = testSearch(termQuery("find_me", "test"));
         for (String hitSource : HIT_SOURCES) {
-            SearchResponse response = setHitSource(search, hitSource).get();
+            SearchResponse response = testSearch(termQuery("find_me", "test"), hitSource(hitSource)).get();
             assertNotHighlighted(response, 0, "test");
         }
     }
@@ -213,9 +235,8 @@ public class MiscellaneousTest extends AbstractExperimentalHighlighterIntegratio
         buildIndex();
         indexTestData("What-a-Mess is a series of children's books written by British comedy writer Frank Muir and illustrated by Joseph Wright. It was later made into an animated series in the UK in 1990 and again in 1995 by DIC Entertainment and aired on ABC in the United States. It aired on YTV from 1995 to 1999 in Canada. The title character is a disheveled (hence his nickname), accident-prone Afghan Hound puppy, whose real name was Prince Amir of Kinjan. Central Independent Television, the Independent Television contractor for the Midlands, created following the restructuring of ATV and commencing broadcast on 1 January 1982, Link Licensing & Bevanfield Films produced the first series and DIC Entertainment produced the second series. Both of them were narrated by Frank Muir.   What-a-Mess - A scruffy Afghan puppy in which is the main character of the entire franchise. His Breed name is Prince Amir of Kinjan, and has a yellow duck sitting on top of his head. In the US animated version, the duck was coloured blue, as if his character was merged with the blue bird in the UK animated version and books, and was also given a name by What-A-Mess called Baldwin. In the US animated version, What-A-Mess is voiced by Ryan O'Donohue. What-a-Mess's Mother - Also known as The Duchess of Kinjan is a beautiful pedigree Afghan Hound mother to What-a-Mess, and is voiced by Miriam Flynn in the US version. Archbishop of Canterbury - A scruffy dark blue dog with brown patches which What-A-Mess met and befriended in What-A-Mess Goes to the Seaside. He's named this way because when What-A-Mess introduces himself with his breed name he sarcastically replies \"Sure, and I'm the Archbishop of Canterbury!\", which the naive pup takes as his actual name. His name was changed to Norton in the US Animated Version, and he was voiced by Dana Hill. The Cat Next Door - Also known as Felicia in the US animated version, is a brown Siamese Cat that loves to tease What-A-Mess at times. In the US animated version, she was coloured blue and she was voiced by Jo Ann Harris Belson. Cynthia - A Hedgehog which What-A-Mess befriended in What-A-Mess Goes to School. Her character was redesigned to become a mole named Ramona in the US animated version, due to the fact that Hedgehogs aren't native to America. In the US animated version, she is voiced by Candi Milo. Trash - Only in the US animated version, Trash is a Bull Terrier who is a real trouble maker to What-A-Mess. His real name is actually Francis He is voiced by Joe Nipote. Frank - An Old English Sheepdog that narrates the US animated version of What-A-Mess, voiced by Frank Muir himself!   What-a-Mess What-a-Mess The Good What-a-Mess at the Seaside What-a-Mess Goes to School Prince What-a-Mess Super What-a-Mess What-a-Mess and the Cat Next Door What-a-Mess and the Hairy Monster  Four Seasons What-a-Mess in Spring What-a-Mess in Summer What-a-Mess in Autumn What-a-Mess in Winter Four Square Meals What-a-Mess has Breakfast What-a-Mess has Lunch What-a-Mess has Tea What-a-Mess has Supper Mini Books What-a-Mess has a Brain Wave What-a-Mess and Little Poppet What-a-Mess and a trip to the Vet What-a-Mess the Beautiful What-a-Mess Goes to Town What-a-Mess Goes on Television What-a-Mess Goes Camping   What-a-Mess Goes to the Seaside / 1990.03.26 What-a-Mess Goes to School / 1990.04.02 Prince What-a-Mess / 1990.04.09 Super What-a-Mess / 1990.04.16 What-a-Mess Keeps Cool / 1990.04.30 What-a-Mess and Cynthia the Hedgehog / 1990.05.14 What-a-Mess Has a Brain Wave! / 1990.05.21 What-a-Mess and the Cat Next Door / 1990.06.04 What-a-Mess and Little Poppet / 1990.06.18 What-a-Mess Goes Camping / 1990.07.02 What-a-Mess The Beautiful / 1990.07.09 What-a-Mess Goes to Town / 1990.07.16 What-a-Mess Goes to the Vet / 1990.07.23   Talkin' Trash (September 16, 1995) A Bone to Pick Midnight Snack Schoolin' Around The Legend of Junkyard Jones It's Raining Cats and Dogs Home Alone...Almost Super What-A-Mess The Recliner Afghan Holiday The Bone Tree Just Four More Left The Ropes What-A-Mess Has Breakfast Prize Puppy The Great Eascape The Scarecrow and Prince Amir Shampooed Show and Tail I Spy, I Cry, I Try What-A-Mess and the Hairy Monster Trick Or Treat My Teatime with Frank Out With the Garbage Dr. What-A-Mess Ultimate What-A-Mess This Hydrant Is Mine His Majesty, Prince What-A-Mess Trash's Wonderful Life Snowbound The Thanksgiving Turkey Santa What-A-Mess Here Comes Santa Paws All Around the Mallberry Bush What-A-Mess At the Movies His Royal Highness, Prince What-A-Mess Party at Poppet's Take Me Out to the Dog Park The Watch Out Dog Molenapped! Pound Pals Taste Test Slobber on a Stick Scout's Honor Seein' Double Luck on His Side What-A-Mess Keeps the Doctor Away There's No Business like Shoe Business Joy Rider Baldwin's Family Reunion Do the Mess Around On Vacation Messy Encounters Dog Days of Summer Fetch! Real Puppies Don't Meow Invasion of the Puppy Snatchers The Ballad of El Pero What-a-Mess Has Lunch Walking the Boy    Russell Williams, Imogen (4 July 2007). \"Whatever happened to What-a-mess?\". London: The Guardian. Retrieved 3 January 2011.   \"IMDB What-a-mess\". Retrieved 3 January 2011.   1990 series episode guide at the Big Cartoon DataBase");
 
-        SearchRequestBuilder search = testSearch(queryStringQuery("what love?"));
         for (String hitSource : HIT_SOURCES) {
-            SearchResponse response = setHitSource(search, hitSource).get();
+            SearchResponse response = testSearch(queryStringQuery("what love?"), hitSource(hitSource)).get();
             assertNoFailures(response);
             assertHitCount(response, 1);
         }
@@ -226,11 +247,12 @@ public class MiscellaneousTest extends AbstractExperimentalHighlighterIntegratio
         buildIndex();
         indexTestData(Resources.toString(Resources.getResource(this.getClass(), "large_text.txt"), Charsets.UTF_8));
 
-        SearchRequestBuilder search = testSearch(termQuery("test", "browser")).addHighlightedField(
-                "test", 100).setHighlighterOrder("score");
-
         for (String hitSource : HIT_SOURCES) {
-            SearchResponse response = setHitSource(search, hitSource).get();
+            SearchResponse response = testSearch(
+                    termQuery("test", "browser"),
+                    hitSource(hitSource)
+                        .andThen(x -> {x.field("test", 100).order("score");})
+            ).get();
             assertHighlight(response, 0, "test", 0, equalTo("json (bug 61659) git #4d2209e " +
                     "- [<em>Browser</em> test] Headless <em>browser</em> test(s) (bug 53691) git #6a238d2 -"));
         }
@@ -301,9 +323,8 @@ public class MiscellaneousTest extends AbstractExperimentalHighlighterIntegratio
     private void lotsOfTermsTestCase(StopWatch watch, String name, QueryBuilder query) throws IOException {
         logger.info("starting {}", name);
         watch.start(name);
-        SearchRequestBuilder search = testSearch(query);
         for (String hitSource : HIT_SOURCES) {
-            setHitSource(search, hitSource);
+            SearchRequestBuilder search = testSearch(query, hitSource(hitSource));
             for (int i = 0; i < 10; i++) {
                 SearchResponse response = search.get();
                 assertHighlight(response, 0, "test", 0,
@@ -314,9 +335,9 @@ public class MiscellaneousTest extends AbstractExperimentalHighlighterIntegratio
 
         logger.info("starting {} many highlighted fields", name);
         watch.start(String.format(Locale.ENGLISH, "%s many highlighted fields", name));
-        search.addHighlightedField("test.english").addHighlightedField("test.english2").addHighlightedField("test2");
         for (String hitSource : HIT_SOURCES) {
-            setHitSource(search, hitSource);
+            SearchRequestBuilder search = testSearch(query, hitSource(hitSource)
+                    .andThen(x -> x.field("test.english").field("test.english2").field("test2")));
             for (int i = 0; i < 10; i++) {
                 SearchResponse response = search.get();
                 assertHighlight(response, 0, "test", 0,
@@ -334,11 +355,10 @@ public class MiscellaneousTest extends AbstractExperimentalHighlighterIntegratio
             many.should(wrapperQuery(
                     builder.string().replaceAll("test", field)));
         }
-        search.setQuery(many);
 
         watch.start(String.format(Locale.ENGLISH, "%s many queried fields", name));
         for (String hitSource : HIT_SOURCES) {
-            setHitSource(search, hitSource);
+            SearchRequestBuilder search = testSearch(many, hitSource(hitSource));
             for (int i = 0; i < 10; i++) {
                 SearchResponse response = search.get();
                 assertHighlight(response, 0, "test", 0,
@@ -357,8 +377,9 @@ public class MiscellaneousTest extends AbstractExperimentalHighlighterIntegratio
         indexTestData();
 
         SearchResponse response = client().prepareSearch("test").setTypes("test")
-                .setQuery(matchQuery("test", "very")).setHighlighterType("experimental")
-                .addHighlightedField(new HighlightBuilder.Field("test").matchedFields("test", "doesntexist")).get();
+                .setQuery(matchQuery("test", "very"))
+                .highlighter(new HighlightBuilder().highlighterType("experimental")
+                        .field(new HighlightBuilder.Field("test").matchedFields("test", "doesntexist"))).get();
         assertHighlight(response, 0, "test", 0, equalTo("tests <em>very</em> simple test"));
     }
 
@@ -371,8 +392,8 @@ public class MiscellaneousTest extends AbstractExperimentalHighlighterIntegratio
         indexTestData();
 
         SearchResponse response = client().prepareSearch("test").setTypes("test")
-                .setQuery(matchQuery("_all", "very")).setHighlighterType("experimental")
-                .addHighlightedField("*").get();
+                .setQuery(matchQuery("_all", "very")).highlighter(new HighlightBuilder().highlighterType("experimental")
+                .field("*")).get();
         assertHighlight(response, 0, "test", 0, equalTo("tests <em>very</em> simple test"));
     }
 
@@ -388,8 +409,8 @@ public class MiscellaneousTest extends AbstractExperimentalHighlighterIntegratio
 
         Map<String, Object> options = new HashMap<String, Object>();
         options.put("max_expanded_terms", 1);
-        SearchRequestBuilder search = testSearch(filteredQuery(rangeQuery("test").from("teso").to("tesz"), idsQuery("test").addIds("1")))
-                .setHighlighterOptions(options);
+        SearchRequestBuilder search = testSearch(boolQuery().must(rangeQuery("test").from("teso").to("tesz")).filter(idsQuery("test").addIds("1")),
+                x -> {x.options(options);} );
         for (String hitSource : HIT_SOURCES) {
             options.put("hit_source", hitSource);
             SearchResponse response = search.get();
@@ -404,8 +425,8 @@ public class MiscellaneousTest extends AbstractExperimentalHighlighterIntegratio
         indexTestData();
         Map<String, Object> options = new HashMap<String, Object>();
         options.put("return_offsets", true);
-        SearchResponse response = testSearch(matchQuery("test.english", "test"))
-                .setHighlighterOptions(options).addHighlightedField("test.english").get();
+        SearchResponse response = testSearch(matchQuery("test.english", "test"),
+                x -> x.options(options).field("test.english")).get();
         assertHighlight(response, 0, "test.english", 0, equalTo("0:0-5,18-22:22"));
     }
 
@@ -415,8 +436,8 @@ public class MiscellaneousTest extends AbstractExperimentalHighlighterIntegratio
         indexTestData(ImmutableList.of("tests very simple test", "with more test"));
         Map<String, Object> options = new HashMap<String, Object>();
         options.put("return_offsets", true);
-        SearchResponse response = testSearch(matchQuery("test.english", "test"))
-                .setHighlighterOptions(options).addHighlightedField("test.english").get();
+        SearchResponse response = testSearch(matchQuery("test.english", "test"),
+                x -> x.options(options).field("test.english")).get();
         assertHighlight(response, 0, "test.english", 0, equalTo("0:0-5,18-22:22"));
         assertHighlight(response, 0, "test.english", 1, equalTo("23:33-37:37"));
     }

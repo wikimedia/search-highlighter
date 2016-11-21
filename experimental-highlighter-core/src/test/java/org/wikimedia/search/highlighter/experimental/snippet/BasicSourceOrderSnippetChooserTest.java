@@ -10,7 +10,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.wikimedia.search.highlighter.experimental.Snippet;
 import org.wikimedia.search.highlighter.experimental.SnippetChooser;
-import org.wikimedia.search.highlighter.experimental.snippet.BasicSourceOrderSnippetChooser;
 
 import com.carrotsearch.randomizedtesting.RandomizedRunner;
 

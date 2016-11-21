@@ -30,9 +30,8 @@ public class RegexTest extends AbstractExperimentalHighlighterIntegrationTestBas
 
         Map<String, Object> options = new HashMap<>();
         options.put("regex", "v.ry");
-        SearchRequestBuilder search = testSearch().setHighlighterOptions(options);
         for (String hitSource : HIT_SOURCES) {
-            options.put("hit_source", hitSource);
+            SearchRequestBuilder search = testSearch(hitSource(hitSource).andThen(options(options)));
             SearchResponse response = search.get();
             assertHighlight(response, 0, "test", 0,
                     equalTo("tests <em>very</em> simple <em>test</em>"));
@@ -41,7 +40,7 @@ public class RegexTest extends AbstractExperimentalHighlighterIntegrationTestBas
         // Now try regex without the rest of the query
         options.put("skip_query", true);
         for (String hitSource : HIT_SOURCES) {
-            options.put("hit_source", hitSource);
+            SearchRequestBuilder search = testSearch(hitSource(hitSource).andThen(options(options)));
             SearchResponse response = search.get();
             assertHighlight(response, 0, "test", 0, equalTo("tests <em>very</em> simple test"));
         }
@@ -54,8 +53,8 @@ public class RegexTest extends AbstractExperimentalHighlighterIntegrationTestBas
 
         Map<String, Object> options = new HashMap<>();
         options.put("regex", ImmutableList.of("v.ry", "simple"));
-        SearchRequestBuilder search = testSearch().setHighlighterOptions(options);
         for (String hitSource : HIT_SOURCES) {
+            SearchRequestBuilder search = testSearch(hitSource(hitSource).andThen(options(options)));
             options.put("hit_source", hitSource);
             SearchResponse response = search.get();
             assertHighlight(response, 0, "test", 0,
@@ -65,7 +64,7 @@ public class RegexTest extends AbstractExperimentalHighlighterIntegrationTestBas
         // Now try regex without the rest of the query
         options.put("skip_query", true);
         for (String hitSource : HIT_SOURCES) {
-            options.put("hit_source", hitSource);
+            SearchRequestBuilder search = testSearch(hitSource(hitSource).andThen(options(options)));
             SearchResponse response = search.get();
             assertHighlight(response, 0, "test", 0,
                     equalTo("tests <em>very</em> <em>simple</em> test"));
@@ -79,9 +78,8 @@ public class RegexTest extends AbstractExperimentalHighlighterIntegrationTestBas
 
         Map<String, Object> options = new HashMap<>();
         options.put("regex", ImmutableList.of("v.ry", "si.*le"));
-        SearchRequestBuilder search = testSearch().setHighlighterOptions(options);
         for (String hitSource : HIT_SOURCES) {
-            options.put("hit_source", hitSource);
+            SearchRequestBuilder search = testSearch(hitSource(hitSource).andThen(options(options)));
             SearchResponse response = search.get();
             assertHighlight(response, 0, "test", 0,
                     equalTo("tests <em>very</em> <em>simple</em> <em>test</em>"));
@@ -91,7 +89,7 @@ public class RegexTest extends AbstractExperimentalHighlighterIntegrationTestBas
         // Now try regex without the rest of the query
         options.put("skip_query", true);
         for (String hitSource : HIT_SOURCES) {
-            options.put("hit_source", hitSource);
+            SearchRequestBuilder search = testSearch(hitSource(hitSource).andThen(options(options)));
             SearchResponse response = search.get();
             assertHighlight(response, 0, "test", 0,
                     equalTo("tests <em>very</em> <em>simple</em> test"));
@@ -107,8 +105,8 @@ public class RegexTest extends AbstractExperimentalHighlighterIntegrationTestBas
         Map<String, Object> options = new HashMap<>();
         options.put("regex", "v\\wry");
         options.put("regex_flavor", "java");
-        SearchRequestBuilder search = testSearch().setHighlighterOptions(options);
         for (String hitSource : HIT_SOURCES) {
+            SearchRequestBuilder search = testSearch(options(options).andThen(hitSource(hitSource)));
             options.put("hit_source", hitSource);
             SearchResponse response = search.get();
             assertHighlight(response, 0, "test", 0,
@@ -119,7 +117,7 @@ public class RegexTest extends AbstractExperimentalHighlighterIntegrationTestBas
         options.put("skip_query", true);
         for (String hitSource : HIT_SOURCES) {
             // The hit source shouldn't matter, but just in case
-            options.put("hit_source", hitSource);
+            SearchRequestBuilder search = testSearch(options(options).andThen(hitSource(hitSource)));
             SearchResponse response = search.get();
             assertHighlight(response, 0, "test", 0, equalTo("tests <em>very</em> simple test"));
         }
@@ -133,7 +131,7 @@ public class RegexTest extends AbstractExperimentalHighlighterIntegrationTestBas
         Map<String, Object> options = new HashMap<>();
         options.put("regex", "v.*");
         options.put("skip_query", true);
-        SearchRequestBuilder search = testSearch().setHighlighterOptions(options);
+        SearchRequestBuilder search = testSearch(options(options));
         SearchResponse response = search.get();
         assertHighlight(response, 0, "test", 0, equalTo("tests <em>very simple test</em>"));
     }
@@ -150,7 +148,7 @@ public class RegexTest extends AbstractExperimentalHighlighterIntegrationTestBas
         options.put("regex_case_insensitive", true);
         for (String flavor: new String[] {"java", "lucene"}) {
             options.put("regex_flavor", flavor);
-            SearchRequestBuilder search = testSearch().setHighlighterOptions(options);
+            SearchRequestBuilder search = testSearch(options(options));
             SearchResponse response = search.get();
             assertHighlight(response, 0, "test", 0, equalTo("TEsts <em>VEry</em> simPLE tesT"));
         }
@@ -168,7 +166,7 @@ public class RegexTest extends AbstractExperimentalHighlighterIntegrationTestBas
         options.put("regex_case_insensitive", true);
         for (String flavor: new String[] {"java", "lucene"}) {
             options.put("regex_flavor", flavor);
-            SearchRequestBuilder search = testSearch().setHighlighterOptions(options);
+            SearchRequestBuilder search = testSearch(options(options));
             SearchResponse response = search.get();
             assertHighlight(response, 0, "test", 0, equalTo("<em>TEsts</em> <em>VEry</em> simPLE <em>tesT</em>"));
         }
@@ -186,7 +184,7 @@ public class RegexTest extends AbstractExperimentalHighlighterIntegrationTestBas
         options.put("regex_case_insensitive", true);
         for (String flavor: new String[] {"java", "lucene"}) {
             options.put("regex_flavor", flavor);
-            SearchRequestBuilder search = testSearch().setHighlighterOptions(options);
+            SearchRequestBuilder search = testSearch(options(options));
             SearchResponse response = search.get();
             assertHighlight(response, 0, "test", 0, equalTo("test {{lang|ar|الخلافة الراشدة}}\n|conventional_<em>long</em>_name"));
         }
@@ -194,7 +192,7 @@ public class RegexTest extends AbstractExperimentalHighlighterIntegrationTestBas
         options.put("regex", "خلا");
         for (String flavor: new String[] {"java", "lucene"}) {
             options.put("regex_flavor", flavor);
-            SearchRequestBuilder search = testSearch().setHighlighterOptions(options);
+            SearchRequestBuilder search = testSearch(options(options));
             SearchResponse response = search.get();
             assertHighlight(response, 0, "test", 0, equalTo("test {{lang|ar|ال<em>خلا</em>فة الراشدة}}\n|conventional_long_name"));
         }
@@ -212,17 +210,17 @@ public class RegexTest extends AbstractExperimentalHighlighterIntegrationTestBas
         options.put("locale", "en_US");
         options.put("regex_case_sensitive", true);
         options.put("regex_flavor", "lucene");
-        assertFailures(testSearch().setHighlighterOptions(options),
+        assertFailures(testSearch(options(options)),
                 RestStatus.INTERNAL_SERVER_ERROR, containsString("Determinizing [^]]*alt=[^]\\|}]{80,} would result in more than"));
         // Some regexes with explosive state growth still run because they
         // don't explode into too many states.
         options.put("regex", ".*te*s[tabclse]{1,16}.*");
-        SearchResponse response = testSearch().setHighlighterOptions(options).get();
+        SearchResponse response = testSearch(options(options)).get();
         assertHitCount(response, 1);
         // But you can stop them by lowering max_determinized_states
         options.put("regex", ".*te*s[tabcse]{1,16}.*");
         options.put("max_determinized_states", 100);
-        assertFailures(testSearch().setHighlighterOptions(options),
+        assertFailures(testSearch(options(options)),
                 RestStatus.INTERNAL_SERVER_ERROR, containsString("Determinizing .*te*s[tabcse]{1,16}.* would result in more than 100"));
         // Its unfortunate that this comes back as an INTERNAL_SERVER_ERROR but
         // I can't find any way from here to mark it otherwise.
@@ -235,7 +233,7 @@ public class RegexTest extends AbstractExperimentalHighlighterIntegrationTestBas
 
         Map<String, Object> options = new HashMap<>();
         options.put("regex", "T.+\\.");
-        SearchRequestBuilder search = testSearch().setHighlighterOptions(options);
+        SearchRequestBuilder search = testSearch(options(options));
         SearchResponse response = search.get();
         assertHighlight(response, 0, "test", 0,
                 equalTo("<em>This test has overlapping highlights.</em>"));
@@ -248,7 +246,7 @@ public class RegexTest extends AbstractExperimentalHighlighterIntegrationTestBas
 
         Map<String, Object> options = new HashMap<>();
         options.put("regex", "T.+shame\\?");
-        SearchRequestBuilder search = testSearch().setHighlighterOptions(options).setHighlighterFragmentSize(30);
+        SearchRequestBuilder search = testSearch(options(options).andThen(fragmentSize(30)));
         SearchResponse response = search.get();
         assertNotHighlighted(response, 0, "test");
     }

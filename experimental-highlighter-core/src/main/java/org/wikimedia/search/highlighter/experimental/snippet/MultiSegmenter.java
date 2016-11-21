@@ -179,7 +179,7 @@ public final class MultiSegmenter implements Segmenter {
      * contain the offset. {@linkplain #inSegmenterStartOffset} must contain the
      * start offset that the segment would have in the *next* segmenter. Meaning
      * whatever it would be in the current segmenter - the current segmenter's
-     * length. {@linkplain lastStartOffset} must also be pushed to the start
+     * length. {@linkplain this#lastStartOffset} must also be pushed to the start
      * offset of the *next* segmenter.
      * 
      * @return did we find a segmenter?

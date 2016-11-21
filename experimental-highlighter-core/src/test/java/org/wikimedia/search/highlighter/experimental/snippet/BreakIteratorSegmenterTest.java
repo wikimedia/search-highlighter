@@ -16,7 +16,6 @@ import org.junit.runner.RunWith;
 import org.wikimedia.search.highlighter.experimental.Segmenter;
 import org.wikimedia.search.highlighter.experimental.SourceExtracter;
 import org.wikimedia.search.highlighter.experimental.Segmenter.Memo;
-import org.wikimedia.search.highlighter.experimental.snippet.BreakIteratorSegmenter;
 import org.wikimedia.search.highlighter.experimental.source.StringSourceExtracter;
 
 import com.carrotsearch.randomizedtesting.RandomizedRunner;

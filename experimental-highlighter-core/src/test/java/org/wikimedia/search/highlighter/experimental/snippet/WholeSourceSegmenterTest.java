@@ -8,7 +8,6 @@ import static org.wikimedia.search.highlighter.experimental.Matchers.extracted;
 import org.junit.Test;
 import org.wikimedia.search.highlighter.experimental.Segmenter;
 import org.wikimedia.search.highlighter.experimental.SourceExtracter;
-import org.wikimedia.search.highlighter.experimental.snippet.WholeSourceSegmenter;
 import org.wikimedia.search.highlighter.experimental.source.StringSourceExtracter;
 
 public class WholeSourceSegmenterTest {

@@ -9,7 +9,6 @@ import java.util.List;
 import org.junit.Test;
 import org.wikimedia.search.highlighter.experimental.Snippet;
 import org.wikimedia.search.highlighter.experimental.SnippetChooser;
-import org.wikimedia.search.highlighter.experimental.snippet.BasicScoreBasedSnippetChooser;
 
 import com.google.common.collect.ImmutableMap;
 

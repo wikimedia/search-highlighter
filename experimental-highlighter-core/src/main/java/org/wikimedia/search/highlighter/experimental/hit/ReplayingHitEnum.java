@@ -48,7 +48,7 @@ public class ReplayingHitEnum extends AbstractHitEnum {
         while (enums.hasNext()) {
             HitEnumAndLength e = enums.next();
             int position = 0;
-            int endOffset = 0;
+            int endOffset;
             while (e.delegate().next()) {
                 position = e.delegate().position();
                 endOffset = e.delegate().endOffset();

@@ -8,8 +8,6 @@ import static org.wikimedia.search.highlighter.experimental.Matchers.atWeight;
 import static org.wikimedia.search.highlighter.experimental.Matchers.isEmpty;
 
 import org.junit.Test;
-import org.wikimedia.search.highlighter.experimental.hit.PositionBoostingHitEnumWrapper;
-import org.wikimedia.search.highlighter.experimental.hit.ReplayingHitEnum;
 
 public class PositionBoostingHitEnumTest {
     @Test

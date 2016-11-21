@@ -8,16 +8,19 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Consumer;
 
 import org.elasticsearch.action.search.SearchRequestBuilder;
 
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.index.query.QueryBuilder;
-import org.elasticsearch.plugin.analysis.icu.AnalysisICUPlugin;
+//import org.elasticsearch.plugin.analysis.icu.AnalysisICUPlugin;
 import org.elasticsearch.plugins.Plugin;
+import org.elasticsearch.search.fetch.subphase.highlight.HighlightBuilder;
 import org.elasticsearch.test.ESIntegTestCase;
 import org.elasticsearch.test.ESIntegTestCase.ClusterScope;
 import org.wikimedia.highlighter.experimental.elasticsearch.plugin.ExperimentalHighlighterPlugin;
@@ -28,24 +31,102 @@ ESIntegTestCase {
     protected static final List<String> HIT_SOURCES = ImmutableList.of("postings", "vectors",
             "analyze");
 
+    protected HighlightBuilder newHLBuilder() {
+        return new HighlightBuilder()
+                .highlighterType("experimental")
+                .field("test");
+    }
+
+    protected SearchRequestBuilder testSearch() {
+        return testSearch(termQuery("test", "test"), null);
+    }
+
     /**
      * A simple search for the term "test".
      */
-    protected SearchRequestBuilder testSearch() {
-        return testSearch(termQuery("test", "test"));
+    protected SearchRequestBuilder testSearch(Consumer<HighlightBuilder> func) {
+        return testSearch(termQuery("test", "test"), func);
     }
 
+    protected SearchRequestBuilder testSearch(QueryBuilder builder) {
+        return testSearch(builder, null);
+    }
+
+    protected Consumer<HighlightBuilder> field(HighlightBuilder.Field field) {
+        return new Consumer<HighlightBuilder>() {
+            @Override
+            public void accept(HighlightBuilder hb) {
+                hb.field(field);
+            }
+        };
+    }
+
+    protected Consumer<HighlightBuilder> field(String field) {
+        return new Consumer<HighlightBuilder>() {
+            @Override
+            public void accept(HighlightBuilder hb) {
+                hb.field(field);
+            }
+        };
+    }
+
+    protected Consumer<HighlightBuilder> order(String order) {
+        return new Consumer<HighlightBuilder>() {
+            @Override
+            public void accept(HighlightBuilder hb) {
+                hb.order(order);
+            }
+        };
+    }
+
+    protected Consumer<HighlightBuilder> options(Map<String, Object> options) {
+        return new Consumer<HighlightBuilder>() {
+            @Override
+            public void accept(HighlightBuilder hb) {
+                if(hb.options() == null) {
+                    hb.options(new HashMap<>());
+                }
+                hb.options().putAll(options);
+            }
+        };
+    }
+
+    protected Consumer<HighlightBuilder> fragmentSize(Integer size) {
+        return new Consumer<HighlightBuilder>() {
+            @Override
+            public void accept(HighlightBuilder hb) {
+                hb.fragmentSize(size);
+            }
+        };
+    }
+
+    protected Consumer<HighlightBuilder> option(String name, Object value) {
+        return new Consumer<HighlightBuilder>() {
+            @Override
+            public void accept(HighlightBuilder hb) {
+                if(hb.options() == null) {
+                    hb.options(new HashMap<>());
+                }
+                hb.options().put(name, value);
+            }
+        };
+    }
+
+    protected Consumer<HighlightBuilder> hitSource(String hitSource) {
+        return option("hit_source", hitSource);
+    }
     /**
      * A simple search for the term test.
      */
-    protected SearchRequestBuilder testSearch(QueryBuilder builder) {
-        return client().prepareSearch("test").setTypes("test").setQuery(builder)
-                .setHighlighterType("experimental").addHighlightedField("test").setSize(1);
-    }
+    protected SearchRequestBuilder testSearch(QueryBuilder builder, Consumer<HighlightBuilder> func) {
+        HighlightBuilder hbuilder = newHLBuilder();
+        if(func != null) {
+            func.accept(hbuilder);
+        }
 
-    protected SearchRequestBuilder setHitSource(SearchRequestBuilder search, String hitSource) {
-        return search.setHighlighterOptions(ImmutableMap.<String, Object> of("hit_source",
-                hitSource));
+        return client().prepareSearch("test").setTypes("test").setQuery(builder)
+                .highlighter(hbuilder)
+                .setSize(1);
     }
 
     protected void buildIndex() throws IOException {
@@ -61,7 +142,7 @@ ESIntegTestCase {
         addField(mapping, "test2", offsetsInPostings, fvhLikeTermVectors);
         mapping.startObject("foo").field("type").value("object").startObject("properties");
         addField(mapping, "test", offsetsInPostings, fvhLikeTermVectors);
-        mapping.endObject().endObject().endObject().endObject();
+        mapping.endObject().endObject().endObject().endObject().endObject();
 
         XContentBuilder settings = jsonBuilder().startObject().startObject("index");
         settings.field("number_of_shards", shards);
@@ -80,7 +161,7 @@ ESIntegTestCase {
                         "standard", //
                         "aggressive_splitting", //
                         "possessive_english", //
-                        "icu_normalizer", //
+                        //"icu_normalizer", //
                         "stop", //
                         "kstem", //
                         "custom_stem", //
@@ -129,12 +210,14 @@ ESIntegTestCase {
                 settings.field("preserve_original", "true");
             }
             settings.endObject();
+            /*
             settings.startObject("icu_normalizer");
             {
                 settings.field("type", "icu_normalizer");
                 settings.field("name", "nfkc_cf");
             }
             settings.endObject();
+            */
         }
         settings.endObject();
         settings.startObject("char_filter");
@@ -152,13 +235,15 @@ ESIntegTestCase {
         }
         settings.endObject();
         settings.endObject();
+        settings.endObject();
+        settings.endObject();
         assertAcked(prepareCreate("test").setSettings(settings).addMapping("test", mapping));
         ensureYellow();
     }
 
     private void addField(XContentBuilder builder, String name, boolean offsetsInPostings,
             boolean fvhLikeTermVectors) throws IOException {
-        builder.startObject(name).field("type", "string");
+        builder.startObject(name).field("type", "text");
         addProperties(builder, offsetsInPostings, fvhLikeTermVectors);
         builder.startObject("fields");
         addSubField(builder, "whitespace", "whitespace", offsetsInPostings, fvhLikeTermVectors);
@@ -172,7 +257,7 @@ ESIntegTestCase {
     private void addSubField(XContentBuilder builder, String name, String analyzer,
             boolean offsetsInPostings, boolean fvhLikeTermVectors) throws IOException {
         builder.startObject(name);
-        builder.field("type", "string");
+        builder.field("type", "text");
         builder.field("analyzer", analyzer);
         addProperties(builder, offsetsInPostings, fvhLikeTermVectors);
         builder.endObject();
@@ -203,6 +288,8 @@ ESIntegTestCase {
     @Override
     protected Collection<Class<? extends Plugin>> nodePlugins() {
         return Collections.unmodifiableCollection(
-                Arrays.asList(ExperimentalHighlighterPlugin.class, AnalysisICUPlugin.class));
+                Arrays.asList(ExperimentalHighlighterPlugin.class
+                        //, AnalysisICUPlugin.class
+                ));
     }
 }

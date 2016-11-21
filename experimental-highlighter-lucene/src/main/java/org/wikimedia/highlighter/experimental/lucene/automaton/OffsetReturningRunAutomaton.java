@@ -22,11 +22,11 @@ public class OffsetReturningRunAutomaton extends RunAutomaton {
      * @return the end offset of the matching string or -1 if no match
      */
     public int run(String s, int offset, int end) {
-        int p = getInitialState();
+        int p = 0;
         int i;
         int cp;
         int lastMatch = -1;
-        for (i = offset, cp = 0; i < end; i += Character.charCount(cp)) {
+        for (i = offset; i < end; i += Character.charCount(cp)) {
             cp = s.codePointAt(i);
             p = step(p, cp);
             if (p == -1) {

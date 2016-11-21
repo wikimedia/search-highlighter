@@ -14,7 +14,8 @@ import java.util.Map;
 import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.index.query.QueryBuilder;
-import org.elasticsearch.search.highlight.HighlightBuilder;
+import org.elasticsearch.search.fetch.subphase.highlight.HighlightBuilder;
+import org.elasticsearch.search.fetch.subphase.highlight.HighlightBuilder.Order;
 import org.junit.Test;
 import org.wikimedia.highlighter.experimental.elasticsearch.AbstractExperimentalHighlighterIntegrationTestBase;
 
@@ -50,16 +51,18 @@ public class FragmentWeightTest extends AbstractExperimentalHighlighterIntegrati
                 exponentialMatch.replaceAll("<em>", "").replaceAll("</em>", ""),
         });
 
-        SearchRequestBuilder search = testSearch(query)
-                .addHighlightedField(new HighlightBuilder.Field("test").numOfFragments(2))
-                .setHighlighterOrder("score");
+        HighlightBuilder builder = newHLBuilder().order(Order.SCORE);
+        SearchRequestBuilder search = testSearch(query).highlighter(builder);
+
+        builder.field(new HighlightBuilder.Field("test").numOfFragments(2));
         Map<String, Object> options = new HashMap<String, Object>();
+        builder.options(options);
 
         options.put("fragment_weigher", "sum");
         options.put("phrase_as_terms", true);
         for (String hitSource : HIT_SOURCES) {
             options.put("hit_source", hitSource);
-            SearchResponse response = search.setHighlighterOptions(options).get();
+            SearchResponse response = search.get();
             assertHighlight(response, 0, "test", 0, equalTo(sumMatch));
             assertHighlight(response, 0, "test", 1, equalTo(exponentialMatch));
         }
@@ -67,7 +70,7 @@ public class FragmentWeightTest extends AbstractExperimentalHighlighterIntegrati
         options.put("fragment_weigher", "exponential");
         for (String hitSource : HIT_SOURCES) {
             options.put("hit_source", hitSource);
-            SearchResponse response = search.setHighlighterOptions(options).get();
+            SearchResponse response = search.get();
             assertHighlight(response, 0, "test", 0, equalTo(exponentialMatch));
         }
 
@@ -75,7 +78,7 @@ public class FragmentWeightTest extends AbstractExperimentalHighlighterIntegrati
         options.remove("fragment_weigher");
         for (String hitSource : HIT_SOURCES) {
             options.put("hit_source", hitSource);
-            SearchResponse response = search.setHighlighterOptions(options).get();
+            SearchResponse response = search.get();
             assertHighlight(response, 0, "test", 0, equalTo(exponentialMatch));
         }
 
@@ -83,7 +86,7 @@ public class FragmentWeightTest extends AbstractExperimentalHighlighterIntegrati
         search.setTypes("test");
         for (String hitSource : HIT_SOURCES) {
             options.put("hit_source", hitSource);
-            SearchResponse response = search.setHighlighterOptions(options).get();
+            SearchResponse response = search.get();
             assertHighlight(response, 0, "test", 0, equalTo(exponentialMatch));
         }
     }

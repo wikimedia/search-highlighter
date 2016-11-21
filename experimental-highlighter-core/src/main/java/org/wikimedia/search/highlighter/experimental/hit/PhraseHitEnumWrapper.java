@@ -127,12 +127,7 @@ public class PhraseHitEnumWrapper extends AbstractHitEnum {
                 }
                 // While we have a releaseUpTo we can clean out the matches
                 if (!currentMatches.isEmpty()) {
-                    Iterator<PhraseCandidate> currentMatchItr = currentMatches.iterator();
-                    while (currentMatchItr.hasNext()) {
-                        if (currentMatchItr.next().readyToRelease()) {
-                            currentMatchItr.remove();
-                        }
-                    }
+                    currentMatches.removeIf(PhraseCandidate::readyToRelease);
                 }
                 return true;
             }

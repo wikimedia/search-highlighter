@@ -99,10 +99,5 @@ public class Snippet implements Segment {
         Hit buildHit(HitEnum e);
     }
 
-    public static final Snippet.HitBuilder DEFAULT_HIT_BUILDER = new Snippet.HitBuilder() {
-        @Override
-        public Hit buildHit(HitEnum e) {
-            return new Hit(e.startOffset(), e.endOffset(), e.corpusWeight()*e.queryWeight(), e.source());
-        }
-    };
+    public static final Snippet.HitBuilder DEFAULT_HIT_BUILDER = e -> new Hit(e.startOffset(), e.endOffset(), e.corpusWeight()*e.queryWeight(), e.source());
 }

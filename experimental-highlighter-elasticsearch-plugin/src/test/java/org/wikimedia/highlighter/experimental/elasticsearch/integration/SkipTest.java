@@ -10,7 +10,7 @@ import java.util.Map;
 
 import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.search.highlight.HighlightBuilder;
+import org.elasticsearch.search.fetch.subphase.highlight.HighlightBuilder;
 import org.junit.Test;
 import org.wikimedia.highlighter.experimental.elasticsearch.AbstractExperimentalHighlighterIntegrationTestBase;
 
@@ -27,11 +27,12 @@ public class SkipTest extends AbstractExperimentalHighlighterIntegrationTestBase
         skipIf.put("skip_if_last_matched", true);
 
         // A single chain and a single extra highlight not in the chain
-        SearchRequestBuilder search = testSearch(termQuery("a", "test")).setSize(1000)
-                .addHighlightedField(new HighlightBuilder.Field("a").options(skipIf))
-                .addHighlightedField(new HighlightBuilder.Field("b").options(skipIf))
-                .addHighlightedField(new HighlightBuilder.Field("c").options(skipIf))
-                .addHighlightedField(new HighlightBuilder.Field("d"));
+        SearchRequestBuilder search = testSearch(termQuery("a", "test"),
+                field(new HighlightBuilder.Field("a").options(skipIf))
+                    .andThen(field(new HighlightBuilder.Field("b").options(skipIf)))
+                    .andThen(field(new HighlightBuilder.Field("c").options(skipIf)))
+                    .andThen(field(new HighlightBuilder.Field("d")))
+                ).setSize(1000);
         SearchResponse response = search.get();
         assertHighlight(response, 0, "a", 0, equalTo("<em>test</em> a"));
         assertNotHighlighted(response, 0, "b");
@@ -44,11 +45,13 @@ public class SkipTest extends AbstractExperimentalHighlighterIntegrationTestBase
         assertHighlight(response, 1, "d", 0, equalTo("<em>test</em> foo d"));
 
         // Support for multiple "chains"
-        search = testSearch(termQuery("b", "foo")).setSize(1000)
-                .addHighlightedField(new HighlightBuilder.Field("a").options(skipIf))
-                .addHighlightedField(new HighlightBuilder.Field("b").options(skipIf))
-                .addHighlightedField(new HighlightBuilder.Field("c"))
-                .addHighlightedField(new HighlightBuilder.Field("d").options(skipIf));
+        search = testSearch(termQuery("b", "foo"),
+                field(new HighlightBuilder.Field("a").options(skipIf))
+                    .andThen(field(new HighlightBuilder.Field("b").options(skipIf)))
+                    .andThen(field(new HighlightBuilder.Field("c")))
+                    .andThen(field(new HighlightBuilder.Field("d").options(skipIf)))
+                ).setSize(1000);
+
         response = search.get();
         assertNotHighlighted(response, 0, "a");
         assertHighlight(response, 0, "b", 0, equalTo("test <em>foo</em> b"));
@@ -61,11 +64,12 @@ public class SkipTest extends AbstractExperimentalHighlighterIntegrationTestBase
         assertHighlight(response, 1, "d", 0, equalTo("test <em>foo</em> d"));
 
         // Everything is a single chain
-        search = testSearch(termQuery("a", "test")).setSize(1000)
-                .addHighlightedField(new HighlightBuilder.Field("a").options(skipIf))
-                .addHighlightedField(new HighlightBuilder.Field("b").options(skipIf))
-                .addHighlightedField(new HighlightBuilder.Field("c").options(skipIf))
-                .addHighlightedField(new HighlightBuilder.Field("d").options(skipIf));
+        search = testSearch(termQuery("a", "test"),
+                field(new HighlightBuilder.Field("a").options(skipIf))
+                    .andThen(field(new HighlightBuilder.Field("b").options(skipIf)))
+                    .andThen(field(new HighlightBuilder.Field("c").options(skipIf)))
+                    .andThen(field(new HighlightBuilder.Field("d").options(skipIf)))
+                ).setSize(1000);
         response = search.get();
         assertHighlight(response, 0, "a", 0, equalTo("<em>test</em> a"));
         assertNotHighlighted(response, 0, "b");

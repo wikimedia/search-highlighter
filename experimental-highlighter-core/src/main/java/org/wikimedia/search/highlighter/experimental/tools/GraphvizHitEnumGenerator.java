@@ -81,12 +81,7 @@ public class GraphvizHitEnumGenerator {
     }
 
     private int getHitEnumId(HitEnum hitEnum) {
-        Integer id = hitEnumIds.get(hitEnum);
-        if (id == null) {
-            id = hitEnumIdSequence++;
-            hitEnumIds.put(hitEnum, id);
-        }
-        return id;
+        return hitEnumIds.computeIfAbsent(hitEnum, k -> hitEnumIdSequence++);
     }
 
     private void writeLinks() {

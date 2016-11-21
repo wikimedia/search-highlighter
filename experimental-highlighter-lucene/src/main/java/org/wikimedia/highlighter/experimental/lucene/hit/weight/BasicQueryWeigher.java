@@ -95,10 +95,7 @@ public class BasicQueryWeigher implements TermWeigher<BytesRef>, TermSourceFinde
             return false;
         }
         List<PhraseInfo> phraseList = phrases.get(field);
-        if (phraseList == null) {
-            return false;
-        }
-        return !phraseList.isEmpty();
+        return phraseList != null && !phraseList.isEmpty();
     }
 
     public CompiledAutomaton acceptableTerms() {
@@ -325,11 +322,7 @@ public class BasicQueryWeigher implements TermWeigher<BytesRef>, TermSourceFinde
                 phraseList = new ArrayList<PhraseInfo>();
                 phrases.put(field, phraseList);
             } else {
-                phraseList = phrases.get(field);
-                if (phraseList == null) {
-                    phraseList = new ArrayList<PhraseInfo>();
-                    phrases.put(field, phraseList);
-                }
+                phraseList = phrases.computeIfAbsent(field, k -> new ArrayList<PhraseInfo>());
             }
             phraseList.add(info);
             phrase = null;
