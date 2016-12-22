@@ -34,7 +34,7 @@ public class NonMergingMultiSourceExtracter<T> extends AbstractMultiSourceExtrac
     /**
      * Builder for {@linkplain StringMergingMultiSourceExtracter}s.
      */
-    public static class Builder<T> implements AbstractMultiSourceExtracter.Builder<T, Builder<T>>{
+    public static class Builder<T> implements AbstractMultiSourceExtracter.Builder<T, Builder<T>> {
         private final List<ConstituentExtracter<T>> extracters = new ArrayList<ConstituentExtracter<T>>();
         private final int offsetGap;
 

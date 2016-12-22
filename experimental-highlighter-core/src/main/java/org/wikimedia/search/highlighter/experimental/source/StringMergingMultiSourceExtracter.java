@@ -29,7 +29,7 @@ public class StringMergingMultiSourceExtracter extends AbstractMultiSourceExtrac
     /**
      * Builder for {@linkplain StringMergingMultiSourceExtracter}s.
      */
-    public static class Builder implements AbstractMultiSourceExtracter.Builder<String, Builder>{
+    public static class Builder implements AbstractMultiSourceExtracter.Builder<String, Builder> {
         private final List<ConstituentExtracter<String>> extracters = new ArrayList<ConstituentExtracter<String>>();
         private final String separator;
 

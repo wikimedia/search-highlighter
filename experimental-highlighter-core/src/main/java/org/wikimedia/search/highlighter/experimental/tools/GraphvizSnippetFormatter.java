@@ -25,8 +25,8 @@ public class GraphvizSnippetFormatter implements SnippetFormatter {
     public String format(Snippet snippet) {
         StringBuilder b = new StringBuilder();
         for (Hit hit : snippet.hits()) {
-            if(!(hit instanceof GraphvizHit)) {
-                throw new IllegalArgumentException("GraphvizSnippetFormatter accepts only "+GraphvizHit.class+" but " + hit.getClass() + " was provided");
+            if (!(hit instanceof GraphvizHit)) {
+                throw new IllegalArgumentException("GraphvizSnippetFormatter accepts only " + GraphvizHit.class + " but " + hit.getClass() + " was provided");
             }
             GraphvizHit hitGraph = (GraphvizHit) hit;
 

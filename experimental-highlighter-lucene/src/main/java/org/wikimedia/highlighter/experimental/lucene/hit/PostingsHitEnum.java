@@ -87,7 +87,7 @@ public class PostingsHitEnum extends AbstractHitEnum {
             enums.add(e);
             dp = null;
         }
-        switch (enums.size()){
+        switch (enums.size()) {
         case 0:
             return EmptyHitEnum.INSTANCE;
         case 1:

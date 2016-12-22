@@ -81,7 +81,7 @@ public class MergingHitEnum extends AbstractHitEnum {
         generator.addNode(this, params);
         Iterator<HitEnum> ite = queue.iterator();
         // Prints only 5 children
-        for(int i =0; i < 5 && ite.hasNext(); i++) {
+        for (int i = 0; i < 5 && ite.hasNext(); i++) {
             generator.addChild(this, ite.next());
         }
     }

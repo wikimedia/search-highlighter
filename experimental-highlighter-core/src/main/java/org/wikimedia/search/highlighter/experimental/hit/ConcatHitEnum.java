@@ -86,7 +86,7 @@ public class ConcatHitEnum extends AbstractHitEnum {
     @Override
     public void toGraph(GraphvizHitEnumGenerator generator) {
         super.toGraph(generator);
-        if(current != null) {
+        if (current != null) {
             generator.addChild(this, current.delegate());
         }
     }

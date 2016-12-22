@@ -71,8 +71,8 @@ public class GraphvizHitEnumGenerator {
 
         appendKeyValue("source", hitEnum.source());
 
-        if(!params.isEmpty()) {
-            for(Map.Entry<String, Object> en : params.entrySet()) {
+        if (!params.isEmpty()) {
+            for (Map.Entry<String, Object> en : params.entrySet()) {
                 appendKeyValue(en.getKey(), en.getValue());
             }
         }
@@ -82,7 +82,7 @@ public class GraphvizHitEnumGenerator {
 
     private int getHitEnumId(HitEnum hitEnum) {
         Integer id = hitEnumIds.get(hitEnum);
-        if(id == null) {
+        if (id == null) {
             id = hitEnumIdSequence++;
             hitEnumIds.put(hitEnum, id);
         }
@@ -90,7 +90,7 @@ public class GraphvizHitEnumGenerator {
     }
 
     private void writeLinks() {
-        for(Link link : links) {
+        for (Link link : links) {
             graph.append(" ").append(link.from).append(" -> ").append(link.to).append("\n");
         }
     }

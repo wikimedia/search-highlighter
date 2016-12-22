@@ -129,7 +129,7 @@ public class CharScanningSegmenter implements Segmenter {
             // is on a boundary, we really can't accept that boundary because
             // shifting forward past it (which we do below) would put us past
             // maxStartOffset. So we make sure we start before maxStartOffset-1.
-            int scanStart = Math.min(maxStartOffset -1, expandedStartOffset);
+            int scanStart = Math.min(maxStartOffset - 1, expandedStartOffset);
             int found = findBreakBefore(scanStart, scanEnd);
             if (found >= 0) {
                 // +1 shifts us after the break

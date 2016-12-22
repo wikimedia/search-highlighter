@@ -15,7 +15,7 @@ public class OffsetSnippetFormatter implements SnippetFormatter {
         if (itr.hasNext()) {
             Hit hit = itr.next();
             b.append(hit.startOffset()).append('-').append(hit.endOffset());
-            while(itr.hasNext()){
+            while (itr.hasNext()) {
                 hit = itr.next();
                 b.append(',').append(hit.startOffset()).append('-').append(hit.endOffset());
             }

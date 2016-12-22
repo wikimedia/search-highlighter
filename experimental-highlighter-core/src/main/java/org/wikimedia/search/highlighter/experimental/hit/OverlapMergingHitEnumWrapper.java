@@ -107,7 +107,7 @@ public class OverlapMergingHitEnumWrapper extends AbstractHitEnum {
     @Override
     public void toGraph(GraphvizHitEnumGenerator generator) {
         super.toGraph(generator);
-        if(delegate != null) {
+        if (delegate != null) {
             generator.addChild(this, delegate);
         }
     }

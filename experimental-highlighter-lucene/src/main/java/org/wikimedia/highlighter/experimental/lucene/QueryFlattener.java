@@ -444,7 +444,7 @@ public class QueryFlattener {
         }
 
         final Query lowFrequency;
-        if(first.getOccur() == Occur.MUST) {
+        if (first.getOccur() == Occur.MUST) {
             lowFrequency = first.getQuery();
         } else {
             lowFrequency = second.getQuery();
