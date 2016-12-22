@@ -110,7 +110,7 @@ public class GraphvizHitEnumGenerator {
         links.add(new Link(getHitEnumId(parent), getHitEnumId(child)));
     }
 
-    private class Link {
+    private static final class Link {
         private final int from;
         private final int to;
         private Link(int from, int to) {

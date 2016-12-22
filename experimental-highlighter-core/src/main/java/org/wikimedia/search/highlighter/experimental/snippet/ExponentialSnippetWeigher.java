@@ -1,5 +1,6 @@
 package org.wikimedia.search.highlighter.experimental.snippet;
 
+import java.io.Serializable;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
@@ -58,7 +59,7 @@ public class ExponentialSnippetWeigher implements SnippetWeigher {
         return weight;
     }
 
-    private static class SourceComparator implements Comparator<Hit> {
+    private static class SourceComparator implements Comparator<Hit>, Serializable {
         @Override
         public int compare(Hit lhs, Hit rhs) {
             return Integer.compare(lhs.source(), rhs.source());

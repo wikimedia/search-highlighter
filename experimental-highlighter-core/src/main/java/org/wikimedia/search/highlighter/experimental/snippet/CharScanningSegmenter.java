@@ -2,6 +2,7 @@ package org.wikimedia.search.highlighter.experimental.snippet;
 
 import java.util.Arrays;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.wikimedia.search.highlighter.experimental.Segment;
 import org.wikimedia.search.highlighter.experimental.Segmenter;
 import org.wikimedia.search.highlighter.experimental.SimpleSegment;
@@ -10,6 +11,7 @@ import org.wikimedia.search.highlighter.experimental.SimpleSegment;
  * Scans a char sequence looking for "boundary characters" to find that start
  * and end offset. Very similar to Lucene's SimpleBoundaryScanner.
  */
+@SuppressFBWarnings("EI_EXPOSE_REP2")
 public class CharScanningSegmenter implements Segmenter {
     private static final char[] DEFAULT_BOUNDARY_CHARACTERS = { '\t', '\n', ' ', '!', ',', '.', '?' };
     private final CharSequence source;

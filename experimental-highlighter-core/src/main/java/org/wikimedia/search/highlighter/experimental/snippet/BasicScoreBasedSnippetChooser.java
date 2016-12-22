@@ -5,6 +5,7 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.wikimedia.search.highlighter.experimental.Segment;
 import org.wikimedia.search.highlighter.experimental.Segmenter;
 import org.wikimedia.search.highlighter.experimental.Snippet;
@@ -162,16 +163,18 @@ public class BasicScoreBasedSnippetChooser extends AbstractBasicSnippetChooser<B
          */
         WEIGHT {
             @Override
+            @SuppressFBWarnings(
+                    value = "CO_COMPARETO_INCORRECT_FLOATING",
+                    justification = "The float comparison here should never occur with the strange NAN or -0.0 values")
             public int compare(ProtoSnippet o1, ProtoSnippet o2) {
-                if (o1.weight != o2.weight) {
-                    return o1.weight > o2.weight ? -1 : 1;
-                }
+                if (o1.weight > o2.weight) return -1;
+                if (o1.weight < o2.weight) return 1;
                 return 0;
             }
         }
     }
 
-    private class ProtoSnippetQueue extends PriorityQueue<ProtoSnippet> {
+    private static final class ProtoSnippetQueue extends PriorityQueue<ProtoSnippet> {
         public ProtoSnippetQueue(int maxSize) {
             super(maxSize);
         }

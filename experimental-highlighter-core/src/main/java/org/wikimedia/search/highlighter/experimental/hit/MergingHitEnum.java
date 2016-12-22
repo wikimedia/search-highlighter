@@ -1,9 +1,6 @@
 package org.wikimedia.search.highlighter.experimental.hit;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
+import java.util.*;
 
 import org.wikimedia.search.highlighter.experimental.HitEnum;
 import org.wikimedia.search.highlighter.experimental.LessThan;
@@ -137,6 +134,7 @@ public class MergingHitEnum extends AbstractHitEnum {
 
                 @Override
                 public HitEnum next() {
+                    if (!hasNext()) throw new NoSuchElementException();
                     return (HitEnum) getHeapArray()[cur++];
                 }
 

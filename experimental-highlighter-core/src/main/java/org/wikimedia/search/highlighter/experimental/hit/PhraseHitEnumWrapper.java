@@ -5,6 +5,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.wikimedia.search.highlighter.experimental.HitEnum;
 import org.wikimedia.search.highlighter.experimental.tools.GraphvizHitEnumGenerator;
 
@@ -13,6 +14,7 @@ import org.wikimedia.search.highlighter.experimental.tools.GraphvizHitEnumGenera
  *
  * TODO this weight phrases too low because it doesn't include the default similarity
  */
+@SuppressFBWarnings("EI_EXPOSE_REP2")
 public class PhraseHitEnumWrapper extends AbstractHitEnum {
     /**
      * Expands non-multi-phrase arrays into multi-phrase arrays so we can always
