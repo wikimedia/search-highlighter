@@ -2,15 +2,15 @@ package org.wikimedia.highlighter.experimental.lucene.hit;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
-import static org.wikimedia.search.highlighter.experimental.Matchers.advances;
-import static org.wikimedia.search.highlighter.experimental.Matchers.hit;
-import static org.wikimedia.search.highlighter.experimental.Matchers.isEmpty;
+import static org.wikimedia.highlighter.experimental.Matchers.advances;
+import static org.wikimedia.highlighter.experimental.Matchers.hit;
+import static org.wikimedia.highlighter.experimental.Matchers.isEmpty;
 
 import org.apache.lucene.util.automaton.RegExp;
 import org.junit.Test;
 import org.wikimedia.search.highlighter.experimental.HitEnum;
 import org.wikimedia.search.highlighter.experimental.SourceExtracter;
-import org.wikimedia.search.highlighter.experimental.hit.AbstractHitEnumTestBase;
+import org.wikimedia.highlighter.experimental.lucene.hit.AbstractHitEnumTestBase;
 import org.wikimedia.search.highlighter.experimental.source.StringSourceExtracter;
 
 public class AutomatonHitEnumTest extends AbstractHitEnumTestBase {

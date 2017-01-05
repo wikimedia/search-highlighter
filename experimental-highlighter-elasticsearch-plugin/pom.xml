@@ -60,20 +60,6 @@
       <version>${elasticsearch.version}</version>
       <scope>test</scope>
     </dependency>
-    <dependency>
-      <groupId>org.wikimedia.search.highlighter</groupId>
-      <artifactId>experimental-highlighter-core</artifactId>
-      <version>${project.parent.version}</version>
-      <type>test-jar</type>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.wikimedia.search.highlighter</groupId>
-      <artifactId>experimental-highlighter-lucene</artifactId>
-      <version>${project.parent.version}</version>
-      <type>test-jar</type>
-      <scope>test</scope>
-    </dependency>
     <!-- override dep inherited from experimental-highlighter-lucene -->
     <dependency>
       <groupId>com.google.guava</groupId>

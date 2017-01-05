@@ -2,9 +2,9 @@ package org.wikimedia.highlighter.experimental.lucene.hit;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
-import static org.wikimedia.search.highlighter.experimental.Matchers.advances;
-import static org.wikimedia.search.highlighter.experimental.Matchers.hit;
-import static org.wikimedia.search.highlighter.experimental.Matchers.isEmpty;
+import static org.wikimedia.highlighter.experimental.Matchers.advances;
+import static org.wikimedia.highlighter.experimental.Matchers.hit;
+import static org.wikimedia.highlighter.experimental.Matchers.isEmpty;
 
 import java.util.ArrayList;
 import java.util.Arrays;

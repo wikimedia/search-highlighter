@@ -11,7 +11,7 @@ import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.util.automaton.CharacterRunAutomaton;
 import org.apache.lucene.util.automaton.RegExp;
 import org.junit.After;
-import org.wikimedia.search.highlighter.experimental.hit.AbstractHitEnumTestBase;
+import org.wikimedia.highlighter.experimental.lucene.hit.AbstractHitEnumTestBase;
 
 /**
  * Base class for tests for Lucene based HitEnums.
