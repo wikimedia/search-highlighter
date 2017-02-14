@@ -442,7 +442,7 @@ public class QueryFlattener {
                 maxMultiTermQueryTerms);
         try {
             return method.rewrite(reader, query);
-        } catch(IOException ioe) {
+        } catch (IOException ioe) {
             throw new WrappedExceptionFromLucene(ioe);
         }
     }
