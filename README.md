@@ -34,7 +34,8 @@ Elasticsearch installation
 
 | Experimental Highlighter Plugin |  ElasticSearch  |
 |---------------------------------|-----------------|
-| 2.4.1, master branch            | 2.4.1           |
+| 5.1.2, master branch            | 5.1.2           |
+| 2.4.1                           | 2.4.1           |
 | 2.4.0,                          | 2.4.0           |
 | 2.3.5, 2.3 branch               | 2.3.5           |
 | 2.3.4                           | 2.3.4           |
