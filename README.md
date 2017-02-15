@@ -51,6 +51,11 @@ Elasticsearch installation
 | 0.0.10                          | 1.2.X           |
 | 0.0.1 -> 0.0.9                  | 1.1.X           |
 
+Install it like so for Elasticsearch 5.x.x:
+```bash
+./bin/elasticsearch-plugin install org.wikimedia.search.highlighter:experimental-highlighter-elasticsearch-plugin:5.x.x
+```
+
 Install it like so for Elasticsearch 2.x.x:
 ```bash
 ./bin/plugin install org.wikimedia.search.highlighter/experimental-highlighter-elasticsearch-plugin/2.x.x
