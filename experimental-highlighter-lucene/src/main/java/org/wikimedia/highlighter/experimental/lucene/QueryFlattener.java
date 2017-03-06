@@ -1,10 +1,5 @@
 package org.wikimedia.highlighter.experimental.lucene;
 
-import java.io.IOException;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.queries.CommonTermsQuery;
@@ -22,6 +17,7 @@ import org.apache.lucene.search.PhraseQuery;
 import org.apache.lucene.search.PrefixQuery;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.RegexpQuery;
+import org.apache.lucene.search.SynonymQuery;
 import org.apache.lucene.search.TermQuery;
 import org.apache.lucene.search.WildcardQuery;
 import org.apache.lucene.search.spans.SpanNearQuery;
@@ -35,6 +31,11 @@ import org.apache.lucene.util.automaton.Automata;
 import org.apache.lucene.util.automaton.Automaton;
 import org.apache.lucene.util.automaton.LevenshteinAutomata;
 import org.apache.lucene.util.automaton.Operations;
+
+import java.io.IOException;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 /**
  * Flattens {@link Query}s similarly to Lucene's FieldQuery.
@@ -144,6 +145,8 @@ public class QueryFlattener {
             flattenQuery((PrefixQuery) query, pathBoost, sourceOverride, reader, callback);
         } else if (query instanceof CommonTermsQuery) {
             flattenQuery((CommonTermsQuery) query, pathBoost, sourceOverride, reader, callback);
+        } else if (query instanceof SynonymQuery) {
+            flattenQuery((SynonymQuery) query, pathBoost, sourceOverride, reader, callback);
         } else if (!flattenUnknown(query, pathBoost, sourceOverride, reader, callback)) {
             Query newRewritten = rewriteQuery(query, pathBoost, sourceOverride, reader);
             if (newRewritten != query) {
@@ -325,6 +328,13 @@ public class QueryFlattener {
         }
         Object source = sourceOverride == null ? query.getTerm().bytes() : sourceOverride;
         callback.flattened(query.getAutomaton(), pathBoost, source.hashCode());
+    }
+
+    protected void flattenQuery(SynonymQuery query, float pathBoost, Object sourceOverride,
+                                IndexReader reader, Callback callback) {
+        for (Term t : query.getTerms()) {
+            callback.flattened(t.bytes(), pathBoost, sourceOverride);
+        }
     }
 
     protected void flattenQuery(PrefixQuery query, float pathBoost, Object sourceOverride,
