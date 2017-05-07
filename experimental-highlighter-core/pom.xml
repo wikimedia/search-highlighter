@@ -3,7 +3,7 @@
   <parent>
     <groupId>org.wikimedia.search.highlighter</groupId>
     <artifactId>experimental</artifactId>
-    <version>5.3.3-SNAPSHOT</version>
+    <version>5.4.0-SNAPSHOT</version>
   </parent>
   <artifactId>experimental-highlighter-core</artifactId>
   <packaging>jar</packaging>

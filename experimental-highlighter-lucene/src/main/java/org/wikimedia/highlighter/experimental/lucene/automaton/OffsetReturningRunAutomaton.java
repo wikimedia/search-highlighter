@@ -10,7 +10,7 @@ import org.apache.lucene.util.automaton.RunAutomaton;
  */
 public class OffsetReturningRunAutomaton extends RunAutomaton {
     public OffsetReturningRunAutomaton(Automaton a, boolean utf8) {
-        super(a, Character.MAX_CODE_POINT, true);
+        super(a, Character.MAX_CODE_POINT);
     }
 
     /**

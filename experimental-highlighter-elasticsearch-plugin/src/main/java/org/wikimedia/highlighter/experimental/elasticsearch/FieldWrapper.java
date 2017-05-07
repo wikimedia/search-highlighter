@@ -1,12 +1,5 @@
 package org.wikimedia.highlighter.experimental.elasticsearch;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
-
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.index.IndexOptions;
@@ -36,6 +29,13 @@ import org.wikimedia.search.highlighter.experimental.hit.weight.ConstantTermWeig
 import org.wikimedia.search.highlighter.experimental.snippet.MultiSegmenter;
 import org.wikimedia.search.highlighter.experimental.source.NonMergingMultiSourceExtracter;
 import org.wikimedia.search.highlighter.experimental.source.StringSourceExtracter;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 
 public class FieldWrapper {
     private final HighlightExecutionContext executionContext;
@@ -68,7 +68,7 @@ public class FieldWrapper {
     public FieldWrapper(HighlightExecutionContext executionContext, HighlighterContext context,
             BasicQueryWeigher weigher, String fieldName) {
         assert !context.fieldName.equals(fieldName);
-        FieldMapper mapper = context.context.mapperService().documentMapper(context.hitContext.hit().type()).mappers().smartNameFieldMapper(fieldName);
+        FieldMapper mapper = context.context.mapperService().documentMapper(context.hitContext.hit().getType()).mappers().smartNameFieldMapper(fieldName);
         this.executionContext = executionContext;
         this.context = new HighlighterContext(fieldName, context.field, mapper, context.context,
                 context.hitContext, context.query);

@@ -10,7 +10,7 @@
 
   <groupId>org.wikimedia.search.highlighter</groupId>
   <artifactId>experimental</artifactId>
-  <version>5.3.3-SNAPSHOT</version>
+  <version>5.4.0-SNAPSHOT</version>
   <packaging>pom</packaging>
 
   <modules>
@@ -51,10 +51,11 @@
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <elasticsearch.version>5.3.2</elasticsearch.version>
+    <elasticsearch.version>5.4.0</elasticsearch.version>
     <!-- For the Elasticsearch plugin to work this should match the version of Lucene that Elasticsearch
       uses. -->
-    <lucene.version>6.4.2</lucene.version>
+    <lucene.version>6.5.0</lucene.version>
+    <randomizedtesting.version>2.5.0</randomizedtesting.version>
     <maven.compiler.target>1.8</maven.compiler.target>
     <maven.compiler.source>1.8</maven.compiler.source>
   </properties>
@@ -168,7 +169,7 @@
         <plugin>
           <groupId>com.carrotsearch.randomizedtesting</groupId>
           <artifactId>junit4-maven-plugin</artifactId>
-          <version>2.4.0</version>
+          <version>${randomizedtesting.version}</version>
           <executions>
             <execution>
               <id>tests</id>
@@ -363,7 +364,7 @@
       <dependency>
         <groupId>com.carrotsearch.randomizedtesting</groupId>
         <artifactId>randomizedtesting-runner</artifactId>
-        <version>2.4.0</version>
+        <version>${randomizedtesting.version}</version>
         <scope>test</scope>
       </dependency>
       <dependency>
