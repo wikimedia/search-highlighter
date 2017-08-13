@@ -1,16 +1,5 @@
 package org.wikimedia.highlighter.experimental.elasticsearch;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Set;
-import java.util.regex.Pattern;
-
 import org.apache.logging.log4j.Logger;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.util.automaton.RegExp;
@@ -45,6 +34,17 @@ import org.wikimedia.search.highlighter.experimental.snippet.SumSnippetWeigher;
 import org.wikimedia.search.highlighter.experimental.tools.GraphvizHit;
 import org.wikimedia.search.highlighter.experimental.tools.GraphvizHitEnum;
 import org.wikimedia.search.highlighter.experimental.tools.GraphvizSnippetFormatter;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
+import java.util.regex.Pattern;
 
 public class ExperimentalHighlighter implements Highlighter {
     public static final String NAME = "experimental";
@@ -134,6 +134,7 @@ public class ExperimentalHighlighter implements Highlighter {
 
     static class HighlightExecutionContext {
         private static final String OPTION_RETURN_DEBUG_GRAPH = "return_debug_graph";
+        private static final String OPTION_RETURN_SNIPPETS_WITH_OFFSET = "return_snippets_and_offsets";
         private static final int DEFAULT_MAX_DETERMINIZED_STATES = 20000;
         private final HighlighterContext context;
         private final CacheEntry cache;
@@ -522,6 +523,9 @@ public class ExperimentalHighlighter implements Highlighter {
                 formatter = new OffsetSnippetFormatter();
             } else if (getOption(OPTION_RETURN_DEBUG_GRAPH, false)) {
                 formatter = new GraphvizSnippetFormatter(defaultField.buildSourceExtracter());
+            } else if (getOption(OPTION_RETURN_SNIPPETS_WITH_OFFSET, false)) {
+                formatter = new OffsetAugmenterSnippetFormatter(new SnippetFormatter.Default(defaultField.buildSourceExtracter(), context.field.fieldOptions().preTags()[0],
+                        context.field.fieldOptions().postTags()[0]));
             } else {
                 formatter = new SnippetFormatter.Default(defaultField.buildSourceExtracter(), context.field.fieldOptions().preTags()[0],
                         context.field.fieldOptions().postTags()[0]);
