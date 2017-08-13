@@ -1,8 +1,35 @@
 package org.wikimedia.highlighter.experimental.elasticsearch.integration;
 
-import static org.elasticsearch.index.query.QueryBuilders.idsQuery;
+import com.google.common.base.Charsets;
+import com.google.common.collect.ImmutableList;
+import com.google.common.io.Resources;
+import org.elasticsearch.action.admin.indices.forcemerge.ForceMergeResponse;
+import org.elasticsearch.action.bulk.BulkRequestBuilder;
+import org.elasticsearch.action.index.IndexRequestBuilder;
+import org.elasticsearch.action.search.SearchRequestBuilder;
+import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.common.StopWatch;
+import org.elasticsearch.common.unit.Fuzziness;
+import org.elasticsearch.common.xcontent.XContentBuilder;
+import org.elasticsearch.common.xcontent.json.JsonXContent;
+import org.elasticsearch.index.query.BoolQueryBuilder;
+import org.elasticsearch.index.query.QueryBuilder;
+import org.elasticsearch.search.fetch.subphase.highlight.HighlightBuilder;
+import org.junit.Test;
+import org.wikimedia.highlighter.experimental.elasticsearch.AbstractExperimentalHighlighterIntegrationTestBase;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.concurrent.ExecutionException;
+
 import static org.elasticsearch.index.query.QueryBuilders.boolQuery;
 import static org.elasticsearch.index.query.QueryBuilders.fuzzyQuery;
+import static org.elasticsearch.index.query.QueryBuilders.idsQuery;
 import static org.elasticsearch.index.query.QueryBuilders.matchPhrasePrefixQuery;
 import static org.elasticsearch.index.query.QueryBuilders.matchQuery;
 import static org.elasticsearch.index.query.QueryBuilders.prefixQuery;
@@ -19,34 +46,6 @@ import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertNotH
 import static org.hamcrest.Matchers.both;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
-
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.concurrent.ExecutionException;
-
-import com.google.common.collect.ImmutableList;
-
-import org.elasticsearch.action.admin.indices.forcemerge.ForceMergeResponse;
-import org.elasticsearch.action.bulk.BulkRequestBuilder;
-import org.elasticsearch.action.index.IndexRequestBuilder;
-import org.elasticsearch.action.search.SearchRequestBuilder;
-import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.common.StopWatch;
-import org.elasticsearch.common.unit.Fuzziness;
-import org.elasticsearch.common.xcontent.XContentBuilder;
-import org.elasticsearch.common.xcontent.json.JsonXContent;
-import org.elasticsearch.index.query.BoolQueryBuilder;
-import org.elasticsearch.index.query.QueryBuilder;
-import org.elasticsearch.search.fetch.subphase.highlight.HighlightBuilder;
-import org.junit.Test;
-import org.wikimedia.highlighter.experimental.elasticsearch.AbstractExperimentalHighlighterIntegrationTestBase;
-
-import com.google.common.base.Charsets;
-import com.google.common.io.Resources;
 
 /**
  * Miscellaneous integration test that don't really have a good home.
@@ -428,6 +427,28 @@ public class MiscellaneousTest extends AbstractExperimentalHighlighterIntegratio
         SearchResponse response = testSearch(matchQuery("test.english", "test"),
                 x -> x.options(options).field("test.english")).get();
         assertHighlight(response, 0, "test.english", 0, equalTo("0:0-5,18-22:22"));
+    }
+
+    @Test
+    public void offsetsAugmenter() throws IOException {
+        buildIndex();
+        indexTestData();
+        Map<String, Object> options = new HashMap<String, Object>();
+        options.put("return_snippets_and_offsets", true);
+        SearchResponse response = testSearch(matchQuery("test.english", "test"),
+                x -> x.options(options).field("test.english")).get();
+        assertHighlight(response, 0, "test.english", 0, equalTo("0:0-5,18-22:22|<em>tests</em> very simple <em>test</em>"));
+    }
+
+    @Test
+    public void offsetsAugmenterWithEmptyArray() throws IOException {
+        buildIndex();
+        indexTestData(Arrays.asList("", "after_empty_array"));
+        Map<String, Object> options = new HashMap<String, Object>();
+        options.put("return_snippets_and_offsets", true);
+        SearchResponse response = testSearch(matchQuery("test.english", "after_empty_array"),
+                x -> x.options(options).field("test.english")).get();
+        assertHighlight(response, 0, "test.english", 0, equalTo("1:1-18:18|<em>after_empty_array</em>"));
     }
 
     @Test
