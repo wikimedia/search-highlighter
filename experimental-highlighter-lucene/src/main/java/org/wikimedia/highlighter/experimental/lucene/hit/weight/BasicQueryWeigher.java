@@ -205,7 +205,7 @@ public class BasicQueryWeigher implements TermWeigher<BytesRef>, TermSourceFinde
             StringBuilder b = new StringBuilder();
             for (int p = 0; p < phrase.length; p++) {
                 if (p != 0) {
-                    b.append(":");
+                    b.append(':');
                 }
                 b.append(Arrays.toString(phrase[p]));
             }

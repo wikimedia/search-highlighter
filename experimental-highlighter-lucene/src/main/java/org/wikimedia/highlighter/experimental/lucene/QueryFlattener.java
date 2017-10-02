@@ -38,16 +38,19 @@ import org.apache.lucene.util.automaton.Automaton;
 import org.apache.lucene.util.automaton.LevenshteinAutomata;
 import org.apache.lucene.util.automaton.Operations;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 /**
  * Flattens {@link Query}s similarly to Lucene's FieldQuery.
  */
 @SuppressWarnings("checkstyle:classfanoutcomplexity") // should be fixed at some point
+@SuppressFBWarnings(value = "UCC_UNRELATED_COLLECTION_CONTENTS", justification = "sentAutomata is used to check different kinds objects")
 public class QueryFlattener {
     /**
      * Some queries are inefficient to rebuild multiple times so we store some
      * information about them here and check if we've already seen them.
      */
-    private final Set<Object> sentAutomata = new HashSet<Object>();
+    private final Set<Object> sentAutomata = new HashSet<>();
     private final int maxMultiTermQueryTerms;
     private final boolean phraseAsTerms;
     private final boolean removeHighFrequencyTermsFromCommonTerms;
@@ -218,6 +221,9 @@ public class QueryFlattener {
         }
     }
 
+    @SuppressFBWarnings(
+            value = "OCP_OVERLY_CONCRETE_PARAMETER",
+            justification = "Using a specific type is required as different behaviour are expected")
     protected void flattenQuery(BooleanQuery query, float pathBoost, Object sourceOverride,
             IndexReader reader, Callback callback) {
         for (BooleanClause clause : query) {
@@ -234,6 +240,9 @@ public class QueryFlattener {
         }
     }
 
+    @SuppressFBWarnings(
+            value = "OCP_OVERLY_CONCRETE_PARAMETER",
+            justification = "Using a specific type is required as different behaviour are expected")
     protected void flattenQuery(DisjunctionMaxQuery query, float pathBoost, Object sourceOverride,
             IndexReader reader, Callback callback) {
         for (Query clause : query) {
@@ -495,13 +504,7 @@ public class QueryFlattener {
         // Eclipse made these:
         @Override
         public int hashCode() {
-            final int prime = 31;
-            int result = 1;
-            result = prime * result + maxEdits;
-            result = prime * result + prefixLength;
-            result = prime * result + ((term == null) ? 0 : term.hashCode());
-            result = prime * result + (transpositions ? 1231 : 1237);
-            return result;
+            return Objects.hash(maxEdits, prefixLength, term, transpositions);
         }
 
         @Override

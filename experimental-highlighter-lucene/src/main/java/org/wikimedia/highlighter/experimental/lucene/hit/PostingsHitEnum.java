@@ -24,11 +24,16 @@ import org.wikimedia.search.highlighter.experimental.hit.MergingHitEnum;
 import org.wikimedia.search.highlighter.experimental.hit.TermSourceFinder;
 import org.wikimedia.search.highlighter.experimental.hit.TermWeigher;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 /**
  * Hit enum that pulls its information from a {@link PostingsEnum}
  * positioned on the appropriate doc. The hits are in document order in for a
  * single term.
  */
+@SuppressFBWarnings(
+        value = "EXS_EXCEPTION_SOFTENING_NO_CHECKED",
+        justification = "The contract of AbstractHitEnum makes sense without exposing IOException")
 public class PostingsHitEnum extends AbstractHitEnum {
     public static HitEnum fromTermVectors(IndexReader reader, int docId, String fieldName,
             CompiledAutomaton acceptable, TermWeigher<BytesRef> queryWeigher,
@@ -39,7 +44,7 @@ public class PostingsHitEnum extends AbstractHitEnum {
             // No term vectors so no hits
             return EmptyHitEnum.INSTANCE;
         }
-        return fromTerms(vectors.terms(fieldName), acceptable, reader, -1, queryWeigher,
+        return fromTerms(vectors.terms(fieldName), acceptable, -1, queryWeigher,
                 corpusWeigher, sourceFinder);
     }
 
@@ -52,13 +57,14 @@ public class PostingsHitEnum extends AbstractHitEnum {
         LeafReaderContext subcontext = leaves.get(leaf);
         LeafReader atomicReader = subcontext.reader();
         docId -= subcontext.docBase;
-        return fromTerms(atomicReader.terms(fieldName), acceptable, reader, docId,
+        return fromTerms(atomicReader.terms(fieldName), acceptable, docId,
                 queryWeigher, corpusWeigher, sourceFinder);
     }
 
-    private static HitEnum fromTerms(Terms terms, CompiledAutomaton acceptable, IndexReader reader,
-            int docId, TermWeigher<BytesRef> queryWeigher, TermWeigher<BytesRef> corpusWeigher,
-            TermSourceFinder<BytesRef> sourceFinder) throws IOException {
+    private static HitEnum fromTerms(Terms terms, CompiledAutomaton acceptable,
+                                     int docId, TermWeigher<BytesRef> queryWeigher,
+                                     TermWeigher<BytesRef> corpusWeigher,
+                                     TermSourceFinder<BytesRef> sourceFinder) throws IOException {
         if (terms == null) {
             // No term vectors on field so no hits
             return EmptyHitEnum.INSTANCE;

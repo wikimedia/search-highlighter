@@ -13,6 +13,8 @@ import org.wikimedia.search.highlighter.experimental.hit.TermSourceFinder;
 import org.wikimedia.search.highlighter.experimental.hit.TermWeigher;
 import org.wikimedia.search.highlighter.experimental.hit.WeightFilteredHitEnumWrapper;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 /**
  * Enumerate hits by pumping a TokenStream.  Similar to how the "plain" highlighter works in Lucene.  Note that this will enumerate all hits, even those
  * that have 0 weight.  It really should be wrapped with a {@link WeightFilteredHitEnumWrapper} to filter out hits with 0 weight.
@@ -51,6 +53,9 @@ public class TokenStreamHitEnum extends AbstractHitEnum {
     }
 
     @Override
+    @SuppressFBWarnings(
+            value = "EXS_EXCEPTION_SOFTENING_NO_CHECKED",
+            justification = "The contract of AbstractHitEnum makes sense without exposing IOException")
     public boolean next() {
         try {
             if (!tokenStream.incrementToken()) {
