@@ -1,5 +1,11 @@
 package org.wikimedia.highlighter.experimental.lucene;
 
+import java.io.IOException;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Objects;
+import java.util.Set;
+
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.queries.CommonTermsQuery;
@@ -32,14 +38,10 @@ import org.apache.lucene.util.automaton.Automaton;
 import org.apache.lucene.util.automaton.LevenshteinAutomata;
 import org.apache.lucene.util.automaton.Operations;
 
-import java.io.IOException;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-
 /**
  * Flattens {@link Query}s similarly to Lucene's FieldQuery.
  */
+@SuppressWarnings("checkstyle:classfanoutcomplexity") // should be fixed at some point
 public class QueryFlattener {
     /**
      * Some queries are inefficient to rebuild multiple times so we store some
@@ -115,6 +117,7 @@ public class QueryFlattener {
         return phraseAsTerms;
     }
 
+    @SuppressWarnings("checkstyle:CyclomaticComplexity") // cyclomatic complexity is high, but the code is simple to read
     protected void flatten(Query query, float pathBoost, Object sourceOverride, IndexReader reader,
             Callback callback) {
         if (query instanceof TermQuery) {
@@ -387,6 +390,7 @@ public class QueryFlattener {
         callback.flattened(automaton, boost, source.hashCode());
     }
 
+    @SuppressWarnings({"checkstyle:CyclomaticComplexity", "checkstyle:NPathComplexity"})
     protected void flattenQuery(CommonTermsQuery query, float pathBoost, Object sourceOverride,
             IndexReader reader, Callback callback) {
         Query rewritten = rewriteQuery(query, pathBoost, sourceOverride, reader);
@@ -481,7 +485,7 @@ public class QueryFlattener {
         private final boolean transpositions;
         private final int prefixLength;
 
-        public FuzzyQueryInfo(String term, FuzzyQuery query) {
+        FuzzyQueryInfo(String term, FuzzyQuery query) {
             this.term = term;
             this.maxEdits = query.getMaxEdits();
             this.transpositions = query.getTranspositions();
@@ -509,18 +513,10 @@ public class QueryFlattener {
             if (getClass() != obj.getClass())
                 return false;
             FuzzyQueryInfo other = (FuzzyQueryInfo) obj;
-            if (maxEdits != other.maxEdits)
-                return false;
-            if (prefixLength != other.prefixLength)
-                return false;
-            if (term == null) {
-                if (other.term != null)
-                    return false;
-            } else if (!term.equals(other.term))
-                return false;
-            if (transpositions != other.transpositions)
-                return false;
-            return true;
+            return Objects.equals(maxEdits, other.maxEdits)
+                    && Objects.equals(prefixLength, other.prefixLength)
+                    && Objects.equals(term, other.term)
+                    && Objects.equals(transpositions, other.transpositions);
         }
     }
 }

@@ -10,7 +10,6 @@ import org.apache.lucene.util.automaton.RegExp;
 import org.junit.Test;
 import org.wikimedia.search.highlighter.experimental.HitEnum;
 import org.wikimedia.search.highlighter.experimental.SourceExtracter;
-import org.wikimedia.highlighter.experimental.lucene.hit.AbstractHitEnumTestBase;
 import org.wikimedia.search.highlighter.experimental.source.StringSourceExtracter;
 
 public class AutomatonHitEnumTest extends AbstractHitEnumTestBase {

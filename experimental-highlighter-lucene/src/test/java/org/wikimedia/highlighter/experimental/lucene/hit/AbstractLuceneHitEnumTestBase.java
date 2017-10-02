@@ -11,7 +11,6 @@ import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.util.automaton.CharacterRunAutomaton;
 import org.apache.lucene.util.automaton.RegExp;
 import org.junit.After;
-import org.wikimedia.highlighter.experimental.lucene.hit.AbstractHitEnumTestBase;
 
 /**
  * Base class for tests for Lucene based HitEnums.
@@ -19,14 +18,14 @@ import org.wikimedia.highlighter.experimental.lucene.hit.AbstractHitEnumTestBase
 public abstract class AbstractLuceneHitEnumTestBase extends AbstractHitEnumTestBase {
     private final List<TokenStream> builtStreams = new ArrayList<TokenStream>();
     private final List<Analyzer> builtAnalyzers = new ArrayList<Analyzer>();
-    
+
     protected Analyzer mockAnalyzer() {
         // Pretty much MockTokenizer.WHITESPACE with a "." added in to make sentences a bit more sane.
         CharacterRunAutomaton tokenizer = new CharacterRunAutomaton(
                 new RegExp("[^ \t\r\n\\.]+").toAutomaton());
         return trackAnalyzer(new MockAnalyzer(new Random(), tokenizer, true));
     }
-    
+
     protected Analyzer trackAnalyzer(Analyzer analyzer) {
         builtAnalyzers.add(analyzer);
         return analyzer;

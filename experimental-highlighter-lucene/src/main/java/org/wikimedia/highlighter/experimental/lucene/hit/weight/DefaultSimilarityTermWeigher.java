@@ -7,7 +7,6 @@ import org.apache.lucene.index.Term;
 import org.apache.lucene.search.similarities.ClassicSimilarity;
 import org.apache.lucene.util.BytesRef;
 import org.wikimedia.highlighter.experimental.lucene.WrappedExceptionFromLucene;
-
 import org.wikimedia.search.highlighter.experimental.hit.TermWeigher;
 
 /**

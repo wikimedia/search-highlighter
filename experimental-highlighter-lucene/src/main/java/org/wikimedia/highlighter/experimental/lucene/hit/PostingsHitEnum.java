@@ -92,6 +92,8 @@ public class PostingsHitEnum extends AbstractHitEnum {
             return EmptyHitEnum.INSTANCE;
         case 1:
             return enums.get(0);
+        default:
+            // do nothing, we only handle the simple cases here.
         }
         return new MergingHitEnum(enums, HitEnum.LessThans.POSITION);
     }

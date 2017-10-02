@@ -154,7 +154,7 @@ public class BasicQueryWeigher implements TermWeigher<BytesRef>, TermSourceFinde
         public final Automaton automaton;
         public ByteRunAutomaton compiled;
 
-        public AutomatonSourceInfo(Automaton automaton) {
+        AutomatonSourceInfo(Automaton automaton) {
             this.automaton = automaton;
         }
 
@@ -190,7 +190,7 @@ public class BasicQueryWeigher implements TermWeigher<BytesRef>, TermSourceFinde
         private final int slop;
         private float weight;
 
-        public PhraseInfo(int[][] phrase, int slop, float weight) {
+        PhraseInfo(int[][] phrase, int slop, float weight) {
             this.phrase = phrase;
             this.slop = slop;
             this.weight = weight;
@@ -214,7 +214,7 @@ public class BasicQueryWeigher implements TermWeigher<BytesRef>, TermSourceFinde
     }
 
     private class FlattenerCallback implements QueryFlattener.Callback {
-        private float maxTermWeight = 0;
+        private float maxTermWeight;
         private int[][] phrase;
         private int phrasePosition;
         private int phraseTerm;
@@ -332,7 +332,7 @@ public class BasicQueryWeigher implements TermWeigher<BytesRef>, TermSourceFinde
     private static class PhraseKey {
         private final int[][] phrase;
 
-        public PhraseKey(int[][] phrase) {
+        PhraseKey(int[][] phrase) {
             this.phrase = phrase;
         }
 

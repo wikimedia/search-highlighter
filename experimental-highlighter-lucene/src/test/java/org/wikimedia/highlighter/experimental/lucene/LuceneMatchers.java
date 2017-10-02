@@ -8,7 +8,7 @@ import org.hamcrest.Description;
 import org.hamcrest.Matcher;
 import org.hamcrest.TypeSafeMatcher;
 
-public class LuceneMatchers {
+public final class LuceneMatchers {
     public static Matcher<Automaton> recognises(Term t) {
         return new AutomatonMatchesBytesMatcher(t.bytes());
     }
@@ -21,10 +21,14 @@ public class LuceneMatchers {
         return new AutomatonMatchesBytesMatcher(new BytesRef(s));
     }
 
+    private LuceneMatchers() {
+        // utility class
+    }
+
     private static class AutomatonMatchesBytesMatcher extends TypeSafeMatcher<Automaton> {
         private final BytesRef term;
 
-        public AutomatonMatchesBytesMatcher(BytesRef term) {
+        AutomatonMatchesBytesMatcher(BytesRef term) {
             this.term = term;
         }
 

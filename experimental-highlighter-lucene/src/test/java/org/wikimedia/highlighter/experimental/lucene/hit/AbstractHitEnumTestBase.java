@@ -1,15 +1,18 @@
 package org.wikimedia.highlighter.experimental.lucene.hit;
 
-import com.carrotsearch.randomizedtesting.RandomizedRunner;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.equalTo;
+import static org.wikimedia.highlighter.experimental.Matchers.advances;
+import static org.wikimedia.highlighter.experimental.Matchers.hit;
+import static org.wikimedia.highlighter.experimental.Matchers.isEmpty;
+
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.wikimedia.search.highlighter.experimental.HitEnum;
 import org.wikimedia.search.highlighter.experimental.SourceExtracter;
 import org.wikimedia.search.highlighter.experimental.source.StringSourceExtracter;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.equalTo;
-import static org.wikimedia.highlighter.experimental.Matchers.*;
+import com.carrotsearch.randomizedtesting.RandomizedRunner;
 
 /**
  * XXX: copied from core (tests dependencies are troublesome)

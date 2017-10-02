@@ -1,6 +1,25 @@
 package org.wikimedia.highlighter.experimental.lucene;
 
-import com.google.common.collect.Lists;
+import static org.hamcrest.Matchers.not;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyFloat;
+import static org.mockito.Matchers.anyInt;
+import static org.mockito.Matchers.anyString;
+import static org.mockito.Matchers.eq;
+import static org.mockito.Matchers.isNull;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+import static org.wikimedia.highlighter.experimental.lucene.LuceneMatchers.recognises;
+
+import java.io.Closeable;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
 import org.apache.lucene.analysis.core.KeywordAnalyzer;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.document.TextField;
@@ -30,25 +49,7 @@ import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.wikimedia.highlighter.experimental.lucene.QueryFlattener.Callback;
 
-import java.io.Closeable;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-
-import static org.hamcrest.Matchers.not;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyFloat;
-import static org.mockito.Matchers.anyInt;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.eq;
-import static org.mockito.Matchers.isNull;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-import static org.wikimedia.highlighter.experimental.lucene.LuceneMatchers.recognises;
+import com.google.common.collect.Lists;
 
 public class QueryFlattenerTest extends LuceneTestCase {
     private final List<Closeable> toClose = new ArrayList<>();
