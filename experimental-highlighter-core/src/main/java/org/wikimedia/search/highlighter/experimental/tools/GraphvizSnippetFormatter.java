@@ -33,7 +33,7 @@ public class GraphvizSnippetFormatter implements SnippetFormatter {
             b.append(extracter.extract(hit.startOffset(), hit.endOffset()))
                 .append(" => \n")
                 .append(hitGraph.getGraph())
-                .append("\n");
+                .append('\n');
         }
         return b.toString();
     }

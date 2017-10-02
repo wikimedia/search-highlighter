@@ -17,6 +17,8 @@ package org.wikimedia.search.highlighter.experimental.extern;
  * limitations under the License.
  */
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 /**
  * This is Lucene's PriorityQueue copied here to prevent the core from depending
  * on Lucene.  It is too good not to have though.
@@ -50,6 +52,9 @@ public abstract class PriorityQueue<T> {
     }
 
     @SuppressWarnings("unchecked")
+    @SuppressFBWarnings(
+            value = {"PCOA_PARTIALLY_CONSTRUCTED_OBJECT_ACCESS", "PRMC_POSSIBLY_REDUNDANT_METHOD_CALLS"},
+            justification = "Constructor escape is required here.")
     public PriorityQueue(int maxSize, boolean prepopulate) {
         size = 0;
         int heapSize;

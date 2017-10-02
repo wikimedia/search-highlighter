@@ -30,7 +30,7 @@ public class GraphvizHitEnumGenerator {
         hitEnum.toGraph(this);
         graph.append(" }\n");
         writeLinks();
-        graph.append("}");
+        graph.append('}');
         return graph.toString();
     }
 
@@ -62,8 +62,8 @@ public class GraphvizHitEnumGenerator {
             .append("|{")
             .append("pos: ").append(hitEnum.position())
             .append(", offsets: ")
-            .append("[").append(hitEnum.startOffset())
-            .append(", ").append(hitEnum.endOffset()).append("]")
+            .append('[').append(hitEnum.startOffset())
+            .append(", ").append(hitEnum.endOffset()).append(']')
             .append("\\l}")
             .append("|{corpusW:").append(hitEnum.corpusWeight())
             .append(", queryW:").append(hitEnum.queryWeight())
@@ -86,7 +86,7 @@ public class GraphvizHitEnumGenerator {
 
     private void writeLinks() {
         for (Link link : links) {
-            graph.append(" ").append(link.from).append(" -> ").append(link.to).append("\n");
+            graph.append(' ').append(link.from).append(" -> ").append(link.to).append('\n');
         }
     }
 

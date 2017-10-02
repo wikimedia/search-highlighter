@@ -115,6 +115,6 @@ public class OverlapMergingHitEnumWrapper extends AbstractHitEnum {
     @Override
     public String toString() {
         // Union symbol - close enought to merge, right?
-        return "\u222A" + delegate.toString();
+        return "\u222A" + delegate;
     }
 }

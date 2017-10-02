@@ -189,7 +189,7 @@ public class PhraseHitEnumWrapper extends AbstractHitEnum {
         StringBuilder b = new StringBuilder(100).append('[');
         for (int p = 0; p < phrase.length; p++) {
             if (p != 0) {
-                b.append(":");
+                b.append(':');
             }
             b.append(Arrays.toString(phrase[p]));
         }

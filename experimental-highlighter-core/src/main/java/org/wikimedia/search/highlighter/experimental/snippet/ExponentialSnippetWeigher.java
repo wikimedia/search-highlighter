@@ -8,6 +8,8 @@ import java.util.List;
 import org.wikimedia.search.highlighter.experimental.Snippet.Hit;
 import org.wikimedia.search.highlighter.experimental.SnippetWeigher;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 /**
  * Weighs snippets by weighing hits from the same source on an exponential
  * scale. Picking a base just over 1 will make more hits on the same source
@@ -21,6 +23,9 @@ public class ExponentialSnippetWeigher implements SnippetWeigher {
     }
 
     @Override
+    @SuppressFBWarnings(
+            value = "USBR_UNNECESSARY_STORE_BEFORE_RETURN",
+            justification = "More readable with return on its own.")
     public float weigh(List<Hit> hits) {
         // Bail out quickly on some simple corner cases
         switch (hits.size()) {
@@ -36,10 +41,7 @@ public class ExponentialSnippetWeigher implements SnippetWeigher {
         // pack them into a sorted array and walk it then build some kind of
         // hash thing. Maybe there is a better way to do this, but this works
         // for now.
-        Hit[] sorted = new Hit[hits.size()];
-        for (int i = 0; i < hits.size(); i++) {
-            sorted[i] = hits.get(i);
-        }
+        Hit[] sorted = hits.toArray(new Hit[hits.size()]);
         Arrays.sort(sorted, new SourceComparator());
         float weight = 0;
         int lastSource = sorted[0].source();
