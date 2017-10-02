@@ -5,7 +5,7 @@ import org.wikimedia.search.highlighter.experimental.hit.HitWeigher;
 import org.wikimedia.search.highlighter.experimental.hit.TermWeigher;
 
 /**
- *  Adapter from TermHitWeigher to HitWeigher. 
+ * Adapter from TermHitWeigher to HitWeigher.
  */
 public class SourceExtractingHitWeigher<T> implements HitWeigher {
     private final TermWeigher<T> weigher;

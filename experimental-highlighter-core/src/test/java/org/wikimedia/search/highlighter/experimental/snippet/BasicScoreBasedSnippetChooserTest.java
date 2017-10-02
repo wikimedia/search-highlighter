@@ -20,7 +20,7 @@ public class BasicScoreBasedSnippetChooserTest extends AbstractBasicSnippetChoos
 
     @Test
     public void basic() {
-        for (boolean scoreOrdered : new boolean[] { true, false }) {
+        for (boolean scoreOrdered : new boolean[] {true, false}) {
             chooser = new BasicScoreBasedSnippetChooser(scoreOrdered, new SumSnippetWeigher());
             setup("The quick brown fox jumped over the lazy dog.", ImmutableMap.of("lazy", 1f));
             List<Snippet> snippets = chooser.choose(segmenter, hitEnum, 1);

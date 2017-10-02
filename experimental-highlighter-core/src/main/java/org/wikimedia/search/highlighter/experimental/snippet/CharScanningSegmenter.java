@@ -2,10 +2,11 @@ package org.wikimedia.search.highlighter.experimental.snippet;
 
 import java.util.Arrays;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.wikimedia.search.highlighter.experimental.Segment;
 import org.wikimedia.search.highlighter.experimental.Segmenter;
 import org.wikimedia.search.highlighter.experimental.SimpleSegment;
+
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 /**
  * Scans a char sequence looking for "boundary characters" to find that start
@@ -13,7 +14,7 @@ import org.wikimedia.search.highlighter.experimental.SimpleSegment;
  */
 @SuppressFBWarnings("EI_EXPOSE_REP2")
 public class CharScanningSegmenter implements Segmenter {
-    private static final char[] DEFAULT_BOUNDARY_CHARACTERS = { '\t', '\n', ' ', '!', ',', '.', '?' };
+    private static final char[] DEFAULT_BOUNDARY_CHARACTERS = {'\t', '\n', ' ', '!', ',', '.', '?'};
     private final CharSequence source;
     private final char[] boundaryCharacters;
     private final int maxSnippetSize;
@@ -28,7 +29,7 @@ public class CharScanningSegmenter implements Segmenter {
 
     /**
      * Build me.
-     * 
+     *
      * @param boundaryCharacters must be in sorted order
      */
     public CharScanningSegmenter(CharSequence source, char[] boundaryCharacters,
@@ -53,7 +54,7 @@ public class CharScanningSegmenter implements Segmenter {
         private final int maxStartOffset;
         private final int minEndOffset;
 
-        public CharScanningSegmenterMemo(int maxStartOffset, int minEndOffset) {
+        CharScanningSegmenterMemo(int maxStartOffset, int minEndOffset) {
             this.maxStartOffset = maxStartOffset;
             this.minEndOffset = minEndOffset;
         }

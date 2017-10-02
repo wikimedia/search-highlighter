@@ -8,7 +8,7 @@ import org.wikimedia.search.highlighter.experimental.Snippet.Hit;
  * Hit that holds a reference to the graph that reflects the HitEnum
  * state before {@link HitEnum#next()} was called.
  */
-public class GraphvizHit extends Hit {
+public final class GraphvizHit extends Hit {
     private final String graph;
     public static Snippet.HitBuilder GRAPHVIZ_HIT_BUILDER = e -> {
         GraphvizHitEnum graphvizHitEnum = (GraphvizHitEnum) e;

@@ -28,6 +28,8 @@ public class ExponentialSnippetWeigher implements SnippetWeigher {
             return 0;
         case 1:
             return base * hits.get(0).weight();
+        default:
+            // do nothing, we only care about the simple cases
         }
 
         // Since there are normally few hits it _should_ be more efficient to

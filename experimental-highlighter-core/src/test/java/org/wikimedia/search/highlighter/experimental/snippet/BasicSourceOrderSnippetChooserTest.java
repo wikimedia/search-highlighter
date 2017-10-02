@@ -19,7 +19,7 @@ public class BasicSourceOrderSnippetChooserTest extends AbstractBasicSnippetChoo
     protected SnippetChooser build() {
         return new BasicSourceOrderSnippetChooser();
     }
-    
+
     @Test
     @SuppressWarnings("unchecked")
     public void basic() {

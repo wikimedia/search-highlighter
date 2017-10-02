@@ -5,9 +5,8 @@ import java.util.Map;
 
 import org.junit.Test;
 import org.wikimedia.search.highlighter.experimental.hit.TermWeigher;
-import org.wikimedia.search.highlighter.experimental.hit.weight.ExactMatchTermWeigher;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 public class ExactMatchTermWeigherTest {
     @Test

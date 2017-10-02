@@ -47,7 +47,7 @@ public interface HitEnum extends Segment {
      */
     void toGraph(GraphvizHitEnumGenerator generator);
 
-    public static enum LessThans implements LessThan<HitEnum> {
+    enum LessThans implements LessThan<HitEnum> {
         /**
          * Sorts ascending by position.
          */

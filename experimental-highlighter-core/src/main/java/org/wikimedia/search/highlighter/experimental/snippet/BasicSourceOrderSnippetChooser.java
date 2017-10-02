@@ -52,7 +52,7 @@ public class BasicSourceOrderSnippetChooser extends AbstractBasicSnippetChooser<
     }
 
     static class State {
-        private int lastSnippetEnd = 0;
+        private int lastSnippetEnd;
         private int max;
         private Segmenter segmenter;
         private List<Snippet> results;

@@ -100,7 +100,7 @@ public abstract class AbstractBasicSnippetChooserTestBase {
                         extracted(extracter, "dog")));
         // Jumped is not in the list because it is in the margin...
     }
-    
+
     @Test
     @SuppressWarnings("unchecked")
     public void twoHits() {

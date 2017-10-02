@@ -50,7 +50,7 @@ public class PositionBoostingHitEnumWrapper extends AbstractHitEnumWrapper {
         return String.format(Locale.ENGLISH, "%s*%s", boosts, wrapped());
     }
 
-    private static class PositionBoost {
+    private static final class PositionBoost {
         private final int before;
         private final float boost;
 

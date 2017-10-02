@@ -42,7 +42,7 @@ public class WeightFilteredHitEnumWrapperTest {
         assertThat(e, allOf(atPosition(2), atStartOffset(0), atEndOffset(2), atWeight(1.7f), atSource(3)));
         assertThat(e, isEmpty());
     }
-    
+
     @Test
     public void filtersAll() {
         ReplayingHitEnum replaying = new ReplayingHitEnum();

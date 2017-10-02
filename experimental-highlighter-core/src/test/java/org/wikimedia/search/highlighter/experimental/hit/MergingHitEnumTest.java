@@ -3,7 +3,6 @@ package org.wikimedia.search.highlighter.experimental.hit;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.allOf;
 import static org.junit.Assert.assertFalse;
-
 import static org.wikimedia.search.highlighter.experimental.Matchers.advances;
 import static org.wikimedia.search.highlighter.experimental.Matchers.atEndOffset;
 import static org.wikimedia.search.highlighter.experimental.Matchers.atPosition;
@@ -68,10 +67,10 @@ public class MergingHitEnumTest extends RandomizedTest {
         List<Integer> allExpectedPositions = new ArrayList<Integer>();
         List<HitEnum> enums = new ArrayList<HitEnum>();
         int maxEnumCount = between(10, 500);
-        
+
         for (int enumCount = 0; enumCount < maxEnumCount; enumCount++) {
             List<Integer> expectedPositions = new ArrayList<Integer>();
-            int enumMax = rarely() ? 0 : between(1000/maxEnumCount, 100000/maxEnumCount);
+            int enumMax = rarely() ? 0 : between(1000 / maxEnumCount, 100000 / maxEnumCount);
             for (int i = 0; i < enumMax; i++) {
                 expectedPositions.add(getRandom().nextInt());
             }
@@ -83,7 +82,7 @@ public class MergingHitEnumTest extends RandomizedTest {
                 e.record(position, 0, 0, 0, 0);
             }
         }
-        
+
         Collections.sort(allExpectedPositions);
         MergingHitEnum merged = new MergingHitEnum(enums, HitEnum.LessThans.POSITION);
         for (int position: allExpectedPositions) {

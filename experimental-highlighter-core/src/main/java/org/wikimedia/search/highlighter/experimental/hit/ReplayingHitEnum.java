@@ -13,7 +13,7 @@ import org.wikimedia.search.highlighter.experimental.HitEnum;
  * start returning results again.
  */
 public class ReplayingHitEnum extends AbstractHitEnum {
-    private final Queue<Hit> hits = new ArrayDeque<Hit>();
+    private final Queue<Hit> hits = new ArrayDeque<>();
     private Hit current;
 
     /**
@@ -128,7 +128,7 @@ public class ReplayingHitEnum extends AbstractHitEnum {
         final float corpusWeight;
         final int source;
 
-        public Hit(int position, int startOffset, int endOffset, float queryWeight, float corpusWeight, int source) {
+        Hit(int position, int startOffset, int endOffset, float queryWeight, float corpusWeight, int source) {
             this.position = position;
             this.startOffset = startOffset;
             this.endOffset = endOffset;

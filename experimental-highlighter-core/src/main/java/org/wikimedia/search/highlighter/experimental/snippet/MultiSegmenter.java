@@ -21,7 +21,7 @@ public final class MultiSegmenter implements Segmenter {
 
     /**
      * Make a builder for the segmenter.
-     * 
+     *
      * @param offsetGap gap between segmenters
      */
     public static Builder builder(int offsetGap) {
@@ -31,7 +31,7 @@ public final class MultiSegmenter implements Segmenter {
     /**
      * Builder for {@linkplain MultiSegmenter}s.
      */
-    public static class Builder {
+    public static final class Builder {
         private final List<ConstituentSegmenter> segmenters = new ArrayList<ConstituentSegmenter>();
         private final int offsetGap;
 
@@ -41,7 +41,7 @@ public final class MultiSegmenter implements Segmenter {
 
         /**
          * Add a segmenter.
-         * 
+         *
          * @param segmenter the segmenter to delegate to
          * @param length the length of the source underlying the segmenter
          * @return this for chaining
@@ -97,7 +97,7 @@ public final class MultiSegmenter implements Segmenter {
         private final Segmenter segmenter;
         private final int length;
 
-        public ConstituentSegmenter(Segmenter segmenter, int length) {
+        ConstituentSegmenter(Segmenter segmenter, int length) {
             this.segmenter = segmenter;
             this.length = length;
         }
@@ -148,7 +148,7 @@ public final class MultiSegmenter implements Segmenter {
     /**
      * Updates all mutable member variables to point at the segmenter that can
      * segment starting at startOffset.
-     * 
+     *
      * @return did we find a segmenter?
      */
     private boolean updateSegmenter(int startOffset) {
@@ -181,7 +181,7 @@ public final class MultiSegmenter implements Segmenter {
      * whatever it would be in the current segmenter - the current segmenter's
      * length. {@linkplain this#lastStartOffset} must also be pushed to the start
      * offset of the *next* segmenter.
-     * 
+     *
      * @return did we find a segmenter?
      */
     private boolean findSegmenterForwards() {
@@ -202,7 +202,7 @@ public final class MultiSegmenter implements Segmenter {
      * contain the offset. {@linkplain #inSegmenterStartOffset} must contain the
      * start offset that the segment would have in the current segmenter.
      * Because we're going backwards that means that it'll be negative.
-     * 
+     *
      * @return did we find a segmenter?
      */
     private boolean findSegmenterBackwards() {
@@ -219,7 +219,7 @@ public final class MultiSegmenter implements Segmenter {
         return false;
     }
 
-    private static class MulitSegmenterMemo implements Memo {
+    private static final class MulitSegmenterMemo implements Memo {
         private final int lastStartOffset;
         private final int segmenterLength;
         private final Memo memo;

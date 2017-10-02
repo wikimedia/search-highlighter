@@ -178,7 +178,7 @@ public class CharScanningSegmenterTest extends RandomizedTest {
     }
 
     @Test
-    @Repeat(iterations=1000)
+    @Repeat(iterations = 1000)
     public void randomSegments() {
         int minStart = between(-100, 400);
         int maxStart = Math.max(0, minStart) + between(0, 400);

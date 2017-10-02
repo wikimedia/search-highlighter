@@ -14,7 +14,7 @@ import org.wikimedia.search.highlighter.experimental.SourceExtracter;
  * </ul>
  * @param <T> the type of highlighted framents (in general String)
  */
-public class NonMergingMultiSourceExtracter<T> extends AbstractMultiSourceExtracter<T> {
+public final class NonMergingMultiSourceExtracter<T> extends AbstractMultiSourceExtracter<T> {
     /**
      * Make a builder for the segmenter with an offsetGap of 1.
      */
@@ -24,7 +24,7 @@ public class NonMergingMultiSourceExtracter<T> extends AbstractMultiSourceExtrac
 
     /**
      * Make a builder for the segmenter.
-     * 
+     *
      * @param offsetGap the gap between the extracters
      */
     public static <T> Builder<T> builder(int offsetGap) {
@@ -34,7 +34,7 @@ public class NonMergingMultiSourceExtracter<T> extends AbstractMultiSourceExtrac
     /**
      * Builder for {@linkplain StringMergingMultiSourceExtracter}s.
      */
-    public static class Builder<T> implements AbstractMultiSourceExtracter.Builder<T, Builder<T>> {
+    public static final class Builder<T> implements AbstractMultiSourceExtracter.Builder<T, Builder<T>> {
         private final List<ConstituentExtracter<T>> extracters = new ArrayList<ConstituentExtracter<T>>();
         private final int offsetGap;
 

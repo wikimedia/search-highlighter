@@ -5,7 +5,6 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.wikimedia.search.highlighter.experimental.Segment;
 import org.wikimedia.search.highlighter.experimental.Segmenter;
 import org.wikimedia.search.highlighter.experimental.Snippet;
@@ -13,6 +12,8 @@ import org.wikimedia.search.highlighter.experimental.Snippet.Hit;
 import org.wikimedia.search.highlighter.experimental.Snippet.HitBuilder;
 import org.wikimedia.search.highlighter.experimental.SnippetWeigher;
 import org.wikimedia.search.highlighter.experimental.extern.PriorityQueue;
+
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 /**
  * Picks the top scoring snippets.
@@ -175,7 +176,7 @@ public class BasicScoreBasedSnippetChooser extends AbstractBasicSnippetChooser<B
     }
 
     private static final class ProtoSnippetQueue extends PriorityQueue<ProtoSnippet> {
-        public ProtoSnippetQueue(int maxSize) {
+        ProtoSnippetQueue(int maxSize) {
             super(maxSize);
         }
 

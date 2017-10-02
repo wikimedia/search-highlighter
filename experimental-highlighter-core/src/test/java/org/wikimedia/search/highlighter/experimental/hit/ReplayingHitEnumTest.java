@@ -57,7 +57,7 @@ public class ReplayingHitEnumTest extends RandomizedTest {
         assertThat(e, isEmpty());
         assertEquals(e.waiting(), 0);
     }
-    
+
     @Test
     public void many() {
         ReplayingHitEnum e = new ReplayingHitEnum();
@@ -106,7 +106,7 @@ public class ReplayingHitEnumTest extends RandomizedTest {
         e.clear();
         assertThat(e, isEmpty());
     }
-    
+
     @Test
     public void recordWholeIterator() {
         List<HitEnumAndLength> allEnums = new ArrayList<HitEnumAndLength>();

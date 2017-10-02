@@ -9,7 +9,7 @@ import org.wikimedia.search.highlighter.experimental.SourceExtracter;
 /**
  * SourceExtracter that can merge requests for segments across strings.
  */
-public class StringMergingMultiSourceExtracter extends AbstractMultiSourceExtracter<String> {
+public final class StringMergingMultiSourceExtracter extends AbstractMultiSourceExtracter<String> {
     /**
      * Make a builder for the segmenter with a separator of " ".
      */
@@ -19,7 +19,7 @@ public class StringMergingMultiSourceExtracter extends AbstractMultiSourceExtrac
 
     /**
      * Make a builder for the segmenter.
-     * 
+     *
      * @param separator separator between merged extractions.  Also the source of the offsetGap.
      */
     public static Builder builder(String separator) {
@@ -29,7 +29,7 @@ public class StringMergingMultiSourceExtracter extends AbstractMultiSourceExtrac
     /**
      * Builder for {@linkplain StringMergingMultiSourceExtracter}s.
      */
-    public static class Builder implements AbstractMultiSourceExtracter.Builder<String, Builder> {
+    public static final class Builder implements AbstractMultiSourceExtracter.Builder<String, Builder> {
         private final List<ConstituentExtracter<String>> extracters = new ArrayList<ConstituentExtracter<String>>();
         private final String separator;
 
@@ -46,7 +46,7 @@ public class StringMergingMultiSourceExtracter extends AbstractMultiSourceExtrac
     }
 
     private final String separator;
-    
+
     private StringMergingMultiSourceExtracter(List<ConstituentExtracter<String>> extracters, String separator) {
         super(extracters, separator.length());
         this.separator = separator;

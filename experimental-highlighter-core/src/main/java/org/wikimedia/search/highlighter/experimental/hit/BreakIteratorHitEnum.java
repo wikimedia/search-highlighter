@@ -117,7 +117,7 @@ public final class BreakIteratorHitEnum extends AbstractHitEnum {
         private final CharSequence source;
         private int positionOffset;
 
-        public RepairedHitEnum(HitEnum wrapped, CharSequence source) {
+        RepairedHitEnum(HitEnum wrapped, CharSequence source) {
             super(wrapped);
             this.source = source;
         }

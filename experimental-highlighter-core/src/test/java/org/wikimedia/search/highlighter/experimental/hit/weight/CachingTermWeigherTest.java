@@ -4,15 +4,13 @@ import static org.junit.Assert.assertEquals;
 
 import org.junit.Test;
 import org.wikimedia.search.highlighter.experimental.hit.TermWeigher;
-import org.wikimedia.search.highlighter.experimental.hit.weight.CachingTermWeigher;
-
 
 public class CachingTermWeigherTest {
     @Test
     public void caches() {
         TermWeigher<Object> weigher = new CachingTermWeigher<Object>(
                 new TermWeigher<Object>() {
-                    private int callCount = 0;
+                    private int callCount;
                     @Override
                     public float weigh(Object term) {
                         if (callCount > 0) {

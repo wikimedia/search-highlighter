@@ -91,7 +91,7 @@ public class Snippet implements Segment {
     /**
      * Build a Hit from a HitEnum
      */
-    public static interface HitBuilder {
+    public interface HitBuilder {
         /**
          * Build the Hit
          * @return the Hit

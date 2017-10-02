@@ -1,6 +1,10 @@
 package org.wikimedia.search.highlighter.experimental.hit;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.NoSuchElementException;
 
 import org.wikimedia.search.highlighter.experimental.HitEnum;
 import org.wikimedia.search.highlighter.experimental.LessThan;
@@ -83,7 +87,7 @@ public class MergingHitEnum extends AbstractHitEnum {
         }
     }
 
-    private static class HitEnumPriorityQueue extends PriorityQueue<HitEnum> implements Iterable<HitEnum> {
+    private static final class HitEnumPriorityQueue extends PriorityQueue<HitEnum> implements Iterable<HitEnum> {
         private final LessThan<HitEnum> lessThan;
 
         private HitEnumPriorityQueue(Collection<? extends HitEnum> hitEnums, LessThan<HitEnum> lessThan) {

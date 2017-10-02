@@ -8,7 +8,12 @@ import org.hamcrest.Description;
 import org.hamcrest.Matcher;
 import org.hamcrest.TypeSafeMatcher;
 
-public class Matchers {
+public final class Matchers {
+
+    private Matchers() {
+        // utility class
+    }
+
     public static <T> Matcher<Segment> extracted(SourceExtracter<T> extracter, T t) {
         return extracted(extracter, equalTo(t));
     }
@@ -59,10 +64,10 @@ public class Matchers {
         return new SourceMatcher(source);
     }
 
-    private static class AdvancesMatcher extends TypeSafeMatcher<HitEnum> {
+    private static final class AdvancesMatcher extends TypeSafeMatcher<HitEnum> {
         private final boolean advances;
 
-        public AdvancesMatcher(boolean advances) {
+        private AdvancesMatcher(boolean advances) {
             this.advances = advances;
         }
 
@@ -91,10 +96,10 @@ public class Matchers {
         }
     }
 
-    private static class PositionMatcher extends TypeSafeMatcher<HitEnum> {
+    private static final class PositionMatcher extends TypeSafeMatcher<HitEnum> {
         private final int position;
 
-        public PositionMatcher(int position) {
+        private PositionMatcher(int position) {
             this.position = position;
         }
 
@@ -114,10 +119,10 @@ public class Matchers {
         }
     }
 
-    private static class StartOffsetMatcher extends TypeSafeMatcher<HitEnum> {
+    private static final class StartOffsetMatcher extends TypeSafeMatcher<HitEnum> {
         private final int startOffset;
 
-        public StartOffsetMatcher(int startOffset) {
+        private StartOffsetMatcher(int startOffset) {
             this.startOffset = startOffset;
         }
 
@@ -137,10 +142,10 @@ public class Matchers {
         }
     }
 
-    private static class EndOffsetMatcher extends TypeSafeMatcher<HitEnum> {
+    private static final class EndOffsetMatcher extends TypeSafeMatcher<HitEnum> {
         private final int endOffset;
 
-        public EndOffsetMatcher(int endOffset) {
+        private EndOffsetMatcher(int endOffset) {
             this.endOffset = endOffset;
         }
 
@@ -160,10 +165,10 @@ public class Matchers {
         }
     }
 
-    private static class SourceMatcher extends TypeSafeMatcher<HitEnum> {
+    private static final class SourceMatcher extends TypeSafeMatcher<HitEnum> {
         private final int source;
 
-        public SourceMatcher(int source) {
+        private SourceMatcher(int source) {
             this.source = source;
         }
 
@@ -183,11 +188,11 @@ public class Matchers {
         }
     }
 
-    private static class ExtractedMatcher<T> extends TypeSafeMatcher<Segment> {
+    private static final class ExtractedMatcher<T> extends TypeSafeMatcher<Segment> {
         private final SourceExtracter<T> extracter;
         private final Matcher<T> extractedMatcher;
 
-        public ExtractedMatcher(SourceExtracter<T> extracter, Matcher<T> extractedMatcher) {
+        private ExtractedMatcher(SourceExtracter<T> extracter, Matcher<T> extractedMatcher) {
             this.extracter = extracter;
             this.extractedMatcher = extractedMatcher;
         }
@@ -212,10 +217,10 @@ public class Matchers {
         }
     }
 
-    private static class WeightMatcher extends TypeSafeMatcher<HitEnum> {
+    private static final class WeightMatcher extends TypeSafeMatcher<HitEnum> {
         private final Matcher<Double> weightMatcher;
 
-        public WeightMatcher(Matcher<Double> weightMatcher) {
+        private WeightMatcher(Matcher<Double> weightMatcher) {
             this.weightMatcher = weightMatcher;
         }
 
@@ -238,10 +243,10 @@ public class Matchers {
         }
     }
 
-    private static class QueryWeightMatcher extends TypeSafeMatcher<HitEnum> {
+    private static final class QueryWeightMatcher extends TypeSafeMatcher<HitEnum> {
         private final Matcher<Double> weightMatcher;
 
-        public QueryWeightMatcher(Matcher<Double> weightMatcher) {
+        private QueryWeightMatcher(Matcher<Double> weightMatcher) {
             this.weightMatcher = weightMatcher;
         }
 
@@ -264,10 +269,10 @@ public class Matchers {
         }
     }
 
-    private static class CorpusWeightMatcher extends TypeSafeMatcher<HitEnum> {
+    private static final class CorpusWeightMatcher extends TypeSafeMatcher<HitEnum> {
         private final Matcher<Double> weightMatcher;
 
-        public CorpusWeightMatcher(Matcher<Double> weightMatcher) {
+        private CorpusWeightMatcher(Matcher<Double> weightMatcher) {
             this.weightMatcher = weightMatcher;
         }
 

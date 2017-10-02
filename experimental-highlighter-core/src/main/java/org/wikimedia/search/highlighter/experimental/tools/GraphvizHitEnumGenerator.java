@@ -16,7 +16,7 @@ public class GraphvizHitEnumGenerator {
     private final Map<HitEnum, Integer> hitEnumIds = new HashMap<HitEnum, Integer>();
     private final List<Link> links = new ArrayList<>();
 
-    private int hitEnumIdSequence = 0;
+    private int hitEnumIdSequence;
 
     /**
      * @return Generate the Graph of the HitEnum state

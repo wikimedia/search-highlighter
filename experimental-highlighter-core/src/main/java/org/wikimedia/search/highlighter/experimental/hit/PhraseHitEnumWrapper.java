@@ -5,9 +5,10 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.wikimedia.search.highlighter.experimental.HitEnum;
 import org.wikimedia.search.highlighter.experimental.tools.GraphvizHitEnumGenerator;
+
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 /**
  * Naive implementation of applying different scores to phrases.
@@ -37,7 +38,7 @@ public class PhraseHitEnumWrapper extends AbstractHitEnum {
     private final int phraseSlop;
     private int releaseUpTo = Integer.MIN_VALUE;
     private HitEnum pullFrom;
-    private boolean replayingAlreadyPositionedForNextNext = false;
+    private boolean replayingAlreadyPositionedForNextNext;
     private float weight;
 
     /**
@@ -78,6 +79,7 @@ public class PhraseHitEnumWrapper extends AbstractHitEnum {
     }
 
     @Override
+    @SuppressWarnings({"checkstyle:CyclomaticComplexity", "checkstyle:NPathComplexity"}) // not that hard to read...
     public boolean next() {
         weight = -1;
         boolean replayingHasHit = true;
@@ -195,11 +197,11 @@ public class PhraseHitEnumWrapper extends AbstractHitEnum {
                 .append(wrapped).append(')').toString();
     }
 
-    private class PhraseCandidate {
+    private final class PhraseCandidate {
         private final int[] matchedPositions;
         private final int[] matchedSources;
         private final int horizon;
-        private int lastIndex = 0;
+        private int lastIndex;
         private int phrasePosition;
 
         private PhraseCandidate() {

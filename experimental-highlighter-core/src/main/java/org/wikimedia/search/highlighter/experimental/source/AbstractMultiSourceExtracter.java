@@ -29,7 +29,7 @@ abstract class AbstractMultiSourceExtracter<T> implements SourceExtracter<T> {
     private final List<ConstituentExtracter<T>> extracters;
     private final int offsetGap;
 
-    public AbstractMultiSourceExtracter(List<ConstituentExtracter<T>> extracters, int offsetGap) {
+    AbstractMultiSourceExtracter(List<ConstituentExtracter<T>> extracters, int offsetGap) {
         this.extracters = extracters;
         this.offsetGap = offsetGap;
     }
@@ -47,13 +47,14 @@ abstract class AbstractMultiSourceExtracter<T> implements SourceExtracter<T> {
         private final SourceExtracter<T> extracter;
         private final int length;
 
-        public ConstituentExtracter(SourceExtracter<T> extracter, int length) {
+        ConstituentExtracter(SourceExtracter<T> extracter, int length) {
             this.extracter = extracter;
             this.length = length;
         }
     }
 
     @Override
+    @SuppressWarnings("checkstyle:CyclomaticComplexity")
     public T extract(int startOffset, int endOffset) {
         ConstituentExtracter<T> extracter = null;
         Iterator<ConstituentExtracter<T>> extractersItr = extracters.iterator();

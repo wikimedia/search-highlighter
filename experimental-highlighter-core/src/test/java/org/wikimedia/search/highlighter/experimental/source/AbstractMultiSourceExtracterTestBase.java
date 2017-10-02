@@ -6,7 +6,6 @@ import static org.junit.Assert.fail;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.wikimedia.search.highlighter.experimental.SourceExtracter;
-import org.wikimedia.search.highlighter.experimental.source.StringSourceExtracter;
 import org.wikimedia.search.highlighter.experimental.source.AbstractMultiSourceExtracter.Builder;
 
 import com.carrotsearch.randomizedtesting.RandomizedRunner;
@@ -62,7 +61,7 @@ public abstract class AbstractMultiSourceExtracterTestBase extends RandomizedTes
         assertEquals("cupcakes", extracter.extract(9 + offsetGap * 3, 17 + offsetGap * 3));
         assertEquals("up", extracter.extract(10 + offsetGap * 3, 12 + offsetGap * 3));
     }
-    
+
     @Test
     public void endOfAString() {
         build("foo", "cupcakes");
