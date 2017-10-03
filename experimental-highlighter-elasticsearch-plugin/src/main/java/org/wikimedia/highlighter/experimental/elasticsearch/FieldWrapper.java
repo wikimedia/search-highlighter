@@ -1,11 +1,15 @@
 package org.wikimedia.highlighter.experimental.elasticsearch;
 
+import static java.util.stream.Collectors.toCollection;
+import static java.util.stream.Collectors.toList;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.stream.Collectors;
 
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.TokenStream;
@@ -105,10 +109,7 @@ public class FieldWrapper {
         if (values == null) {
             List<Object> objs = HighlightUtils.loadFieldValues(context.field, context.mapper,
                     context.context, context.hitContext);
-            values = new ArrayList<String>(objs.size());
-            for (Object obj : objs) {
-                values.add(obj.toString());
-            }
+            values = objs.stream().map(Object::toString).collect(toCollection(() -> new ArrayList<>(objs.size())));
         }
         return values;
     }
@@ -186,9 +187,7 @@ public class FieldWrapper {
 
                 // Filter 0 weight hits which pop out from the TokenStreamHitEnum,
                 // phrase match misses.
-                e = new WeightFilteredHitEnumWrapper(e, 0f);
-
-                return e;
+                return new WeightFilteredHitEnumWrapper(e, 0f);
             }
         }
         // TODO move this up so we don't have to redo it per matched_field
@@ -211,9 +210,7 @@ public class FieldWrapper {
 
         // Filter 0 weight hits which pop out from the TokenStreamHitEnum,
         // phrase match misses, and boost_before being used as a filter.
-        e = new WeightFilteredHitEnumWrapper(e, 0f);
-
-        return e;
+        return new WeightFilteredHitEnumWrapper(e, 0f);
     }
 
     private HitEnum buildHitEnumForSource() throws IOException {
@@ -262,13 +259,13 @@ public class FieldWrapper {
     private HitEnum buildPostingsHitEnum() throws IOException {
         return PostingsHitEnum.fromPostings(context.hitContext.reader(),
                 context.hitContext.docId(), context.mapper.fieldType().name(),
-                weigher.acceptableTerms(), getQueryWeigher(false), getCorpusWeigher(false), weigher);
+                weigher.acceptableTerms(), getQueryWeigher(), getCorpusWeigher(false), weigher);
     }
 
     private HitEnum buildTermVectorsHitEnum() throws IOException {
         return PostingsHitEnum.fromTermVectors(context.hitContext.reader(),
                 context.hitContext.docId(), context.mapper.fieldType().name(),
-                weigher.acceptableTerms(), getQueryWeigher(false), getCorpusWeigher(false), weigher);
+                weigher.acceptableTerms(), getQueryWeigher(), getCorpusWeigher(false), weigher);
     }
 
     private HitEnum buildTokenStreamHitEnum() throws IOException {
@@ -314,7 +311,7 @@ public class FieldWrapper {
         }
     }
 
-    private HitEnum buildTokenStreamHitEnum(Analyzer analyzer, String source) throws IOException {
+    private HitEnum buildTokenStreamHitEnum(Analyzer analyzer, String source) {
         TokenStream tokenStream;
         try {
             tokenStream = analyzer.tokenStream(context.fieldName, source);
@@ -325,10 +322,10 @@ public class FieldWrapper {
                     "If analyzing to find hits each matched field must have a unique analyzer.", e);
         }
         this.tokenStream = tokenStream;
-        return new TokenStreamHitEnum(tokenStream, getQueryWeigher(true), getCorpusWeigher(true), weigher);
+        return new TokenStreamHitEnum(tokenStream, getQueryWeigher(), getCorpusWeigher(true), weigher);
     }
 
-    private TermWeigher<BytesRef> getQueryWeigher(boolean mightWeighTermsMultipleTimes) {
+    private TermWeigher<BytesRef> getQueryWeigher() {
         return weigher;
     }
 

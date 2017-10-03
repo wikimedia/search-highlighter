@@ -1,5 +1,8 @@
 package org.wikimedia.highlighter.experimental.elasticsearch;
 
+import static java.lang.Boolean.FALSE;
+import static java.lang.Boolean.TRUE;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -161,7 +164,7 @@ public class ExperimentalHighlighter implements Highlighter {
             }
             segmenter = new DelayedSegmenter(defaultField);
             List<Snippet> snippets = buildChooser().choose(segmenter, buildHitEnum(), numberOfSnippets);
-            if (snippets.size() != 0) {
+            if (!snippets.isEmpty()) {
                 cache.lastMatched = true;
                 return new HighlightField(context.fieldName, formatSnippets(snippets));
             }
@@ -249,8 +252,8 @@ public class ExperimentalHighlighter implements Highlighter {
             if (weigher != null) {
                 return;
             }
-            boolean phraseAsTerms = getOption("phrase_as_terms", false);
-            boolean removeHighFrequencyTermsFromCommonTerms = getOption("remove_high_freq_terms_from_common_terms", true);
+            boolean phraseAsTerms = getOption("phrase_as_terms", FALSE);
+            boolean removeHighFrequencyTermsFromCommonTerms = getOption("remove_high_freq_terms_from_common_terms", TRUE);
             int maxExpandedTerms = getOption("max_expanded_terms", 1024);
             // TODO simplify
             QueryCacheKey key = new QueryCacheKey(context.query, maxExpandedTerms, phraseAsTerms,
@@ -280,7 +283,7 @@ public class ExperimentalHighlighter implements Highlighter {
             // analyzers that make overlaps.
             e = new OverlapMergingHitEnumWrapper(e);
 
-            if (getOption(OPTION_RETURN_DEBUG_GRAPH, false)) {
+            if (getOption(OPTION_RETURN_DEBUG_GRAPH, FALSE)) {
                 e = new GraphvizHitEnum(e);
             }
             return e;
@@ -322,7 +325,7 @@ public class ExperimentalHighlighter implements Highlighter {
 
             List<HitEnum> hitEnums = new ArrayList<>();
             List<String> fieldValues = defaultField.getFieldValues();
-            if (fieldValues.size() == 0) {
+            if (fieldValues.isEmpty()) {
                 return hitEnums;
             }
 
@@ -451,7 +454,7 @@ public class ExperimentalHighlighter implements Highlighter {
                 }
                 extraFields.add(wrapper);
             }
-            if (hitEnums.size() == 0) {
+            if (hitEnums.isEmpty()) {
                 return Collections.emptyList();
             }
             return hitEnums;
@@ -459,7 +462,7 @@ public class ExperimentalHighlighter implements Highlighter {
 
         private SnippetChooser buildChooser() {
             HitBuilder hitBuilder = Snippet.DEFAULT_HIT_BUILDER;
-            if (getOption(OPTION_RETURN_DEBUG_GRAPH, false)) {
+            if (getOption(OPTION_RETURN_DEBUG_GRAPH, FALSE)) {
                 hitBuilder = GraphvizHit.GRAPHVIZ_HIT_BUILDER;
             }
             if (context.field.fieldOptions().scoreOrdered()) {
@@ -516,11 +519,11 @@ public class ExperimentalHighlighter implements Highlighter {
 
         private Text[] formatSnippets(List<Snippet> snippets) throws IOException {
             final SnippetFormatter formatter;
-            if (getOption("return_offsets", false)) {
+            if (getOption("return_offsets", FALSE)) {
                 formatter = new OffsetSnippetFormatter();
-            } else if (getOption(OPTION_RETURN_DEBUG_GRAPH, false)) {
+            } else if (getOption(OPTION_RETURN_DEBUG_GRAPH, FALSE)) {
                 formatter = new GraphvizSnippetFormatter(defaultField.buildSourceExtracter());
-            } else if (getOption(OPTION_RETURN_SNIPPETS_WITH_OFFSET, false)) {
+            } else if (getOption(OPTION_RETURN_SNIPPETS_WITH_OFFSET, FALSE)) {
                 formatter = new OffsetAugmenterSnippetFormatter(
                         new SnippetFormatter.Default(
                                 defaultField.buildSourceExtracter(),
