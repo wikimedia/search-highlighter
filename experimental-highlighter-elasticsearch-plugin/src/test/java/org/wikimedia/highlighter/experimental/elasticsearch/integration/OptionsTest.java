@@ -16,8 +16,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 
-import com.google.common.collect.ImmutableMap;
-
 import org.elasticsearch.action.index.IndexRequestBuilder;
 import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchResponse;
@@ -27,6 +25,8 @@ import org.elasticsearch.rest.RestStatus;
 import org.elasticsearch.search.fetch.subphase.highlight.HighlightBuilder;
 import org.junit.Test;
 import org.wikimedia.highlighter.experimental.elasticsearch.AbstractExperimentalHighlighterIntegrationTestBase;
+
+import com.google.common.collect.ImmutableMap;
 
 /**
  * Tests for the query options that don't have their own test class.
@@ -403,6 +403,11 @@ public class OptionsTest extends AbstractExperimentalHighlighterIntegrationTestB
     }
 
     @Test
+    @SuppressWarnings("checkstyle:NPathComplexity")
+    // This test should be split if we revisit it at some time. At this point
+    // it tests multiple things and if the test is failing, it is not clear
+    // what caused the failure. That being said, it is not worth refactoring
+    // unless we actually have changes to make to that area of the code.
     public void fetchedFields() throws IOException, InterruptedException,
             ExecutionException {
         buildIndex();
@@ -415,11 +420,11 @@ public class OptionsTest extends AbstractExperimentalHighlighterIntegrationTestB
         client().prepareIndex("test", "test", "3")
                 .setSource("test", new String[] {"no match here", "nobuddy"}, "fetched", new Integer[] {0}).get();
         XContentBuilder nested = jsonBuilder().startObject().startArray("foo");
-        for (int i = 0 ; i < 200; i++) {
+        for (int i = 0; i < 200; i++) {
             nested.startObject().field("test").value("nested" + Integer.toString(i));
             if (i < 100) {
                 nested.field("fetched").value(Integer.toString(i));
-                nested.field("fetched2").value(Integer.toString(1000+i));
+                nested.field("fetched2").value(Integer.toString(1000 + i));
             }
             nested.endObject();
         }

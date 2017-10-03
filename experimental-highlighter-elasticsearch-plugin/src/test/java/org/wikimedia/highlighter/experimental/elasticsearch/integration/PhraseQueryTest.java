@@ -109,7 +109,7 @@ public class PhraseQueryTest extends AbstractExperimentalHighlighterIntegrationT
         }
         long total = System.currentTimeMillis() - start;
         // Without the optimization this runs about 7 seconds, with, about 1.8.
-        assertThat(total, lessThan(3000l));
+        assertThat(total, lessThan(3000L));
 
         start = System.currentTimeMillis();
         for (int i = 0; i < iterations; i++) {
@@ -120,7 +120,7 @@ public class PhraseQueryTest extends AbstractExperimentalHighlighterIntegrationT
         }
         total = System.currentTimeMillis() - start;
         // Without the optimization this runs about 7 seconds, with, about 1.8.
-        assertThat(total, lessThan(3000l));
+        assertThat(total, lessThan(3000L));
 
         search = testSearch(qb, hitSource("analyze").andThen(field(new HighlightBuilder.Field("test2").matchedFields("test", "test2.whitespace"))));
         start = System.currentTimeMillis();
@@ -129,7 +129,7 @@ public class PhraseQueryTest extends AbstractExperimentalHighlighterIntegrationT
         }
         total = System.currentTimeMillis() - start;
         // Without the optimization this runs about 7 seconds, with, about 1.8.
-        assertThat(total, lessThan(3000l));
+        assertThat(total, lessThan(3000L));
     }
 
     @Test
@@ -261,7 +261,7 @@ public class PhraseQueryTest extends AbstractExperimentalHighlighterIntegrationT
     @Test
     public void termAndPhraseQueryWeightsAndDifferentFields() throws IOException {
         buildIndex();
-        indexTestData(new Object[] { "test very simple foo", "test test" });
+        indexTestData(new Object[] {"test very simple foo", "test test"});
         QueryBuilder qb = boolQuery().should(matchPhraseQuery("test", "simple foo"))
                 .should(termQuery("test", "test"))
                 .should(termQuery("fake", "test").boost(1000f))

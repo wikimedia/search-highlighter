@@ -1,7 +1,8 @@
 package org.wikimedia.highlighter.experimental.elasticsearch.integration;
 
 import static org.elasticsearch.index.query.QueryBuilders.termQuery;
-import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.*;
+import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertHighlight;
+import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertNotHighlighted;
 import static org.hamcrest.Matchers.equalTo;
 
 import java.io.IOException;

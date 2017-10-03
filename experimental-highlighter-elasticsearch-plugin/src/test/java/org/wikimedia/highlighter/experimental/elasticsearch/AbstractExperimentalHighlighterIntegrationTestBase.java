@@ -14,16 +14,17 @@ import java.util.Map;
 import java.util.function.Consumer;
 
 import org.elasticsearch.action.search.SearchRequestBuilder;
-
-import com.google.common.collect.ImmutableList;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.index.query.QueryBuilder;
-//import org.elasticsearch.plugin.analysis.icu.AnalysisICUPlugin;
 import org.elasticsearch.plugins.Plugin;
 import org.elasticsearch.search.fetch.subphase.highlight.HighlightBuilder;
 import org.elasticsearch.test.ESIntegTestCase;
 import org.elasticsearch.test.ESIntegTestCase.ClusterScope;
 import org.wikimedia.highlighter.experimental.elasticsearch.plugin.ExperimentalHighlighterPlugin;
+
+import com.google.common.collect.ImmutableList;
+
+//import org.elasticsearch.plugin.analysis.icu.AnalysisICUPlugin;
 
 @ClusterScope(scope = ESIntegTestCase.Scope.SUITE, transportClientRatio = 0.0)
 public abstract class AbstractExperimentalHighlighterIntegrationTestBase extends
@@ -83,7 +84,7 @@ ESIntegTestCase {
         return new Consumer<HighlightBuilder>() {
             @Override
             public void accept(HighlightBuilder hb) {
-                if(hb.options() == null) {
+                if (hb.options() == null) {
                     hb.options(new HashMap<>());
                 }
                 hb.options().putAll(options);
@@ -104,7 +105,7 @@ ESIntegTestCase {
         return new Consumer<HighlightBuilder>() {
             @Override
             public void accept(HighlightBuilder hb) {
-                if(hb.options() == null) {
+                if (hb.options() == null) {
                     hb.options(new HashMap<>());
                 }
                 hb.options().put(name, value);
@@ -120,7 +121,7 @@ ESIntegTestCase {
      */
     protected SearchRequestBuilder testSearch(QueryBuilder builder, Consumer<HighlightBuilder> func) {
         HighlightBuilder hbuilder = newHLBuilder();
-        if(func != null) {
+        if (func != null) {
             func.accept(hbuilder);
         }
 

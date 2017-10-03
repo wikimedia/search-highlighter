@@ -1,5 +1,17 @@
 package org.wikimedia.highlighter.experimental.elasticsearch;
 
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.regex.Pattern;
+
 import org.apache.logging.log4j.Logger;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.util.automaton.RegExp;
@@ -35,17 +47,7 @@ import org.wikimedia.search.highlighter.experimental.tools.GraphvizHit;
 import org.wikimedia.search.highlighter.experimental.tools.GraphvizHitEnum;
 import org.wikimedia.search.highlighter.experimental.tools.GraphvizSnippetFormatter;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Set;
-import java.util.regex.Pattern;
-
+@SuppressWarnings("checkstyle:classfanoutcomplexity") // to improve if we ever touch that code again
 public class ExperimentalHighlighter implements Highlighter {
     public static final String NAME = "experimental";
     private static final String CACHE_KEY = "highlight-experimental";
@@ -58,6 +60,7 @@ public class ExperimentalHighlighter implements Highlighter {
     }
 
     @Override
+    @SuppressWarnings("checkstyle:IllegalCatch")
     public HighlightField highlight(HighlighterContext context) {
         try {
             CacheEntry entry = (CacheEntry) context.hitContext.cache().get(CACHE_KEY);
@@ -80,7 +83,7 @@ public class ExperimentalHighlighter implements Highlighter {
     static class CacheEntry {
         private final Map<QueryCacheKey, BasicQueryWeigher> queryWeighers = new HashMap<>();
         private Map<String, AutomatonHitEnum.Factory> automatonHitEnumFactories;
-        private boolean lastMatched = false;
+        private boolean lastMatched;
         private int lastDocId = -1;
     }
 
@@ -90,7 +93,7 @@ public class ExperimentalHighlighter implements Highlighter {
         private final boolean phraseAsTerms;
         private final boolean removeHighFrequencyTermsFromCommonTerms;
 
-        public QueryCacheKey(Query query, int maxExpandedTerms, boolean phraseAsTerms, boolean removeHighFrequencyTermsFromCommonTerms) {
+        QueryCacheKey(Query query, int maxExpandedTerms, boolean phraseAsTerms, boolean removeHighFrequencyTermsFromCommonTerms) {
             this.query = query;
             this.maxExpandedTerms = maxExpandedTerms;
             this.phraseAsTerms = phraseAsTerms;
@@ -99,13 +102,7 @@ public class ExperimentalHighlighter implements Highlighter {
 
         @Override
         public int hashCode() {
-            final int prime = 31;
-            int result = 1;
-            result = prime * result + (phraseAsTerms ? 1231 : 1237);
-            result = prime * result + maxExpandedTerms;
-            result = prime * result + (removeHighFrequencyTermsFromCommonTerms ? 1231 : 1237);
-            result = prime * result + ((query == null) ? 0 : query.hashCode());
-            return result;
+            return Objects.hash(maxExpandedTerms, phraseAsTerms, removeHighFrequencyTermsFromCommonTerms, query);
         }
 
         @Override
@@ -117,18 +114,10 @@ public class ExperimentalHighlighter implements Highlighter {
             if (getClass() != obj.getClass())
                 return false;
             QueryCacheKey other = (QueryCacheKey) obj;
-            if (maxExpandedTerms != other.maxExpandedTerms)
-                return false;
-            if (phraseAsTerms != other.phraseAsTerms)
-                return false;
-            if (removeHighFrequencyTermsFromCommonTerms != other.removeHighFrequencyTermsFromCommonTerms)
-                return false;
-            if (query == null) {
-                if (other.query != null)
-                    return false;
-            } else if (!query.equals(other.query))
-                return false;
-            return true;
+            return Objects.equals(maxExpandedTerms, other.maxExpandedTerms)
+                    && Objects.equals(phraseAsTerms, other.phraseAsTerms)
+                    && Objects.equals(removeHighFrequencyTermsFromCommonTerms, other.removeHighFrequencyTermsFromCommonTerms)
+                    && Objects.equals(query, other.query);
         }
     }
 
@@ -186,7 +175,7 @@ public class ExperimentalHighlighter implements Highlighter {
                 return null;
             }
             Text fragment = new Text(getSegmenterFactory().extractNoMatchFragment(fieldValues.get(0), noMatchSize));
-            return new HighlightField(context.fieldName, new Text[] { fragment });
+            return new HighlightField(context.fieldName, new Text[] {fragment});
         }
 
         private boolean shouldSkip() {
@@ -201,6 +190,9 @@ public class ExperimentalHighlighter implements Highlighter {
             return skipIfLastMatched != null && skipIfLastMatched && cache.lastMatched;
         }
 
+        @SuppressWarnings("checkstyle:IllegalCatch")
+        // We might be able to improve this a bit with AutoClosable magic,
+        // but not worth doing it unless we revisit that code.
         void cleanup() throws Exception {
             Exception lastCaught = null;
             try {
@@ -217,6 +209,9 @@ public class ExperimentalHighlighter implements Highlighter {
                     try {
                         extra.cleanup();
                     } catch (Exception e) {
+                        if (lastCaught != null) {
+                            e.addSuppressed(lastCaught);
+                        }
                         lastCaught = e;
                     }
                 }
@@ -315,6 +310,8 @@ public class ExperimentalHighlighter implements Highlighter {
             return hitEnums;
         }
 
+        @SuppressWarnings("checkstyle:ModifiedControlVariable")
+        // cleanup the re-assignment of `regex` if we revisit that code
         private List<HitEnum> buildRegexHitEnums() throws IOException {
             boolean luceneRegex = isLuceneRegexFlavor();
             if (luceneRegex) {
@@ -524,8 +521,11 @@ public class ExperimentalHighlighter implements Highlighter {
             } else if (getOption(OPTION_RETURN_DEBUG_GRAPH, false)) {
                 formatter = new GraphvizSnippetFormatter(defaultField.buildSourceExtracter());
             } else if (getOption(OPTION_RETURN_SNIPPETS_WITH_OFFSET, false)) {
-                formatter = new OffsetAugmenterSnippetFormatter(new SnippetFormatter.Default(defaultField.buildSourceExtracter(), context.field.fieldOptions().preTags()[0],
-                        context.field.fieldOptions().postTags()[0]));
+                formatter = new OffsetAugmenterSnippetFormatter(
+                        new SnippetFormatter.Default(
+                                defaultField.buildSourceExtracter(),
+                                context.field.fieldOptions().preTags()[0],
+                                context.field.fieldOptions().postTags()[0]));
             } else {
                 formatter = new SnippetFormatter.Default(defaultField.buildSourceExtracter(), context.field.fieldOptions().preTags()[0],
                         context.field.fieldOptions().postTags()[0]);

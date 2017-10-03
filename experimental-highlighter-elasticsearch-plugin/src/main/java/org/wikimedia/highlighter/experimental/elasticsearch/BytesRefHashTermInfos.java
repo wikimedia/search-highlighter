@@ -16,14 +16,14 @@ public class BytesRefHashTermInfos implements TermInfos, Releasable {
     private final BigArrays bigArrays;
     private final BytesRefHash bytes;
     private ObjectArray<SourceInfo> infos;
-    
+
     public BytesRefHashTermInfos(BigArrays bigArrays) {
         this.bigArrays = bigArrays;
         bytes = new BytesRefHash(INITIAL_CAPACITY, bigArrays);
         infos = bigArrays.newObjectArray(INITIAL_CAPACITY);
         // TODO switching from ObjectArray to something holding the floats and ints would be quickers, surely.
     }
-    
+
     @Override
     public SourceInfo get(BytesRef term) {
         long id = bytes.find(term);

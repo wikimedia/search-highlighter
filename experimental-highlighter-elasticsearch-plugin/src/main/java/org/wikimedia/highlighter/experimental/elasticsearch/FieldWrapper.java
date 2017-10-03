@@ -1,5 +1,12 @@
 package org.wikimedia.highlighter.experimental.elasticsearch;
 
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
+
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.index.IndexOptions;
@@ -30,13 +37,7 @@ import org.wikimedia.search.highlighter.experimental.snippet.MultiSegmenter;
 import org.wikimedia.search.highlighter.experimental.source.NonMergingMultiSourceExtracter;
 import org.wikimedia.search.highlighter.experimental.source.StringSourceExtracter;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
-
+@SuppressWarnings("checkstyle:classfanoutcomplexity") // to improve if we ever touch that code again
 public class FieldWrapper {
     private final HighlightExecutionContext executionContext;
     private final HighlighterContext context;

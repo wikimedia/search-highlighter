@@ -22,7 +22,7 @@ public class BytesRefTermWeigherCache implements CachingTermWeigher.Cache<BytesR
         bytes = new BytesRefHash(INITIAL_CAPACITY, bigArrays);
         weights = bigArrays.newFloatArray(INITIAL_CAPACITY);
     }
-    
+
     @Override
     public float get(BytesRef term) {
         long id = bytes.find(term);
@@ -44,5 +44,5 @@ public class BytesRefTermWeigherCache implements CachingTermWeigher.Cache<BytesR
         }
         weights.set(id, weight);
     }
-    
+
 }

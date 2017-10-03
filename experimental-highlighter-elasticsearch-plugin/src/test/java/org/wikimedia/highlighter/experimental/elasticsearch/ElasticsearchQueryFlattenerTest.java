@@ -91,8 +91,8 @@ public class ElasticsearchQueryFlattenerTest {
         Term bar = new Term("test", "bar");
         Term anoth = new Term("test", "anoth");
         query.add(foo);
-        query.add(new Term[] { qux, quux });
-        query.add(new Term[] { bar, anoth });
+        query.add(new Term[] {qux, quux});
+        query.add(new Term[] {bar, anoth});
 
         Term bart = new Term("test", "bart");
         Term another = new Term("test", "another");
@@ -100,15 +100,15 @@ public class ElasticsearchQueryFlattenerTest {
         Callback callback = mock(Callback.class);
         new ElasticsearchQueryFlattener(1, phraseAsTerms, true).flatten(query, ir, callback);
 
-        verify(callback).flattened(foo.bytes(), phraseAsTerms ? 1f : 0, query);
-        verify(callback).flattened(qux.bytes(), phraseAsTerms ? 1f : 0, query);
-        verify(callback).flattened(quux.bytes(), phraseAsTerms ? 1f : 0, query);
-        verify(callback).flattened(bart.bytes(), phraseAsTerms ? 1f : 0, query);
-        verify(callback).flattened(another.bytes(), phraseAsTerms ? 1f : 0, query);
+        verify(callback).flattened(foo.bytes(), boost(phraseAsTerms), query);
+        verify(callback).flattened(qux.bytes(), boost(phraseAsTerms), query);
+        verify(callback).flattened(quux.bytes(), boost(phraseAsTerms), query);
+        verify(callback).flattened(bart.bytes(), boost(phraseAsTerms), query);
+        verify(callback).flattened(another.bytes(), boost(phraseAsTerms), query);
         verify(callback, never()).flattened(eq(bar.bytes()), anyFloat(), isNull(Query.class));
         verify(callback, never()).flattened(eq(anoth.bytes()), anyFloat(), isNull(Query.class));
 
-        verify(callback).flattened(another.bytes(), phraseAsTerms ? 1f : 0, query);
+        verify(callback).flattened(another.bytes(), boost(phraseAsTerms), query);
 
         if (phraseAsTerms) {
             verify(callback, never()).startPhrase(anyInt(), anyFloat());
@@ -122,5 +122,9 @@ public class ElasticsearchQueryFlattenerTest {
             verify(callback, times(3)).endPhrasePosition();
             verify(callback).endPhrase("test", 0, 1);
         }
+    }
+
+    private float boost(boolean phraseAsTerms) {
+        return phraseAsTerms ? 1f : 0;
     }
 }
