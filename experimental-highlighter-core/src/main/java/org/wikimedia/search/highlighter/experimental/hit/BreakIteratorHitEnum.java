@@ -98,7 +98,7 @@ public final class BreakIteratorHitEnum extends AbstractHitEnum {
     }
 
     /**
-     * Since the BreakIteratorHitEnum has no real idea how to
+     * Since the BreakIteratorHitEnum has no real idea how to.
      */
     @Override
     public float corpusWeight() {

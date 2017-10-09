@@ -33,7 +33,7 @@ public class TokenStreamHitEnum extends AbstractHitEnum {
     private int source;
 
     /**
-     * Build an HitEnum for a TokenStream
+     * Build an HitEnum for a TokenStream.
      */
     public TokenStreamHitEnum(TokenStream tokenStream, TermWeigher<BytesRef> queryWeigher,
             TermWeigher<BytesRef> corpusWeigher, TermSourceFinder<BytesRef> sourceFinder) {

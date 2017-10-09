@@ -21,7 +21,8 @@ public class BasicSourceOrderSnippetChooser extends AbstractBasicSnippetChooser<
     public BasicSourceOrderSnippetChooser() {}
 
     /**
-     * Build the snippet chooser with the hitBuilder provided
+     * Build the snippet chooser with the hitBuilder provided.
+     *
      * @param hitBuilder
      */
     public BasicSourceOrderSnippetChooser(HitBuilder hitBuilder) {

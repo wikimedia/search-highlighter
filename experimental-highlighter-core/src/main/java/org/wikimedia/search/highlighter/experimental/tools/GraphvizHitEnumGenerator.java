@@ -9,7 +9,7 @@ import java.util.Map;
 import org.wikimedia.search.highlighter.experimental.HitEnum;
 
 /**
- * Tool that generates a graph by reading the HitEnum structure
+ * Tool that generates a graph by reading the HitEnum structure.
  */
 public class GraphvizHitEnumGenerator {
     private final StringBuilder graph = new StringBuilder();
@@ -40,7 +40,8 @@ public class GraphvizHitEnumGenerator {
     }
 
     /**
-     * Add a node to the current graph
+     * Add a node to the current graph.
+     *
      * @param hitEnum
      */
     public void addNode(HitEnum hitEnum) {
@@ -48,7 +49,8 @@ public class GraphvizHitEnumGenerator {
     }
 
     /**
-     * Add a node to the current graph with extra infos
+     * Add a node to the current graph with extra infos.
+     *
      * @param hitEnum
      * @param params
      * @return the node id

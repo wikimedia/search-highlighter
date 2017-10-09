@@ -89,11 +89,12 @@ public class Snippet implements Segment {
     }
 
     /**
-     * Build a Hit from a HitEnum
+     * Build a Hit from a HitEnum.
      */
     public interface HitBuilder {
         /**
-         * Build the Hit
+         * Build the Hit.
+         *
          * @return the Hit
          */
         Hit buildHit(HitEnum e);
