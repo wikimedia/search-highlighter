@@ -37,8 +37,8 @@
     </modules>
 
     <scm>
-        <connection>scm:git:https://gerrit.wikimedia.org/r/a/search/highlighter</connection>
-        <developerConnection>scm:git:ssh://gerrit.wikimedia.org:29418/wikimedia/search/highlighter</developerConnection>
+        <connection>scm:git:https://gerrit.wikimedia.org/r/search/highlighter</connection>
+        <developerConnection>scm:git:ssh://gerrit.wikimedia.org:29418/search/highlighter</developerConnection>
         <tag>HEAD</tag>
         <url>https://gerrit.wikimedia.org/r/#/admin/projects/search/highlighter</url>
     </scm>
