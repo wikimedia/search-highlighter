@@ -5,7 +5,7 @@
     <parent>
         <groupId>org.wikimedia.discovery</groupId>
         <artifactId>discovery-parent-pom</artifactId>
-        <version>1.7</version>
+        <version>1.8</version>
     </parent>
 
     <groupId>org.wikimedia.search.highlighter</groupId>
@@ -47,6 +47,14 @@
         <system>GitHub</system>
         <url>https://github.com/wikimedia/search-highlighter/issues</url>
     </issueManagement>
+
+    <distributionManagement>
+        <site>
+            <id>search-experimental-highlighter.site</id>
+            <name>Experimental highlighter documentation</name>
+            <url>https://doc.wikimedia.org/search-highlighter/experimental/</url>
+        </site>
+    </distributionManagement>
 
     <properties>
         <elasticsearch.version>5.5.2</elasticsearch.version>
