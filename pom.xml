@@ -13,6 +13,8 @@
     <version>5.5.2.3-SNAPSHOT</version>
     <packaging>pom</packaging>
 
+    <url>https://doc.wikimedia.org/search-highlighter/</url>
+
     <licenses>
         <license>
             <name>The Apache Software License, Version 2.0</name>
@@ -47,14 +49,6 @@
         <system>GitHub</system>
         <url>https://github.com/wikimedia/search-highlighter/issues</url>
     </issueManagement>
-
-    <distributionManagement>
-        <site>
-            <id>search-experimental-highlighter.site</id>
-            <name>Experimental highlighter documentation</name>
-            <url>https://doc.wikimedia.org/search-highlighter/experimental/</url>
-        </site>
-    </distributionManagement>
 
     <properties>
         <elasticsearch.version>5.5.2</elasticsearch.version>
