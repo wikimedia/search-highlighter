@@ -1,12 +1,12 @@
 package org.wikimedia.search.highlighter.experimental.hit.weight;
 
+import static org.junit.Assert.assertEquals;
+
 import java.util.HashMap;
 import java.util.Map;
 
 import org.junit.Test;
 import org.wikimedia.search.highlighter.experimental.hit.TermWeigher;
-
-import static org.junit.Assert.assertEquals;
 
 public class ExactMatchTermWeigherTest {
     @Test
