@@ -41,8 +41,6 @@ public class GraphvizHitEnumGenerator {
 
     /**
      * Add a node to the current graph.
-     *
-     * @param hitEnum
      */
     public void addNode(HitEnum hitEnum) {
         addNode(hitEnum, Collections.<String, Object>emptyMap());
@@ -51,8 +49,6 @@ public class GraphvizHitEnumGenerator {
     /**
      * Add a node to the current graph with extra infos.
      *
-     * @param hitEnum
-     * @param params
      * @return the node id
      */
     public int addNode(HitEnum hitEnum, Map<String, Object> params) {

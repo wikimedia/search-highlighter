@@ -27,7 +27,7 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
  * least element can always be found in constant time.  Put()'s and pop()'s
  * require log(size) time.
  * <p>
- * <p><b>NOTE</b>: This class will pre-allocate a full array of
+ * <b>NOTE</b>: This class will pre-allocate a full array of
  * length <code>maxSize+1</code> if instantiated via the
  * {@link #PriorityQueue(int, boolean)} constructor with
  * <code>prepopulate</code> set to <code>true</code>.
@@ -120,7 +120,7 @@ public abstract class PriorityQueue<T> {
      * <p>
      * If this method is extended to return a non-null value, then the following
      * usage pattern is recommended:
-     * <p>
+     *
      * <pre class="prettyprint">
      * // extends getSentinelObject() to return a non-null value.
      * PriorityQueue&lt;MyObject&gt; pq = new MyQueue&lt;MyObject&gt;(numHits);
@@ -132,7 +132,7 @@ public abstract class PriorityQueue<T> {
      * pqTop.change().
      * pqTop = pq.updateTop();
      * </pre>
-     * <p>
+     *
      * <b>NOTE:</b> if this method returns a non-null value, it will be called by
      * the {@link PriorityQueue#PriorityQueue(int, boolean)} constructor
      * {@link #size()} times, relying on a new object to be returned and will not
@@ -216,14 +216,14 @@ public abstract class PriorityQueue<T> {
     /**
      * Should be called when the Object at top changes values. Still log(n) worst
      * case, but it's at least twice as fast to
-     * <p>
+     *
      * <pre class="prettyprint">
      * pq.top().change();
      * pq.updateTop();
      * </pre>
-     * <p>
+     *
      * instead of
-     * <p>
+     *
      * <pre class="prettyprint">
      * o = pq.pop();
      * o.change();
