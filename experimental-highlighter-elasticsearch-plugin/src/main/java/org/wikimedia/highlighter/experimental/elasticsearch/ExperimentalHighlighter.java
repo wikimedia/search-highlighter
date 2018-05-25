@@ -17,7 +17,6 @@ import java.util.regex.Pattern;
 
 import org.apache.logging.log4j.Logger;
 import org.apache.lucene.search.Query;
-import org.apache.lucene.util.automaton.RegExp;
 import org.elasticsearch.common.logging.ESLoggerFactory;
 import org.elasticsearch.common.text.Text;
 import org.elasticsearch.common.util.BigArrays;
@@ -336,7 +335,7 @@ public class ExperimentalHighlighter implements Highlighter {
                     }
                     AutomatonHitEnum.Factory factory = cache.automatonHitEnumFactories.get(regex);
                     if (factory == null) {
-                        factory = buildFactoryForRegex(new RegExp(regex));
+                        factory = buildFactoryForRegex(regex);
                         cache.automatonHitEnumFactories.put(regex, factory);
                     }
                     hitEnums.add(buildLuceneRegexHitEnumForRegex(factory, fieldValues, caseInsensitive));
@@ -351,8 +350,8 @@ public class ExperimentalHighlighter implements Highlighter {
             return hitEnums;
         }
 
-        private AutomatonHitEnum.Factory buildFactoryForRegex(RegExp regex) {
-            return AutomatonHitEnum.factory(regex.toAutomaton(getMaxDeterminizedStates()));
+        private AutomatonHitEnum.Factory buildFactoryForRegex(String regex) {
+            return AutomatonHitEnum.factory(regex, getMaxDeterminizedStates());
         }
 
         private int getMaxDeterminizedStates() {

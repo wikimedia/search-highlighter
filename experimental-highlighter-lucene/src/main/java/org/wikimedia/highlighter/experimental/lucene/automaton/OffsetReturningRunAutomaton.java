@@ -4,7 +4,6 @@ import org.apache.lucene.util.automaton.Automaton;
 import org.apache.lucene.util.automaton.RunAutomaton;
 
 
-
 /**
  * RunAutomaton that returns the end offset of the matching string.
  */
