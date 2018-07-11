@@ -5,12 +5,12 @@
     <parent>
         <groupId>org.wikimedia.discovery</groupId>
         <artifactId>discovery-parent-pom</artifactId>
-        <version>1.12</version>
+        <version>1.14</version>
     </parent>
 
     <groupId>org.wikimedia.search.highlighter</groupId>
     <artifactId>experimental</artifactId>
-    <version>5.5.2.4-SNAPSHOT</version>
+    <version>6.3.0-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <url>https://doc.wikimedia.org/search-highlighter/</url>
@@ -51,11 +51,12 @@
     </issueManagement>
 
     <properties>
-        <elasticsearch.version>5.5.2</elasticsearch.version>
+        <elasticsearch.version>6.3.0</elasticsearch.version>
+        <log4j.version>2.9.1</log4j.version>
         <!-- For the Elasticsearch plugin to work this should match the version of Lucene that Elasticsearch
       uses. -->
-        <lucene.version>6.6.0</lucene.version>
-        <randomizedtesting.version>2.5.0</randomizedtesting.version>
+        <lucene.version>7.3.1</lucene.version>
+        <randomizedtesting.version>2.5.2</randomizedtesting.version>
     </properties>
 
     <dependencyManagement>
@@ -115,7 +116,7 @@
             <dependency>
                 <groupId>org.apache.logging.log4j</groupId>
                 <artifactId>log4j-api</artifactId>
-                <version>2.6.2</version>
+                <version>${log4j.version}</version>
                 <scope>provided</scope>
             </dependency>
             <dependency>
@@ -145,7 +146,7 @@
             <dependency>
                 <groupId>org.apache.logging.log4j</groupId>
                 <artifactId>log4j-core</artifactId>
-                <version>2.6.2</version>
+                <version>${log4j.version}</version>
                 <scope>test</scope>
             </dependency>
             <dependency>
@@ -219,20 +220,21 @@
                                 </excludes>
                                 <skipTests>${skip.unit.tests}</skipTests>
                                 <listeners>
-                                    <report-text showNumFailures="30" showOutput="onerror" showStackTraces="true" showStatusError="true" showStatusFailure="true" showStatusIgnored="true" showStatusOk="false" showSuiteSummary="true" showThrowable="true" timestamps="false" />
-                                    <report-ant-xml dir="${project.build.directory}/surefire-reports" mavenExtensions="true" />
+                                    <report-text showNumFailures="30" showOutput="onerror" showStackTraces="true" showStatusError="true" showStatusFailure="true" showStatusIgnored="true" showStatusOk="false" showSuiteSummary="true" showThrowable="true" timestamps="false"></report-text>
+                                    <report-ant-xml dir="${project.build.directory}/surefire-reports" mavenExtensions="true"></report-ant-xml>
                                 </listeners>
                                 <heartbeat>20</heartbeat>
                                 <jvmOutputAction>warn</jvmOutputAction>
                                 <leaveTemporary>true</leaveTemporary>
                                 <sysouts>false</sysouts>
                                 <assertions>
-                                    <enable />
+                                    <enable></enable>
                                 </assertions>
                                 <jvmArgs>
                                     <param>-Xmx512m</param>
                                     <param>-XX:MaxDirectMemorySize=512m</param>
                                     <param>-Des.logger.prefix=</param>
+                                    <param>-Dtests.gradle=yes</param>
                                 </jvmArgs>
                             </configuration>
                         </execution>
@@ -256,20 +258,21 @@
                                 </includes>
                                 <skipTests>${skip.unit.tests}</skipTests>
                                 <listeners>
-                                    <report-text showNumFailures="30" showOutput="onerror" showStackTraces="true" showStatusError="true" showStatusFailure="true" showStatusIgnored="true" showStatusOk="false" showSuiteSummary="true" showThrowable="true" timestamps="false" />
-                                    <report-ant-xml dir="${project.build.directory}/surefire-reports" mavenExtensions="true" />
+                                    <report-text showNumFailures="30" showOutput="onerror" showStackTraces="true" showStatusError="true" showStatusFailure="true" showStatusIgnored="true" showStatusOk="false" showSuiteSummary="true" showThrowable="true" timestamps="false"></report-text>
+                                    <report-ant-xml dir="${project.build.directory}/surefire-reports" mavenExtensions="true"></report-ant-xml>
                                 </listeners>
                                 <heartbeat>20</heartbeat>
                                 <jvmOutputAction>warn</jvmOutputAction>
                                 <leaveTemporary>true</leaveTemporary>
                                 <sysouts>false</sysouts>
                                 <assertions>
-                                    <enable />
+                                    <enable></enable>
                                 </assertions>
                                 <jvmArgs>
                                     <param>-Xmx512m</param>
                                     <param>-XX:MaxDirectMemorySize=512m</param>
                                     <param>-Des.logger.prefix=</param>
+                                    <param>-Dtests.gradle=yes</param>
                                 </jvmArgs>
                             </configuration>
                         </execution>
@@ -299,7 +302,7 @@
                                         </goals>
                                     </pluginExecutionFilter>
                                     <action>
-                                        <ignore />
+                                        <ignore></ignore>
                                     </action>
                                 </pluginExecution>
                                 <pluginExecution>
@@ -313,7 +316,7 @@
                                         </goals>
                                     </pluginExecutionFilter>
                                     <action>
-                                        <ignore />
+                                        <ignore></ignore>
                                     </action>
                                 </pluginExecution>
                             </pluginExecutions>

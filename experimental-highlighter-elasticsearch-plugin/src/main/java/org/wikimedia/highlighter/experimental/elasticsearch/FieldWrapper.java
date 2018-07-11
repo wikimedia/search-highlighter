@@ -15,7 +15,7 @@ import org.apache.lucene.index.IndexOptions;
 import org.apache.lucene.util.BytesRef;
 import org.elasticsearch.common.util.BigArrays;
 import org.elasticsearch.index.mapper.FieldMapper;
-import org.elasticsearch.index.mapper.StringFieldMapper;
+import org.elasticsearch.index.mapper.TextFieldMapper;
 import org.elasticsearch.search.fetch.subphase.highlight.HighlightUtils;
 import org.elasticsearch.search.fetch.subphase.highlight.HighlighterContext;
 import org.elasticsearch.search.fetch.subphase.highlight.SearchContextHighlight.FieldOptions;
@@ -352,8 +352,8 @@ public class FieldWrapper {
 
     public int getPositionGap() {
         if (positionGap < 0) {
-            if (context.mapper instanceof StringFieldMapper) {
-                positionGap = ((StringFieldMapper) context.mapper).getPositionIncrementGap();
+            if (context.mapper instanceof TextFieldMapper) {
+                positionGap = ((TextFieldMapper) context.mapper).getPositionIncrementGap();
             } else {
                 positionGap = 1;
             }

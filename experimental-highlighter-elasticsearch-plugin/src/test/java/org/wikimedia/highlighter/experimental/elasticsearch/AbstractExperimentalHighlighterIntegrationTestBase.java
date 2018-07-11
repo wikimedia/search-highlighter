@@ -2,20 +2,42 @@ package org.wikimedia.highlighter.experimental.elasticsearch;
 
 import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
 import static org.elasticsearch.index.query.QueryBuilders.termQuery;
+import static org.elasticsearch.plugins.AnalysisPlugin.requriesAnalysisSettings;
 import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertAcked;
 
 import java.io.IOException;
+import java.io.Reader;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Consumer;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
+import org.apache.lucene.analysis.CharArraySet;
+import org.apache.lucene.analysis.TokenStream;
+import org.apache.lucene.analysis.charfilter.MappingCharFilter;
+import org.apache.lucene.analysis.charfilter.NormalizeCharMap;
+import org.apache.lucene.analysis.en.EnglishPossessiveFilter;
+import org.apache.lucene.analysis.en.KStemFilter;
+import org.apache.lucene.analysis.miscellaneous.ASCIIFoldingFilter;
+import org.apache.lucene.analysis.miscellaneous.StemmerOverrideFilter;
+import org.apache.lucene.analysis.miscellaneous.WordDelimiterGraphFilter;
+import org.apache.lucene.analysis.miscellaneous.WordDelimiterIterator;
 import org.elasticsearch.action.search.SearchRequestBuilder;
+import org.elasticsearch.common.Strings;
+import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.xcontent.XContentBuilder;
+import org.elasticsearch.index.analysis.Analysis;
+import org.elasticsearch.index.analysis.CharFilterFactory;
+import org.elasticsearch.index.analysis.TokenFilterFactory;
 import org.elasticsearch.index.query.QueryBuilder;
+import org.elasticsearch.indices.analysis.AnalysisModule;
+import org.elasticsearch.plugins.AnalysisPlugin;
 import org.elasticsearch.plugins.Plugin;
 import org.elasticsearch.search.fetch.subphase.highlight.HighlightBuilder;
 import org.elasticsearch.test.ESIntegTestCase;
@@ -139,10 +161,11 @@ ESIntegTestCase {
         XContentBuilder mapping = jsonBuilder().startObject();
         mapping.startObject("test").startObject("properties");
         mapping.startObject("bar").field("type", "integer").endObject();
-        addField(mapping, "test", offsetsInPostings, fvhLikeTermVectors);
-        addField(mapping, "test2", offsetsInPostings, fvhLikeTermVectors);
+        addField(mapping, "custom_all", offsetsInPostings, fvhLikeTermVectors, false);
+        addField(mapping, "test", offsetsInPostings, fvhLikeTermVectors, true);
+        addField(mapping, "test2", offsetsInPostings, fvhLikeTermVectors, true);
         mapping.startObject("foo").field("type").value("object").startObject("properties");
-        addField(mapping, "test", offsetsInPostings, fvhLikeTermVectors);
+        addField(mapping, "test", offsetsInPostings, fvhLikeTermVectors, true);
         mapping.endObject().endObject().endObject().endObject().endObject();
 
         XContentBuilder settings = jsonBuilder().startObject().startObject("index");
@@ -188,14 +211,13 @@ ESIntegTestCase {
         {
             settings.startObject("possessive_english");
             {
-                settings.field("type", "stemmer");
-                settings.field("language", "possessive_english");
+                settings.field("type", "stemmer_possessive_english");
             }
             settings.endObject();
             settings.startObject("aggressive_splitting");
             {
-                settings.field("type", "word_delimiter");
-                settings.field("stem_possessive_english", "false");
+                settings.field("type", "word_delimiter_graph");
+                settings.field("stem_english_possessive", "false");
                 settings.field("preserve_original", "false");
             }
             settings.endObject();
@@ -243,15 +265,19 @@ ESIntegTestCase {
     }
 
     private void addField(XContentBuilder builder, String name, boolean offsetsInPostings,
-            boolean fvhLikeTermVectors) throws IOException {
+            boolean fvhLikeTermVectors, boolean includeInAll) throws IOException {
         builder.startObject(name).field("type", "text");
         addProperties(builder, offsetsInPostings, fvhLikeTermVectors);
+        if (includeInAll) {
+            builder.field("copy_to", "custom_all");
+        }
         builder.startObject("fields");
         addSubField(builder, "whitespace", "whitespace", offsetsInPostings, fvhLikeTermVectors);
         addSubField(builder, "english", "english", offsetsInPostings, fvhLikeTermVectors);
         addSubField(builder, "english2", "english", offsetsInPostings, fvhLikeTermVectors);
         addSubField(builder, "cirrus_english", "cirrus_english", offsetsInPostings, fvhLikeTermVectors);
         addSubField(builder, "chars", "chars", offsetsInPostings, fvhLikeTermVectors);
+
         builder.endObject().endObject();
     }
 
@@ -289,8 +315,186 @@ ESIntegTestCase {
     @Override
     protected Collection<Class<? extends Plugin>> nodePlugins() {
         return Collections.unmodifiableCollection(
-                Arrays.asList(ExperimentalHighlighterPlugin.class
-                        //, AnalysisICUPlugin.class
+                Arrays.asList(ExperimentalHighlighterPlugin.class,
+                        MockPlugin.class
                 ));
+    }
+
+    /**
+     * Replicate some analysis components that were moved to a plugin.
+     * @see <a href="https://github.com/elastic/elasticsearch/blob/master/modules/analysis-common">analysis-common.java</a>}
+     */
+    public static class MockPlugin extends Plugin implements AnalysisPlugin {
+        @Override
+        public Map<String, AnalysisModule.AnalysisProvider<CharFilterFactory>> getCharFilters() {
+            Map<String, AnalysisModule.AnalysisProvider<CharFilterFactory>> map = new HashMap<>();
+            // org/elasticsearch/analysis/common/MappingCharFilterFactory.java
+            map.put("mapping", (isettings, env, name, settings) -> {
+
+                Pattern p = Pattern.compile("^(.*?)=>(.*)$");
+
+                NormalizeCharMap.Builder builder = new NormalizeCharMap.Builder();
+                List<String> patterns = settings.getAsList("mappings");
+                for (String pattern : patterns) {
+                    Matcher m = p.matcher(pattern);
+                    if (!m.find()) {
+                        throw new IllegalArgumentException("Invalid pattern [" + pattern + "]");
+                    }
+                    builder.add(m.group(1), m.group(2));
+                }
+
+                final NormalizeCharMap charMap = builder.build();
+
+
+                return new CharFilterFactory() {
+                    @Override
+                    public String name() {
+                        return name;
+                    }
+
+                    @Override
+                    public Reader create(Reader reader) {
+                        return new MappingCharFilter(charMap, reader);
+                    }
+                };
+            });
+            return Collections.unmodifiableMap(map);
+        }
+
+        @Override
+        public Map<String, AnalysisModule.AnalysisProvider<TokenFilterFactory>> getTokenFilters() {
+            Map<String, AnalysisModule.AnalysisProvider<TokenFilterFactory>> map = new HashMap<>();
+            // org/elasticsearch/analysis/common/ASCIIFoldingTokenFilterFactory.java
+            map.put("asciifolding", requriesAnalysisSettings((isettings, env, name, settings) -> {
+                return new TokenFilterFactory() {
+                    @Override
+                    public String name() {
+                        return name;
+                    }
+
+                    @Override
+                    public TokenStream create(TokenStream tokenStream) {
+                        return new ASCIIFoldingFilter(tokenStream, settings.getAsBoolean("preserve_original", false));
+                    }
+                };
+            }));
+            // org/elasticsearch/analysis/common/KStemTokenFilterFactory.java
+            map.put("kstem", (isettings, env, name, settings) -> {
+                return new TokenFilterFactory() {
+                    @Override
+                    public String name() {
+                        return name;
+                    }
+
+                    @Override
+                    public TokenStream create(TokenStream tokenStream) {
+                        return new KStemFilter(tokenStream);
+                    }
+                };
+            });
+            // org/elasticsearch/analysis/common/WordDelimiterGraphTokenFilterFactory.java
+            map.put("word_delimiter_graph", requriesAnalysisSettings((isettings, env, name, settings) -> {
+                int wflags = 0;
+                // If set, causes parts of words to be generated: "PowerShot" => "Power" "Shot"
+                wflags |= getFlag(WordDelimiterGraphFilter.GENERATE_WORD_PARTS, settings, "generate_word_parts", true);
+                // If set, causes number subwords to be generated: "500-42" => "500" "42"
+                wflags |= getFlag(WordDelimiterGraphFilter.GENERATE_NUMBER_PARTS, settings, "generate_number_parts", true);
+                // 1, causes maximum runs of word parts to be catenated: "wi-fi" => "wifi"
+                wflags |= getFlag(WordDelimiterGraphFilter.CATENATE_WORDS, settings, "catenate_words", false);
+                // If set, causes maximum runs of number parts to be catenated: "500-42" => "50042"
+                wflags |= getFlag(WordDelimiterGraphFilter.CATENATE_NUMBERS, settings, "catenate_numbers", false);
+                // If set, causes all subword parts to be catenated: "wi-fi-4000" => "wifi4000"
+                wflags |= getFlag(WordDelimiterGraphFilter.CATENATE_ALL, settings, "catenate_all", false);
+                // 1, causes "PowerShot" to be two tokens; ("Power-Shot" remains two parts regards)
+                wflags |= getFlag(WordDelimiterGraphFilter.SPLIT_ON_CASE_CHANGE, settings, "split_on_case_change", true);
+                // If set, includes original words in subwords: "500-42" => "500" "42" "500-42"
+                wflags |= getFlag(WordDelimiterGraphFilter.PRESERVE_ORIGINAL, settings, "preserve_original", false);
+                // 1, causes "j2se" to be three tokens; "j" "2" "se"
+                wflags |= getFlag(WordDelimiterGraphFilter.SPLIT_ON_NUMERICS, settings, "split_on_numerics", true);
+                // If set, causes trailing "'s" to be removed for each subword: "O'Neil's" => "O", "Neil"
+                wflags |= getFlag(WordDelimiterGraphFilter.STEM_ENGLISH_POSSESSIVE, settings, "stem_english_possessive", true);
+                // If not null is the set of tokens to protect from being delimited
+                Set<?> protectedWords = Analysis.getWordSet(env, isettings.getIndexVersionCreated(),
+                        settings, "protected_words");
+                final CharArraySet protoWords = protectedWords == null ? null : CharArraySet.copy(protectedWords);
+                final int flags = wflags;
+
+                return new TokenFilterFactory() {
+                    @Override
+                    public String name() {
+                        return name;
+                    }
+
+                    @Override
+                    public TokenStream create(TokenStream tokenStream) {
+                        return new WordDelimiterGraphFilter(tokenStream, WordDelimiterIterator.DEFAULT_WORD_DELIM_TABLE, flags, protoWords);
+                    }
+                };
+            }));
+            // org/elasticsearch/analysis/common/StemmerTokenFilterFactory.java#L138
+            map.put("stemmer_possessive_english", (isettings, env, name, settings) -> {
+                return new TokenFilterFactory() {
+                    @Override
+                    public String name() {
+                        return name;
+                    }
+
+                    @Override
+                    public TokenStream create(TokenStream tokenStream) {
+                        return new EnglishPossessiveFilter(tokenStream);
+                    }
+                };
+            });
+            // org/elasticsearch/analysis/common/StemmerOverrideTokenFilterFactory.java
+            map.put("stemmer_override", requriesAnalysisSettings((isettings, env, name, settings) -> {
+                List<String> rules = Analysis.getWordList(env, settings, "rules");
+                if (rules == null) {
+                    throw new IllegalArgumentException("stemmer override filter requires either `rules` or `rules_path` to be configured");
+                }
+
+                StemmerOverrideFilter.Builder builder = new StemmerOverrideFilter.Builder(false);
+                parseRules(rules, builder, "=>");
+                final StemmerOverrideFilter.StemmerOverrideMap overrideMap = builder.build();
+                return new TokenFilterFactory() {
+                    @Override
+                    public String name() {
+                        return name;
+                    }
+
+                    @Override
+                    public TokenStream create(TokenStream tokenStream) {
+                        return new StemmerOverrideFilter(tokenStream, overrideMap);
+                    }
+                };
+            }));
+            return Collections.unmodifiableMap(map);
+        }
+
+        private int getFlag(int flag, Settings settings, String key, boolean defaultValue) {
+            if (settings.getAsBoolean(key, defaultValue)) {
+                return flag;
+            }
+            return 0;
+        }
+
+        static void parseRules(List<String> rules, StemmerOverrideFilter.Builder builder, String mappingSep) {
+            for (String rule : rules) {
+                String key;
+                String override;
+                List<String> mapping = Strings.splitSmart(rule, mappingSep, false);
+                if (mapping.size() == 2) {
+                    key = mapping.get(0).trim();
+                    override = mapping.get(1).trim();
+                } else {
+                    throw new RuntimeException("Invalid Keyword override Rule:" + rule);
+                }
+
+                if (key.isEmpty() || override.isEmpty()) {
+                    throw new RuntimeException("Invalid Keyword override Rule:" + rule);
+                } else {
+                    builder.add(key, override);
+                }
+            }
+        }
     }
 }

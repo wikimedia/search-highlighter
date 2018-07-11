@@ -2,7 +2,6 @@ package org.wikimedia.highlighter.experimental.elasticsearch;
 
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.search.Query;
-import org.elasticsearch.common.lucene.search.function.FiltersFunctionScoreQuery;
 import org.elasticsearch.common.lucene.search.function.FunctionScoreQuery;
 import org.wikimedia.highlighter.experimental.lucene.QueryFlattener;
 
@@ -26,22 +25,10 @@ public class ElasticsearchQueryFlattener extends QueryFlattener {
                     callback);
             return true;
         }
-        if (query instanceof FiltersFunctionScoreQuery) {
-            flattenQuery((FiltersFunctionScoreQuery) query, pathBoost, sourceOverride, reader,
-                    callback);
-            return true;
-        }
         return false;
     }
 
     protected void flattenQuery(FunctionScoreQuery query, float pathBoost,
-            Object sourceOverride, IndexReader reader, Callback callback) {
-        if (query.getSubQuery() != null) {
-            flatten(query.getSubQuery(), pathBoost, sourceOverride, reader, callback);
-        }
-    }
-
-    protected void flattenQuery(FiltersFunctionScoreQuery query, float pathBoost,
             Object sourceOverride, IndexReader reader, Callback callback) {
         if (query.getSubQuery() != null) {
             flatten(query.getSubQuery(), pathBoost, sourceOverride, reader, callback);

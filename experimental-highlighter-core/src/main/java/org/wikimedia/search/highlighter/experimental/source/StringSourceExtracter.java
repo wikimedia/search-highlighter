@@ -17,13 +17,13 @@ public final class StringSourceExtracter implements SourceExtracter<String> {
 
     @Override
     public String extract(int startOffset, int endOffset) {
-        // This has extra defense just in case thing get weird. Shouldn't happen
-        // though.
+        startOffset = Math.max(0, startOffset);
+        endOffset = Math.min(endOffset, source.length());
+        // May happen on copy_to fields where the data is not
+        // part of the source
         if (startOffset >= endOffset) {
             return "";
         }
-        startOffset = Math.max(0, startOffset);
-        endOffset = Math.min(endOffset, source.length());
         return source.substring(startOffset, endOffset);
     }
 }

@@ -5,10 +5,10 @@ import static org.mockito.Mockito.anyInt;
 import static org.mockito.Mockito.anyString;
 import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.isNull;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.mock;
 
 import java.io.IOException;
 
@@ -24,14 +24,14 @@ import org.apache.lucene.search.Query;
 import org.apache.lucene.search.TermQuery;
 import org.apache.lucene.store.RAMDirectory;
 import org.elasticsearch.common.lucene.search.MultiPhrasePrefixQuery;
+import org.elasticsearch.common.lucene.search.function.CombineFunction;
 import org.elasticsearch.common.lucene.search.function.FieldValueFactorFunction;
-import org.elasticsearch.common.lucene.search.function.FiltersFunctionScoreQuery;
-import org.elasticsearch.common.lucene.search.function.FiltersFunctionScoreQuery.FilterFunction;
 import org.elasticsearch.common.lucene.search.function.FunctionScoreQuery;
 import org.elasticsearch.common.lucene.search.function.ScoreFunction;
 import org.elasticsearch.index.mapper.ParseContext.Document;
 import org.junit.Test;
 import org.wikimedia.highlighter.experimental.lucene.QueryFlattener.Callback;
+
 
 /**
  * NOTE: This test may fail because of the security manager.
@@ -63,7 +63,7 @@ public class ElasticsearchQueryFlattenerTest {
     @Test
     public void filtersFunctionScoreQuery() {
         Callback callback = mock(Callback.class);
-        Query query = new FiltersFunctionScoreQuery(new TermQuery(bar), null, new FilterFunction[] {}, Float.MAX_VALUE, 0f, null);
+        Query query = new FunctionScoreQuery(new TermQuery(bar), null, new ScoreFunction[]{}, CombineFunction.AVG, 0f, Float.MAX_VALUE);
         new ElasticsearchQueryFlattener().flatten(query, null, callback);
         verify(callback).flattened(bar.bytes(), 1f, null);
     }

@@ -35,6 +35,7 @@ import org.elasticsearch.action.index.IndexRequestBuilder;
 import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.common.StopWatch;
+import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.unit.Fuzziness;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.json.JsonXContent;
@@ -354,7 +355,7 @@ public class MiscellaneousTest extends AbstractExperimentalHighlighterIntegratio
             XContentBuilder builder = XContentBuilder.builder(JsonXContent.jsonXContent);
             query.toXContent(builder, null);
             many.should(wrapperQuery(
-                    builder.string().replaceAll("test", field)));
+                    Strings.toString(builder).replaceAll("test", field)));
         }
 
         watch.start(String.format(Locale.ENGLISH, "%s many queried fields", name));
@@ -393,7 +394,7 @@ public class MiscellaneousTest extends AbstractExperimentalHighlighterIntegratio
         indexTestData();
 
         SearchResponse response = client().prepareSearch("test").setTypes("test")
-                .setQuery(matchQuery("_all", "very")).highlighter(new HighlightBuilder().highlighterType("experimental")
+                .setQuery(matchQuery("custom_all", "very")).highlighter(new HighlightBuilder().highlighterType("experimental")
                 .field("*")).get();
         assertHighlight(response, 0, "test", 0, equalTo("tests <em>very</em> simple test"));
     }
