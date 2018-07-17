@@ -10,7 +10,7 @@
 
     <groupId>org.wikimedia.search.highlighter</groupId>
     <artifactId>experimental</artifactId>
-    <version>6.3.0-SNAPSHOT</version>
+    <version>6.3.0</version>
     <packaging>pom</packaging>
 
     <url>https://doc.wikimedia.org/search-highlighter/</url>
@@ -41,7 +41,7 @@
     <scm>
         <connection>scm:git:https://gerrit.wikimedia.org/r/search/highlighter</connection>
         <developerConnection>scm:git:ssh://gerrit.wikimedia.org:29418/search/highlighter</developerConnection>
-        <tag>HEAD</tag>
+        <tag>experimental-6.3.0</tag>
         <url>https://gerrit.wikimedia.org/r/#/admin/projects/search/highlighter</url>
     </scm>
 
