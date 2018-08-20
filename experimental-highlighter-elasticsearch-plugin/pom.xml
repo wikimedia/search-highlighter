@@ -123,16 +123,6 @@
                     </execution>
                 </executions>
             </plugin>
-            <?SORTPOM IGNORE?>
-            <!--
-                checksum must be run *after* assembly so that we generate
-                sha files for zip files as well.
-            -->
-            <plugin>
-                <groupId>net.nicoulaj.maven.plugins</groupId>
-                <artifactId>checksum-maven-plugin</artifactId>
-            </plugin>
-            <?SORTPOM RESUME?>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-enforcer-plugin</artifactId>
