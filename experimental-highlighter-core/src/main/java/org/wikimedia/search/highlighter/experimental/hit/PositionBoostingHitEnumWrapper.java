@@ -11,7 +11,7 @@ import org.wikimedia.search.highlighter.experimental.HitEnum;
  * weights.
  */
 public class PositionBoostingHitEnumWrapper extends AbstractHitEnumWrapper {
-    private final List<PositionBoost> boosts = new ArrayList<PositionBoost>();
+    private final List<PositionBoost> boosts = new ArrayList<>();
     private int current;
 
     public PositionBoostingHitEnumWrapper(HitEnum wrapped) {

@@ -13,7 +13,7 @@ import org.wikimedia.search.highlighter.experimental.HitEnum;
  */
 public class GraphvizHitEnumGenerator {
     private final StringBuilder graph = new StringBuilder();
-    private final Map<HitEnum, Integer> hitEnumIds = new HashMap<HitEnum, Integer>();
+    private final Map<HitEnum, Integer> hitEnumIds = new HashMap<>();
     private final List<Link> links = new ArrayList<>();
 
     private int hitEnumIdSequence;
@@ -43,7 +43,7 @@ public class GraphvizHitEnumGenerator {
      * Add a node to the current graph.
      */
     public void addNode(HitEnum hitEnum) {
-        addNode(hitEnum, Collections.<String, Object>emptyMap());
+        addNode(hitEnum, Collections.emptyMap());
     }
 
     /**

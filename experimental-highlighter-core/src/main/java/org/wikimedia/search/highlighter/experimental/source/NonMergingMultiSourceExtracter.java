@@ -19,7 +19,7 @@ public final class NonMergingMultiSourceExtracter<T> extends AbstractMultiSource
      * Make a builder for the segmenter with an offsetGap of 1.
      */
     public static <T> Builder<T> builder() {
-        return new Builder<T>(1);
+        return new Builder<>(1);
     }
 
     /**
@@ -28,25 +28,25 @@ public final class NonMergingMultiSourceExtracter<T> extends AbstractMultiSource
      * @param offsetGap the gap between the extracters
      */
     public static <T> Builder<T> builder(int offsetGap) {
-        return new Builder<T>(offsetGap);
+        return new Builder<>(offsetGap);
     }
 
     /**
      * Builder for {@linkplain StringMergingMultiSourceExtracter}s.
      */
     public static final class Builder<T> implements AbstractMultiSourceExtracter.Builder<T, Builder<T>> {
-        private final List<ConstituentExtracter<T>> extracters = new ArrayList<ConstituentExtracter<T>>();
+        private final List<ConstituentExtracter<T>> extracters = new ArrayList<>();
         private final int offsetGap;
 
         private Builder(int offsetGap) {
             this.offsetGap = offsetGap;
         }
         public Builder<T> add(SourceExtracter<T> extracter, int length) {
-            extracters.add(new ConstituentExtracter<T>(extracter, length));
+            extracters.add(new ConstituentExtracter<>(extracter, length));
             return this;
         }
         public NonMergingMultiSourceExtracter<T> build() {
-            return new NonMergingMultiSourceExtracter<T>(extracters, offsetGap);
+            return new NonMergingMultiSourceExtracter<>(extracters, offsetGap);
         }
     }
 

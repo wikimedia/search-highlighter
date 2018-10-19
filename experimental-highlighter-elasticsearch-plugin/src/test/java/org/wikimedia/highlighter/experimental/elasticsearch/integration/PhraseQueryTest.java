@@ -326,8 +326,7 @@ public class PhraseQueryTest extends AbstractExperimentalHighlighterIntegrationT
         buildIndex();
         indexTestData(data);
 
-        QueryBuilder qb = queryStringQuery(query).defaultField("test.cirrus_english").autoGeneratePhraseQueries(
-                true);
+        QueryBuilder qb = queryStringQuery(query).defaultField("test.cirrus_english");
         for (String hitSource : HIT_SOURCES) {
             SearchResponse response = testSearch(qb,
                     hitSource(hitSource)

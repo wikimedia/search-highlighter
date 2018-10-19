@@ -29,7 +29,7 @@ public class WeightFilteredHitEnumWrapper extends AbstractFilteredHitEnumWrapper
 
     @Override
     public void toGraph(GraphvizHitEnumGenerator generator) {
-        generator.addNode(this, Collections.<String, Object>singletonMap("cutoff", cutoff));
+        generator.addNode(this, Collections.singletonMap("cutoff", cutoff));
         generator.addChild(this, wrapped());
     }
 }

@@ -41,6 +41,7 @@ import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.json.JsonXContent;
 import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilder;
+import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.fetch.subphase.highlight.HighlightBuilder;
 import org.junit.Test;
 import org.wikimedia.highlighter.experimental.elasticsearch.AbstractExperimentalHighlighterIntegrationTestBase;
@@ -464,6 +465,35 @@ public class MiscellaneousTest extends AbstractExperimentalHighlighterIntegratio
             x -> x.options(options).field("test.english")).get();
         assertHighlight(response, 0, "test.english", 0, equalTo("0:0-5,18-22:22"));
         assertHighlight(response, 0, "test.english", 1, equalTo("23:33-37:37"));
+    }
+
+    public void testPosIncGap() throws IOException {
+        buildIndex();
+        List data = ImmutableList.of("one gap one", "gap");
+        Map<String, Object> doc = new HashMap<>();
+        doc.put("pos_gap_big", data);
+        doc.put("pos_gap_small", data);
+        client().prepareIndex("test", "test", "1").setSource(doc).get();
+        refresh();
+        SearchResponse resp = client().prepareSearch().setQuery(QueryBuilders.matchPhraseQuery("pos_gap_big", "one gap"))
+                .highlighter(new HighlightBuilder()
+                .highlighterType("experimental")
+                .field("pos_gap_big"))
+            .get();
+        assertEquals(1, resp.getHits().totalHits);
+        assertEquals(1, resp.getHits().getHits()[0].getHighlightFields().size());
+        // The second "one gap" is not highlighted because of pos inc offset
+        assertEquals(1, resp.getHits().getHits()[0].getHighlightFields().get("pos_gap_big").getFragments().length);
+
+        resp = client().prepareSearch().setQuery(QueryBuilders.matchPhraseQuery("pos_gap_small", "one gap"))
+                .highlighter(new HighlightBuilder()
+                        .highlighterType("experimental")
+                        .field("pos_gap_small"))
+                .get();
+        assertEquals(1, resp.getHits().totalHits);
+        assertEquals(1, resp.getHits().getHits()[0].getHighlightFields().size());
+        // The second "one gap" *is* highlighted because of pos inc offset set to 1 on the pos_gap_small field
+        assertEquals(2, resp.getHits().getHits()[0].getHighlightFields().get("pos_gap_small").getFragments().length);
     }
 
     // TODO matched_fields with different hit source

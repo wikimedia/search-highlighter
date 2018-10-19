@@ -119,7 +119,7 @@ public class BasicScoreBasedSnippetChooser extends AbstractBasicSnippetChooser<B
         if (scoreOrdered) {
             Arrays.sort(protos, ProtoSnippetComparators.WEIGHT);
         }
-        List<Snippet> results = new ArrayList<Snippet>(protos.length);
+        List<Snippet> results = new ArrayList<>(protos.length);
         for (ProtoSnippet proto: protos) {
             results.add(new Snippet(proto.pickedBounds.startOffset(), proto.pickedBounds.endOffset(), proto.hits));
         }

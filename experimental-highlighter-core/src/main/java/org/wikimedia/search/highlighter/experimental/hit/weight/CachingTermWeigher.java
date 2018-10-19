@@ -24,7 +24,7 @@ public class CachingTermWeigher<T> implements TermWeigher<T> {
      * @param next the weigher to cache
      */
     public CachingTermWeigher(TermWeigher<T> next) {
-        this(new MapCache<T>(new HashMap<T, Float>()), next);
+        this(new MapCache<>(new HashMap<>()), next);
     }
 
     /**

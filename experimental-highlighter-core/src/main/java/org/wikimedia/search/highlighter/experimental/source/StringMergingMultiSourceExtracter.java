@@ -30,14 +30,14 @@ public final class StringMergingMultiSourceExtracter extends AbstractMultiSource
      * Builder for {@linkplain StringMergingMultiSourceExtracter}s.
      */
     public static final class Builder implements AbstractMultiSourceExtracter.Builder<String, Builder> {
-        private final List<ConstituentExtracter<String>> extracters = new ArrayList<ConstituentExtracter<String>>();
+        private final List<ConstituentExtracter<String>> extracters = new ArrayList<>();
         private final String separator;
 
         private Builder(String separator) {
             this.separator = separator;
         }
         public Builder add(SourceExtracter<String> extracter, int length) {
-            extracters.add(new ConstituentExtracter<String>(extracter, length));
+            extracters.add(new ConstituentExtracter<>(extracter, length));
             return this;
         }
         public StringMergingMultiSourceExtracter build() {

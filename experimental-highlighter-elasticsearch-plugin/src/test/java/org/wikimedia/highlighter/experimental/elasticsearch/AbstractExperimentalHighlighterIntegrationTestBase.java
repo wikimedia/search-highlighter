@@ -2,7 +2,7 @@ package org.wikimedia.highlighter.experimental.elasticsearch;
 
 import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
 import static org.elasticsearch.index.query.QueryBuilders.termQuery;
-import static org.elasticsearch.plugins.AnalysisPlugin.requriesAnalysisSettings;
+import static org.elasticsearch.plugins.AnalysisPlugin.requiresAnalysisSettings;
 import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertAcked;
 
 import java.io.IOException;
@@ -18,23 +18,32 @@ import java.util.function.Consumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.CharArraySet;
 import org.apache.lucene.analysis.TokenStream;
+import org.apache.lucene.analysis.Tokenizer;
 import org.apache.lucene.analysis.charfilter.MappingCharFilter;
 import org.apache.lucene.analysis.charfilter.NormalizeCharMap;
+import org.apache.lucene.analysis.en.EnglishAnalyzer;
 import org.apache.lucene.analysis.en.EnglishPossessiveFilter;
 import org.apache.lucene.analysis.en.KStemFilter;
 import org.apache.lucene.analysis.miscellaneous.ASCIIFoldingFilter;
 import org.apache.lucene.analysis.miscellaneous.StemmerOverrideFilter;
 import org.apache.lucene.analysis.miscellaneous.WordDelimiterGraphFilter;
 import org.apache.lucene.analysis.miscellaneous.WordDelimiterIterator;
+import org.apache.lucene.analysis.pattern.PatternTokenizer;
 import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.common.Strings;
+import org.elasticsearch.common.regex.Regex;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.xcontent.XContentBuilder;
+import org.elasticsearch.index.analysis.AbstractIndexAnalyzerProvider;
+import org.elasticsearch.index.analysis.AbstractTokenizerFactory;
 import org.elasticsearch.index.analysis.Analysis;
+import org.elasticsearch.index.analysis.AnalyzerProvider;
 import org.elasticsearch.index.analysis.CharFilterFactory;
 import org.elasticsearch.index.analysis.TokenFilterFactory;
+import org.elasticsearch.index.analysis.TokenizerFactory;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.indices.analysis.AnalysisModule;
 import org.elasticsearch.plugins.AnalysisPlugin;
@@ -164,6 +173,14 @@ ESIntegTestCase {
         addField(mapping, "custom_all", offsetsInPostings, fvhLikeTermVectors, false);
         addField(mapping, "test", offsetsInPostings, fvhLikeTermVectors, true);
         addField(mapping, "test2", offsetsInPostings, fvhLikeTermVectors, true);
+        mapping.startObject("pos_gap_big")
+                .field("type").value("text")
+                .field("position_increment_gap", 1000)
+            .endObject();
+        mapping.startObject("pos_gap_small")
+                .field("type").value("text")
+                .field("position_increment_gap", 1)
+            .endObject();
         mapping.startObject("foo").field("type").value("object").startObject("properties");
         addField(mapping, "test", offsetsInPostings, fvhLikeTermVectors, true);
         mapping.endObject().endObject().endObject().endObject().endObject();
@@ -365,7 +382,7 @@ ESIntegTestCase {
         public Map<String, AnalysisModule.AnalysisProvider<TokenFilterFactory>> getTokenFilters() {
             Map<String, AnalysisModule.AnalysisProvider<TokenFilterFactory>> map = new HashMap<>();
             // org/elasticsearch/analysis/common/ASCIIFoldingTokenFilterFactory.java
-            map.put("asciifolding", requriesAnalysisSettings((isettings, env, name, settings) -> {
+            map.put("asciifolding", requiresAnalysisSettings((isettings, env, name, settings) -> {
                 return new TokenFilterFactory() {
                     @Override
                     public String name() {
@@ -393,7 +410,7 @@ ESIntegTestCase {
                 };
             });
             // org/elasticsearch/analysis/common/WordDelimiterGraphTokenFilterFactory.java
-            map.put("word_delimiter_graph", requriesAnalysisSettings((isettings, env, name, settings) -> {
+            map.put("word_delimiter_graph", requiresAnalysisSettings((isettings, env, name, settings) -> {
                 int wflags = 0;
                 // If set, causes parts of words to be generated: "PowerShot" => "Power" "Shot"
                 wflags |= getFlag(WordDelimiterGraphFilter.GENERATE_WORD_PARTS, settings, "generate_word_parts", true);
@@ -446,7 +463,7 @@ ESIntegTestCase {
                 };
             });
             // org/elasticsearch/analysis/common/StemmerOverrideTokenFilterFactory.java
-            map.put("stemmer_override", requriesAnalysisSettings((isettings, env, name, settings) -> {
+            map.put("stemmer_override", requiresAnalysisSettings((isettings, env, name, settings) -> {
                 List<String> rules = Analysis.getWordList(env, settings, "rules");
                 if (rules == null) {
                     throw new IllegalArgumentException("stemmer override filter requires either `rules` or `rules_path` to be configured");
@@ -468,6 +485,39 @@ ESIntegTestCase {
                 };
             }));
             return Collections.unmodifiableMap(map);
+        }
+
+        @Override
+        public Map<String, AnalysisModule.AnalysisProvider<TokenizerFactory>> getTokenizers() {
+            return Collections.singletonMap("pattern",
+                requiresAnalysisSettings((isettings, env, name, settings) -> new AbstractTokenizerFactory(isettings, name, settings) {
+                    @Override
+                    public Tokenizer create() {
+                        String sPattern = settings.get("pattern", "\\W+" /*PatternAnalyzer.NON_WORD_PATTERN*/);
+                        if (sPattern == null) {
+                            throw new IllegalArgumentException("pattern is missing for [" + name + "] tokenizer of type 'pattern'");
+                        }
+
+                        Pattern pattern = Regex.compile(sPattern, settings.get("flags"));
+                        int group = settings.getAsInt("group", -1);
+
+                        return new PatternTokenizer(pattern, group);
+                    }
+                })
+            );
+        }
+
+        @Override
+        public Map<String, AnalysisModule.AnalysisProvider<AnalyzerProvider<? extends Analyzer>>> getAnalyzers() {
+            return Collections.singletonMap("english",
+                    (isettings, env, name, settings) -> new AbstractIndexAnalyzerProvider<Analyzer>(isettings, name, settings) {
+                        @Override
+                        public Analyzer get() {
+                            return new EnglishAnalyzer(
+                                    Analysis.parseStopWords(env, isettings.getIndexVersionCreated(), settings, EnglishAnalyzer.getDefaultStopSet()),
+                                    Analysis.parseStemExclusion(settings, CharArraySet.EMPTY_SET));
+                        }
+                    });
         }
 
         private int getFlag(int flag, Settings settings, String key, boolean defaultValue) {

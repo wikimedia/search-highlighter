@@ -71,7 +71,7 @@ public class PostingsHitEnum extends AbstractHitEnum {
         }
         TermsEnum termsEnum = acceptable.getTermsEnum(terms);
         BytesRef term;
-        List<HitEnum> enums = new ArrayList<HitEnum>();
+        List<HitEnum> enums = new ArrayList<>();
 
         // Last enum that didn't find anything.  We can reuse it.
         PostingsEnum dp = null;

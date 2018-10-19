@@ -41,7 +41,7 @@ public class ExponentialSnippetWeigher implements SnippetWeigher {
         // pack them into a sorted array and walk it then build some kind of
         // hash thing. Maybe there is a better way to do this, but this works
         // for now.
-        Hit[] sorted = hits.toArray(new Hit[hits.size()]);
+        Hit[] sorted = hits.toArray(new Hit[0]);
         Arrays.sort(sorted, new SourceComparator());
         float weight = 0;
         int lastSource = sorted[0].source();

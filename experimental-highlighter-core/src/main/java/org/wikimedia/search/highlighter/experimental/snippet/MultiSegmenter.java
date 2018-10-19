@@ -32,7 +32,7 @@ public final class MultiSegmenter implements Segmenter {
      * Builder for {@linkplain MultiSegmenter}s.
      */
     public static final class Builder {
-        private final List<ConstituentSegmenter> segmenters = new ArrayList<ConstituentSegmenter>();
+        private final List<ConstituentSegmenter> segmenters = new ArrayList<>();
         private final int offsetGap;
 
         private Builder(int offsetGap) {

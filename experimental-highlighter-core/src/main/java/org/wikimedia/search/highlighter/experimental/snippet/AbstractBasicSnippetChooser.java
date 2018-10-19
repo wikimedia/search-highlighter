@@ -42,7 +42,7 @@ public abstract class AbstractBasicSnippetChooser<S> implements SnippetChooser {
                 }
                 continue;
             }
-            List<Hit> hits = new ArrayList<Hit>();
+            List<Hit> hits = new ArrayList<>();
             hits.add(hitBuilder.buildHit(e));
             while (true) {
                 boolean done = !e.next();

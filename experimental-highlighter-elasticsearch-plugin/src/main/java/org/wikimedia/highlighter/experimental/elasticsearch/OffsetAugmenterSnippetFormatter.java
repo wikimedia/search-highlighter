@@ -13,8 +13,7 @@ public class OffsetAugmenterSnippetFormatter implements SnippetFormatter {
 
     @Override
     public String format(Snippet snippet) {
-        StringBuilder sb = new StringBuilder();
-        sb.append(OFFSETS.format(snippet));
-        return sb.append('|').append(formatter.format(snippet)).toString();
+        return OFFSETS.format(snippet) +
+                '|' + formatter.format(snippet);
     }
 }

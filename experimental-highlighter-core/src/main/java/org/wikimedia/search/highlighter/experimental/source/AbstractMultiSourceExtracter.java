@@ -76,7 +76,7 @@ abstract class AbstractMultiSourceExtracter<T> implements SourceExtracter<T> {
             // efficient.
             return extracter.extracter.extract(startOffset, endOffset);
         }
-        List<T> extracts = new ArrayList<T>();
+        List<T> extracts = new ArrayList<>();
         extracts.add(extracter.extracter.extract(startOffset, extracter.length));
         // Oh well, we need to get results from multiple sources and smash them
         // together.

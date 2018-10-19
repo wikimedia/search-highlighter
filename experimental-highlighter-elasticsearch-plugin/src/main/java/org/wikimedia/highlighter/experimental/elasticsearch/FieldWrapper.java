@@ -14,7 +14,8 @@ import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.index.IndexOptions;
 import org.apache.lucene.util.BytesRef;
 import org.elasticsearch.common.util.BigArrays;
-import org.elasticsearch.index.mapper.FieldMapper;
+import org.elasticsearch.index.mapper.MappedFieldType;
+import org.elasticsearch.index.mapper.Mapper;
 import org.elasticsearch.index.mapper.TextFieldMapper;
 import org.elasticsearch.search.fetch.subphase.highlight.HighlightUtils;
 import org.elasticsearch.search.fetch.subphase.highlight.HighlighterContext;
@@ -52,7 +53,7 @@ public class FieldWrapper {
     /**
      * Position gap for the field.  Only looked up if needed.  < 0 means not looked up.
      */
-    private int positionGap = 1;
+    private int positionGap = -1;
 
     /**
      * Build a wrapper around the default field in the context.
@@ -71,9 +72,9 @@ public class FieldWrapper {
     public FieldWrapper(HighlightExecutionContext executionContext, HighlighterContext context,
             BasicQueryWeigher weigher, String fieldName) {
         assert !context.fieldName.equals(fieldName);
-        FieldMapper mapper = context.context.mapperService().documentMapper(context.hitContext.hit().getType()).mappers().smartNameFieldMapper(fieldName);
+        MappedFieldType fieldType = context.context.mapperService().fullName(fieldName);
         this.executionContext = executionContext;
-        this.context = new HighlighterContext(fieldName, context.field, mapper, context.context,
+        this.context = new HighlighterContext(fieldName, context.field, fieldType, context.context,
                 context.hitContext, context.query);
         this.weigher = weigher;
     }
@@ -105,7 +106,7 @@ public class FieldWrapper {
 
     public List<String> getFieldValues() throws IOException {
         if (values == null) {
-            List<Object> objs = HighlightUtils.loadFieldValues(context.field, context.mapper,
+            List<Object> objs = HighlightUtils.loadFieldValues(context.field, context.fieldType,
                     context.context, context.hitContext);
             values = objs.stream().map(Object::toString).collect(toCollection(() -> new ArrayList<>(objs.size())));
         }
@@ -192,7 +193,7 @@ public class FieldWrapper {
         @SuppressWarnings("unchecked")
         Map<String, Object> boostBefore = (Map<String, Object>)executionContext.getOption("boost_before");
         if (boostBefore != null) {
-            TreeMap<Integer, Float> ordered = new TreeMap<Integer, Float>();
+            TreeMap<Integer, Float> ordered = new TreeMap<>();
             for (Map.Entry<String, Object> entry : boostBefore.entrySet()) {
                 if (!(entry.getValue() instanceof Number)) {
                     throw new IllegalArgumentException("boost_before must be a flat object who's values are numbers.");
@@ -245,29 +246,29 @@ public class FieldWrapper {
     }
 
     private boolean canUsePostingsHitEnum() {
-        return context.mapper.fieldType().indexOptions() == IndexOptions.DOCS_AND_FREQS_AND_POSITIONS_AND_OFFSETS;
+        return context.fieldType.indexOptions() == IndexOptions.DOCS_AND_FREQS_AND_POSITIONS_AND_OFFSETS;
     }
 
     private boolean canUseVectorsHitEnum() {
-        return context.mapper.fieldType().storeTermVectors()
-                && context.mapper.fieldType().storeTermVectorOffsets()
-                && context.mapper.fieldType().storeTermVectorPositions();
+        return context.fieldType.storeTermVectors()
+                && context.fieldType.storeTermVectorOffsets()
+                && context.fieldType.storeTermVectorPositions();
     }
 
     private HitEnum buildPostingsHitEnum() throws IOException {
         return PostingsHitEnum.fromPostings(context.hitContext.reader(),
-                context.hitContext.docId(), context.mapper.fieldType().name(),
+                context.hitContext.docId(), context.fieldType.name(),
                 weigher.acceptableTerms(), getQueryWeigher(), getCorpusWeigher(false), weigher);
     }
 
     private HitEnum buildTermVectorsHitEnum() throws IOException {
         return PostingsHitEnum.fromTermVectors(context.hitContext.reader(),
-                context.hitContext.docId(), context.mapper.fieldType().name(),
+                context.hitContext.docId(), context.fieldType.name(),
                 weigher.acceptableTerms(), getQueryWeigher(), getCorpusWeigher(false), weigher);
     }
 
     private HitEnum buildTokenStreamHitEnum() throws IOException {
-        Analyzer analyzer = context.mapper.fieldType().indexAnalyzer();
+        Analyzer analyzer = context.fieldType.indexAnalyzer();
         if (analyzer == null) {
             analyzer = context.context.mapperService().indexAnalyzer();
         }
@@ -331,7 +332,7 @@ public class FieldWrapper {
         // No need to add fancy term weights if there is only one term or we
         // aren't using score order.
         if (weigher.singleTerm() || !executionContext.scoreMatters()) {
-            return new ConstantTermWeigher<BytesRef>();
+            return new ConstantTermWeigher<>();
         }
         Boolean useDefaultSimilarity = (Boolean) executionContext.getOption("default_similarity");
         if (useDefaultSimilarity == null || useDefaultSimilarity) {
@@ -342,20 +343,26 @@ public class FieldWrapper {
             // we find a ton of terms in the document. That'd require more work
             // to make sure everything is properly Releasable.
             if (mightWeighTermsMultipleTimes) {
-                corpusWeigher = new CachingTermWeigher<BytesRef>(new BytesRefTermWeigherCache(
+                corpusWeigher = new CachingTermWeigher<>(new BytesRefTermWeigherCache(
                         BigArrays.NON_RECYCLING_INSTANCE), corpusWeigher);
             }
             return corpusWeigher;
         }
-        return new ConstantTermWeigher<BytesRef>();
+        return new ConstantTermWeigher<>();
     }
 
     public int getPositionGap() {
         if (positionGap < 0) {
-            if (context.mapper instanceof TextFieldMapper) {
-                positionGap = ((TextFieldMapper) context.mapper).getPositionIncrementGap();
-            } else {
+            if (!exists()) {
                 positionGap = 1;
+            }
+            Mapper mapper = context.context.mapperService()
+                    .documentMapper(context.hitContext.hit().getType()).mappers()
+                    .getMapper(context.fieldType.name());
+            if (mapper instanceof TextFieldMapper) {
+                this.positionGap = ((TextFieldMapper) mapper).getPositionIncrementGap();
+            } else {
+                this.positionGap = 1;
             }
         }
         return positionGap;
@@ -365,6 +372,6 @@ public class FieldWrapper {
      * Does this field exist?
      */
     public boolean exists() {
-        return context.mapper != null;
+        return context.fieldType != null;
     }
 }

@@ -28,8 +28,8 @@ import org.wikimedia.search.highlighter.experimental.hit.TermWeigher;
  * first matching automata for efficiency's sake.
  */
 public class BasicQueryWeigher implements TermWeigher<BytesRef>, TermSourceFinder<BytesRef> {
-    private final List<AutomatonSourceInfo> automata = new ArrayList<AutomatonSourceInfo>();
-    private final List<BytesRef> terms = new ArrayList<BytesRef>();
+    private final List<AutomatonSourceInfo> automata = new ArrayList<>();
+    private final List<BytesRef> terms = new ArrayList<>();
     private final TermInfos termInfos;
     private final float maxTermWeight;
     private Map<String, List<PhraseInfo>> phrases;
@@ -115,7 +115,7 @@ public class BasicQueryWeigher implements TermWeigher<BytesRef>, TermSourceFinde
         if (automata.size() == 1 && terms.isEmpty()) {
             return automata.get(0).automaton;
         }
-        List<Automaton> all = new ArrayList<Automaton>(automata.size() + 1);
+        List<Automaton> all = new ArrayList<>(automata.size() + 1);
         for (AutomatonSourceInfo info : automata) {
             all.add(info.automaton);
         }
@@ -172,7 +172,7 @@ public class BasicQueryWeigher implements TermWeigher<BytesRef>, TermSourceFinde
     }
 
     public static class HashMapTermInfos implements TermInfos {
-        private final Map<BytesRef, SourceInfo> infos = new HashMap<BytesRef, SourceInfo>();
+        private final Map<BytesRef, SourceInfo> infos = new HashMap<>();
 
         @Override
         public SourceInfo get(BytesRef term) {
@@ -195,8 +195,8 @@ public class BasicQueryWeigher implements TermWeigher<BytesRef>, TermSourceFinde
             this.slop = slop;
             this.weight = weight;
 
-            for (int i = 0; i < phrase.length; i++) {
-                Arrays.sort(phrase[i]);
+            for (int[] ph : phrase) {
+                Arrays.sort(ph);
             }
         }
 
@@ -303,7 +303,7 @@ public class BasicQueryWeigher implements TermWeigher<BytesRef>, TermSourceFinde
             PhraseKey key = new PhraseKey(phrase);
             PhraseInfo info;
             if (allPhrases == null) {
-                allPhrases = new HashMap<PhraseKey, PhraseInfo>();
+                allPhrases = new HashMap<>();
                 info = new PhraseInfo(phrase, slop, weight);
                 allPhrases.put(key, info);
             } else {
@@ -318,11 +318,11 @@ public class BasicQueryWeigher implements TermWeigher<BytesRef>, TermSourceFinde
 
             List<PhraseInfo> phraseList;
             if (phrases == null) {
-                phrases = new HashMap<String, List<PhraseInfo>>();
-                phraseList = new ArrayList<PhraseInfo>();
+                phrases = new HashMap<>();
+                phraseList = new ArrayList<>();
                 phrases.put(field, phraseList);
             } else {
-                phraseList = phrases.computeIfAbsent(field, k -> new ArrayList<PhraseInfo>());
+                phraseList = phrases.computeIfAbsent(field, k -> new ArrayList<>());
             }
             phraseList.add(info);
             phrase = null;

@@ -290,6 +290,6 @@ public abstract class PriorityQueue<T> {
      * This method returns the internal heap array as Object[].
      */
     protected final Object[] getHeapArray() {
-        return (Object[]) heap;
+        return heap;
     }
 }

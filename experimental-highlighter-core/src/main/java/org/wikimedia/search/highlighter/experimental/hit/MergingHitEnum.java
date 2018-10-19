@@ -76,7 +76,7 @@ public class MergingHitEnum extends AbstractHitEnum {
 
     @Override
     public void toGraph(GraphvizHitEnumGenerator generator) {
-        Map<String, Object> params = new HashMap<String, Object>();
+        Map<String, Object> params = new HashMap<>();
         params.put("comparator", queue.lessThan);
         params.put("queueSize", queue.size());
         generator.addNode(this, params);
@@ -110,10 +110,10 @@ public class MergingHitEnum extends AbstractHitEnum {
         @Override
         public String toString() {
             StringBuilder b = new StringBuilder(1000).append('[');
-            Object[] arr = getHeapArray();
+            Object[] objs = getHeapArray();
             boolean comma = false;
-            for (int i = 0; i < arr.length; i++) {
-                if (arr[i] == null) {
+            for (Object obj : objs) {
+                if (obj == null) {
                     continue;
                 }
                 if (comma) {
@@ -121,7 +121,7 @@ public class MergingHitEnum extends AbstractHitEnum {
                 } else {
                     comma = true;
                 }
-                b.append(arr[i]);
+                b.append(obj);
             }
             b.append(']');
             return b.toString();

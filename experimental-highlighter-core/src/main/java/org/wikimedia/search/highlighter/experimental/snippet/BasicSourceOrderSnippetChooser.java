@@ -31,7 +31,7 @@ public class BasicSourceOrderSnippetChooser extends AbstractBasicSnippetChooser<
     protected State init(Segmenter segmenter, int max) {
         State s = new State();
         s.segmenter = segmenter;
-        s.results  = new ArrayList<Snippet>(max);
+        s.results  = new ArrayList<>(max);
         s.max = max;
         return s;
     }

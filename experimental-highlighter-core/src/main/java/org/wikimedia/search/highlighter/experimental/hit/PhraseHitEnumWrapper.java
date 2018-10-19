@@ -30,8 +30,8 @@ public class PhraseHitEnumWrapper extends AbstractHitEnum {
     }
 
     private final ReplayingHitEnum replaying = new ReplayingHitEnum();
-    private final List<PhraseCandidate> candidates = new LinkedList<PhraseCandidate>();
-    private final List<PhraseCandidate> currentMatches = new LinkedList<PhraseCandidate>();
+    private final List<PhraseCandidate> candidates = new LinkedList<>();
+    private final List<PhraseCandidate> currentMatches = new LinkedList<>();
     private final HitEnum wrapped;
     private final int[][] phrase;
     private final float phraseWeight;
@@ -66,13 +66,13 @@ public class PhraseHitEnumWrapper extends AbstractHitEnum {
     }
 
     private boolean phraseIsSorted() {
-        for (int p = 0; p < phrase.length; p++) {
+        for (int[] ph : phrase) {
             int last = Integer.MIN_VALUE;
-            for (int t = 0; t < phrase[p].length; t++) {
-                if (last > phrase[p][t]) {
+            for (int aPh : ph) {
+                if (last > aPh) {
                     return false;
                 }
-                last = phrase[p][t];
+                last = aPh;
             }
         }
         return true;

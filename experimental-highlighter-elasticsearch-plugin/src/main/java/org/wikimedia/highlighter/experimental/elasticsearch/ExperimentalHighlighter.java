@@ -21,7 +21,7 @@ import org.elasticsearch.common.logging.ESLoggerFactory;
 import org.elasticsearch.common.text.Text;
 import org.elasticsearch.common.util.BigArrays;
 import org.elasticsearch.common.util.LocaleUtils;
-import org.elasticsearch.index.mapper.FieldMapper;
+import org.elasticsearch.index.mapper.MappedFieldType;
 import org.elasticsearch.search.fetch.FetchPhaseExecutionException;
 import org.elasticsearch.search.fetch.subphase.highlight.HighlightField;
 import org.elasticsearch.search.fetch.subphase.highlight.Highlighter;
@@ -57,7 +57,7 @@ public class ExperimentalHighlighter implements Highlighter {
     private static final Logger log = ESLoggerFactory.getLogger(ExperimentalHighlighter.class);
 
     @Override
-    public boolean canHighlight(FieldMapper field) {
+    public boolean canHighlight(MappedFieldType field) {
         return true;
     }
 
@@ -436,8 +436,8 @@ public class ExperimentalHighlighter implements Highlighter {
                 }
                 return Collections.singletonList(defaultField.buildHitEnum());
             }
-            List<HitEnum> hitEnums = new ArrayList<HitEnum>(matchedFields.size());
-            extraFields = new ArrayList<FieldWrapper>(matchedFields.size());
+            List<HitEnum> hitEnums = new ArrayList<>(matchedFields.size());
+            extraFields = new ArrayList<>(matchedFields.size());
             for (String field : matchedFields) {
                 FieldWrapper wrapper;
                 if (context.fieldName.equals(field)) {
@@ -572,8 +572,8 @@ public class ExperimentalHighlighter implements Highlighter {
             if (fetchFields == null) {
                 return null;
             }
-            List<FieldWrapper> fetchFieldWrappers = new ArrayList<FieldWrapper>(fetchFields.size());
-            List<FieldWrapper> newExtraFields = new ArrayList<FieldWrapper>();
+            List<FieldWrapper> fetchFieldWrappers = new ArrayList<>(fetchFields.size());
+            List<FieldWrapper> newExtraFields = new ArrayList<>();
             try {
                 for (String fetchField : fetchFields) {
                     boolean found = false;
