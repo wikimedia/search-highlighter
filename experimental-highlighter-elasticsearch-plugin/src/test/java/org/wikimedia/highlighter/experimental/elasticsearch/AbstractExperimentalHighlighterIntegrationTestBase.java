@@ -57,6 +57,7 @@ import com.google.common.collect.ImmutableList;
 
 //import org.elasticsearch.plugin.analysis.icu.AnalysisICUPlugin;
 
+@SuppressWarnings("checkstyle:classfanoutcomplexity") // do not care too much about complexity of test classes
 @ClusterScope(scope = ESIntegTestCase.Scope.SUITE, transportClientRatio = 0.0)
 public abstract class AbstractExperimentalHighlighterIntegrationTestBase extends
 ESIntegTestCase {
