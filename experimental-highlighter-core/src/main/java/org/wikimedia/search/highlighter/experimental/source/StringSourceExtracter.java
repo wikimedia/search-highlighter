@@ -24,6 +24,15 @@ public final class StringSourceExtracter implements SourceExtracter<String> {
         if (startOffset >= endOffset) {
             return "";
         }
+        if (Character.isLowSurrogate(source.charAt(startOffset))) {
+            startOffset++;
+        }
+        if (source.length() > endOffset && Character.isLowSurrogate(source.charAt(endOffset))) {
+            endOffset--;
+        }
+        if (startOffset >= endOffset) {
+            return "";
+        }
         return source.substring(startOffset, endOffset);
     }
 }
