@@ -19,11 +19,20 @@ public final class StringSourceExtracter implements SourceExtracter<String> {
     public String extract(int startOffset, int endOffset) {
         // This has extra defense just in case thing get weird. Shouldn't happen
         // though.
+        startOffset = Math.max(0, startOffset);
+        endOffset = Math.min(endOffset, source.length());
         if (startOffset >= endOffset) {
             return "";
         }
-        startOffset = Math.max(0, startOffset);
-        endOffset = Math.min(endOffset, source.length());
+        if (Character.isLowSurrogate(source.charAt(startOffset))) {
+            startOffset++;
+        }
+        if (source.length() > endOffset && Character.isLowSurrogate(source.charAt(endOffset))) {
+            endOffset--;
+        }
+        if (startOffset >= endOffset) {
+            return "";
+        }
         return source.substring(startOffset, endOffset);
     }
 }

@@ -259,6 +259,33 @@ public class MiscellaneousTest extends AbstractExperimentalHighlighterIntegratio
         }
     }
 
+    @Test
+    public void testSurrogate() throws IOException {
+        // Regression test for https://github.com/wikimedia/search-highlighter/issues/32
+        buildIndex();
+        String testData = "Lorem ipsum dolor sit amet, consectetur, adipisci velit \uD83D\uDC4A" +
+                "\uD83D\uDC4A\uD83D\uDC4A\uD83D\uDC4A\uD83D\uDC4A\uD83D\uDC4A\uD83D\uDC4A\uD83D\uDC4A\uD83D\uDC4A" +
+                "\uD83D\uDC4A\uD83D\uDC4A\uD83D\uDC4A\uD83D\uDC4A\uD83D\uDC4A\uD83D\uDC4A\uD83D\uDC4A\uD83D\uDC4A" +
+                "\uD83D\uDC4A\uD83D\uDC4A\uD83D\uDC4A\uD83D\uDC4A\uD83D\uDC4A\uD83D\uDC4A\uD83D\uDC4A\uD83D\uDC4A" +
+                "\uD83D\uDC4A\uD83D\uDC4A";
+        indexTestData(testData);
+
+        for (int i = 49; i < 51; i++) { // Test that fragmentSize of 49 and 50 brings same snippet (we do not cut surrogate pairs)
+            for (String hitSource : HIT_SOURCES) {
+                int fragmentSize = i;
+                SearchResponse response = testSearch(
+                        matchQuery("test", "velit"),
+                        hitSource(hitSource)
+                                .andThen(x -> x.field("test", fragmentSize).order("score"))
+                ).get();
+                assertHighlight(response, 0, "test", 0,
+                        equalTo("consectetur, adipisci <em>velit</em> " +
+                                "\uD83D\uDC4A\uD83D\uDC4A\uD83D\uDC4A\uD83D\uDC4A\uD83D\uDC4A\uD83D\uDC4A\uD83D\uDC4A" +
+                                "\uD83D\uDC4A\uD83D\uDC4A\uD83D\uDC4A"));
+            }
+        }
+    }
+
     /**
      * Skipped until we have a way to verify something. It is useful for
      * spitting out performance information though.
