@@ -13,6 +13,8 @@
     <version>6.4.2-SNAPSHOT</version>
     <packaging>pom</packaging>
 
+    <name>Elasticsearch experimental highlighter plugin</name>
+
     <url>https://doc.wikimedia.org/search-highlighter/</url>
 
     <licenses>
