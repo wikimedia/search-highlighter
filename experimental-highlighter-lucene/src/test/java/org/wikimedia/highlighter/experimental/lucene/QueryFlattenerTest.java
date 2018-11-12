@@ -51,6 +51,7 @@ import org.wikimedia.highlighter.experimental.lucene.QueryFlattener.Callback;
 
 import com.google.common.collect.Lists;
 
+@SuppressWarnings("checkstyle:classfanoutcomplexity") // do not care too much about complexity of test classes
 public class QueryFlattenerTest extends LuceneTestCase {
     private final List<Closeable> toClose = new ArrayList<>();
     private final Term bar = new Term("foo", "bar");
