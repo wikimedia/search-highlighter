@@ -10,7 +10,7 @@
 
     <groupId>org.wikimedia.search.highlighter</groupId>
     <artifactId>experimental</artifactId>
-    <version>6.4.2-SNAPSHOT</version>
+    <version>6.5.4-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <name>Elasticsearch experimental highlighter plugin</name>
@@ -53,12 +53,12 @@
     </issueManagement>
 
     <properties>
-        <elasticsearch.version>6.4.2</elasticsearch.version>
+        <elasticsearch.version>6.5.4</elasticsearch.version>
         <log4j.version>2.11.1</log4j.version>
         <!-- For the Elasticsearch plugin to work this should match the version of Lucene that Elasticsearch
       uses. -->
-        <lucene.version>7.4.0</lucene.version>
-        <randomizedtesting.version>2.5.2</randomizedtesting.version>
+        <lucene.version>7.5.0</lucene.version>
+        <randomizedtesting.version>2.7.0</randomizedtesting.version>
     </properties>
 
     <dependencyManagement>

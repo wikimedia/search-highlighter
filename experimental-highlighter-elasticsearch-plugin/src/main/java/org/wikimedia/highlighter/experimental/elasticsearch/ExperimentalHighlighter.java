@@ -17,7 +17,7 @@ import java.util.regex.Pattern;
 
 import org.apache.logging.log4j.Logger;
 import org.apache.lucene.search.Query;
-import org.elasticsearch.common.logging.ESLoggerFactory;
+import org.elasticsearch.common.logging.Loggers;
 import org.elasticsearch.common.text.Text;
 import org.elasticsearch.common.util.BigArrays;
 import org.elasticsearch.common.util.LocaleUtils;
@@ -54,7 +54,6 @@ public class ExperimentalHighlighter implements Highlighter {
     public static final String NAME = "experimental";
     private static final String CACHE_KEY = "highlight-experimental";
     private static final Text EMPTY_STRING = new Text("");
-    private static final Logger log = ESLoggerFactory.getLogger(ExperimentalHighlighter.class);
 
     @Override
     public boolean canHighlight(MappedFieldType field) {
@@ -77,9 +76,13 @@ public class ExperimentalHighlighter implements Highlighter {
                 executionContext.cleanup();
             }
         } catch (Exception e) {
-            log.error("Failed to highlight field [{}]", e, context.fieldName);
+            getLogger(context).error("Failed to highlight field [{}]", e, context.fieldName);
             throw new FetchPhaseExecutionException(context.context, "Failed to highlight field [" + context.fieldName + "]", e);
         }
+    }
+
+    private Logger getLogger(HighlighterContext context) {
+        return Loggers.getLogger(ExperimentalHighlighter.class, context.context.getQueryShardContext().index());
     }
 
     static class CacheEntry {

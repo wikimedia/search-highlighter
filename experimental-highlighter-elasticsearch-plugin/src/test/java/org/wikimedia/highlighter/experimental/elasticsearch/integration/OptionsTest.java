@@ -421,7 +421,7 @@ public class OptionsTest extends AbstractExperimentalHighlighterIntegrationTestB
                 .setSource("test", new String[] {"no match here", "nobuddy"}, "fetched", new Integer[] {0}).get();
         XContentBuilder nested = jsonBuilder().startObject().startArray("foo");
         for (int i = 0; i < 200; i++) {
-            nested.startObject().field("test").value("nested" + Integer.toString(i));
+            nested.startObject().field("test").value("nested" + i);
             if (i < 100) {
                 nested.field("fetched").value(Integer.toString(i));
                 nested.field("fetched2").value(Integer.toString(1000 + i));

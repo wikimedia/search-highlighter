@@ -22,7 +22,8 @@ import org.apache.lucene.index.IndexWriterConfig;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.TermQuery;
-import org.apache.lucene.store.RAMDirectory;
+import org.apache.lucene.store.ByteBuffersDirectory;
+import org.apache.lucene.store.Directory;
 import org.elasticsearch.common.lucene.search.MultiPhrasePrefixQuery;
 import org.elasticsearch.common.lucene.search.function.CombineFunction;
 import org.elasticsearch.common.lucene.search.function.FieldValueFactorFunction;
@@ -74,7 +75,7 @@ public class ElasticsearchQueryFlattenerTest {
             // Previously MultiPhraseQuery was flattened directly
             // This is not possible anymore, so we need to rewrite
             // but to rewrite we need an IndexReader with a doc.
-            RAMDirectory dir = new RAMDirectory();
+            Directory dir = new ByteBuffersDirectory();
             IndexWriter iw = new IndexWriter(dir, new IndexWriterConfig(new StandardAnalyzer()));
             Document doc = new Document();
             doc.add(new TextField("test", "foo qux bart foo quux another", Store.NO));
