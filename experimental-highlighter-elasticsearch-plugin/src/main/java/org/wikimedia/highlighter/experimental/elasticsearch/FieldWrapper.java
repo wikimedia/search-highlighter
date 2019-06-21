@@ -14,6 +14,7 @@ import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.index.IndexOptions;
 import org.apache.lucene.util.BytesRef;
 import org.elasticsearch.common.util.BigArrays;
+import org.elasticsearch.index.mapper.KeywordFieldMapper;
 import org.elasticsearch.index.mapper.MappedFieldType;
 import org.elasticsearch.index.mapper.Mapper;
 import org.elasticsearch.index.mapper.TextFieldMapper;
@@ -268,7 +269,13 @@ public class FieldWrapper {
     }
 
     private HitEnum buildTokenStreamHitEnum() throws IOException {
-        Analyzer analyzer = context.fieldType.indexAnalyzer();
+        Analyzer analyzer;
+        if (context.fieldType instanceof KeywordFieldMapper.KeywordFieldType) {
+            analyzer = ((KeywordFieldMapper.KeywordFieldType) context.fieldType).normalizer().analyzer();
+        } else {
+            analyzer = context.fieldType.indexAnalyzer();
+        }
+
         if (analyzer == null) {
             analyzer = context.context.mapperService().indexAnalyzer();
         }

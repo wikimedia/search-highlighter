@@ -24,6 +24,7 @@ import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.analysis.Tokenizer;
 import org.apache.lucene.analysis.charfilter.MappingCharFilter;
 import org.apache.lucene.analysis.charfilter.NormalizeCharMap;
+import org.apache.lucene.analysis.core.KeywordTokenizer;
 import org.apache.lucene.analysis.en.EnglishAnalyzer;
 import org.apache.lucene.analysis.en.EnglishPossessiveFilter;
 import org.apache.lucene.analysis.en.KStemFilter;
@@ -33,15 +34,21 @@ import org.apache.lucene.analysis.miscellaneous.WordDelimiterGraphFilter;
 import org.apache.lucene.analysis.miscellaneous.WordDelimiterIterator;
 import org.apache.lucene.analysis.pattern.PatternTokenizer;
 import org.elasticsearch.action.search.SearchRequestBuilder;
+import org.elasticsearch.common.ParseField;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.regex.Regex;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.xcontent.XContentBuilder;
+import org.elasticsearch.env.Environment;
+import org.elasticsearch.index.IndexSettings;
 import org.elasticsearch.index.analysis.AbstractIndexAnalyzerProvider;
+import org.elasticsearch.index.analysis.AbstractTokenFilterFactory;
 import org.elasticsearch.index.analysis.AbstractTokenizerFactory;
 import org.elasticsearch.index.analysis.Analysis;
 import org.elasticsearch.index.analysis.AnalyzerProvider;
 import org.elasticsearch.index.analysis.CharFilterFactory;
+import org.elasticsearch.index.analysis.MultiTermAwareComponent;
+import org.elasticsearch.index.analysis.PreConfiguredTokenizer;
 import org.elasticsearch.index.analysis.TokenFilterFactory;
 import org.elasticsearch.index.analysis.TokenizerFactory;
 import org.elasticsearch.index.query.QueryBuilder;
@@ -174,6 +181,10 @@ ESIntegTestCase {
         addField(mapping, "custom_all", offsetsInPostings, fvhLikeTermVectors, false);
         addField(mapping, "test", offsetsInPostings, fvhLikeTermVectors, true);
         addField(mapping, "test2", offsetsInPostings, fvhLikeTermVectors, true);
+        mapping.startObject("keyword_field")
+                .field("type").value("keyword")
+                .field("normalizer").value("asciifolding_normalizer")
+            .endObject();
         mapping.startObject("pos_gap_big")
                 .field("type").value("text")
                 .field("position_increment_gap", 1000)
@@ -251,6 +262,12 @@ ESIntegTestCase {
                 settings.field("preserve_original", "true");
             }
             settings.endObject();
+            settings.startObject("asciifolding_nopreserve");
+            {
+                settings.field("type", "asciifolding");
+                settings.field("preserve_original", "false");
+            }
+            settings.endObject();
             /*
             settings.startObject("icu_normalizer");
             {
@@ -275,6 +292,13 @@ ESIntegTestCase {
             settings.endObject();
         }
         settings.endObject();
+        settings.startObject("normalizer")
+                .startObject("asciifolding_normalizer")
+                .field("type", "custom")
+                .array("filter", "asciifolding_nopreserve")
+                .endObject()
+                .endObject();
+
         settings.endObject();
         settings.endObject();
         settings.endObject();
@@ -383,19 +407,7 @@ ESIntegTestCase {
         public Map<String, AnalysisModule.AnalysisProvider<TokenFilterFactory>> getTokenFilters() {
             Map<String, AnalysisModule.AnalysisProvider<TokenFilterFactory>> map = new HashMap<>();
             // org/elasticsearch/analysis/common/ASCIIFoldingTokenFilterFactory.java
-            map.put("asciifolding", requiresAnalysisSettings((isettings, env, name, settings) -> {
-                return new TokenFilterFactory() {
-                    @Override
-                    public String name() {
-                        return name;
-                    }
-
-                    @Override
-                    public TokenStream create(TokenStream tokenStream) {
-                        return new ASCIIFoldingFilter(tokenStream, settings.getAsBoolean("preserve_original", false));
-                    }
-                };
-            }));
+            map.put("asciifolding", requiresAnalysisSettings(ASCIIFoldingTokenFilterFactory::new));
             // org/elasticsearch/analysis/common/KStemTokenFilterFactory.java
             map.put("kstem", (isettings, env, name, settings) -> {
                 return new TokenFilterFactory() {
@@ -509,6 +521,11 @@ ESIntegTestCase {
         }
 
         @Override
+        public List<PreConfiguredTokenizer> getPreConfiguredTokenizers() {
+            return Collections.singletonList(PreConfiguredTokenizer.singleton("keyword", KeywordTokenizer::new, null));
+        }
+
+        @Override
         public Map<String, AnalysisModule.AnalysisProvider<AnalyzerProvider<? extends Analyzer>>> getAnalyzers() {
             return Collections.singletonMap("english",
                     (isettings, env, name, settings) -> new AbstractIndexAnalyzerProvider<Analyzer>(isettings, name, settings) {
@@ -548,4 +565,45 @@ ESIntegTestCase {
             }
         }
     }
+
+    static class ASCIIFoldingTokenFilterFactory extends AbstractTokenFilterFactory implements MultiTermAwareComponent {
+
+        static final ParseField PRESERVE_ORIGINAL = new ParseField("preserve_original");
+        static final boolean DEFAULT_PRESERVE_ORIGINAL = false;
+
+        private final boolean preserveOriginal;
+
+        ASCIIFoldingTokenFilterFactory(IndexSettings indexSettings, Environment environment,
+                                              String name, Settings settings) {
+            super(indexSettings, name, settings);
+            preserveOriginal = settings.getAsBooleanLenientForPreEs6Indices(
+                    indexSettings.getIndexVersionCreated(), PRESERVE_ORIGINAL.getPreferredName(),
+                    DEFAULT_PRESERVE_ORIGINAL, deprecationLogger);
+        }
+
+        @Override
+        public TokenStream create(TokenStream tokenStream) {
+            return new ASCIIFoldingFilter(tokenStream, preserveOriginal);
+        }
+
+        @Override
+        public Object getMultiTermComponent() {
+            if (!preserveOriginal) {
+                return this;
+            } else {
+                // See https://issues.apache.org/jira/browse/LUCENE-7536 for the reasoning
+                return new TokenFilterFactory() {
+                    @Override
+                    public String name() {
+                        return ASCIIFoldingTokenFilterFactory.this.name();
+                    }
+                    @Override
+                    public TokenStream create(TokenStream tokenStream) {
+                        return new ASCIIFoldingFilter(tokenStream, false);
+                    }
+                };
+            }
+        }
+    }
+
 }

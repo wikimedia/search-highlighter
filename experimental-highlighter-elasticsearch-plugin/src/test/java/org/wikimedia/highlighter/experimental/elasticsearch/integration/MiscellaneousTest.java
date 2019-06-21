@@ -494,6 +494,15 @@ public class MiscellaneousTest extends AbstractExperimentalHighlighterIntegratio
         assertHighlight(response, 0, "test.english", 1, equalTo("23:33-37:37"));
     }
 
+    public void testKeywordNormalizer() throws IOException {
+        buildIndex();
+        client().prepareIndex("test", "test", "1").setSource("keyword_field", "Héllö").get();
+        refresh();
+        SearchResponse response = testSearch(matchQuery("keyword_field", "Hèllô"),
+                x -> x.field("keyword_field")).get();
+        assertHighlight(response, 0, "keyword_field", 0, equalTo("<em>Héllö</em>"));
+    }
+
     public void testPosIncGap() throws IOException {
         buildIndex();
         List data = ImmutableList.of("one gap one", "gap");
