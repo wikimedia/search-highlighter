@@ -5,6 +5,7 @@ import java.util.Locale;
 
 import org.wikimedia.search.highlighter.experimental.Segmenter;
 import org.wikimedia.search.highlighter.experimental.snippet.BreakIteratorSegmenter;
+import org.wikimedia.search.highlighter.experimental.source.StringSourceExtracter;
 
 public class SentenceIteratorSegmenterFactory implements SegmenterFactory {
     private final Locale locale;
@@ -33,16 +34,16 @@ public class SentenceIteratorSegmenterFactory implements SegmenterFactory {
         }
         int end = breakIterator.preceding(Math.min(value.length(), size + boundaryMaxScan));
         if (end > 0) {
-            return value.substring(0, end);
+            return StringSourceExtracter.safeSubstring(0, end, value);
         }
         // If the sentence is too far away, try a word
         breakIterator = BreakIterator.getWordInstance(locale);
         breakIterator.setText(value);
         end = breakIterator.preceding(Math.min(value.length(), size + boundaryMaxScan));
         if (end > 0) {
-            return value.substring(0, end);
+            return StringSourceExtracter.safeSubstring(0, end, value);
         }
         // If the word is too far away, just snap it at the size.
-        return value.substring(0, size);
+        return StringSourceExtracter.safeSubstring(0, size, value);
     }
 }

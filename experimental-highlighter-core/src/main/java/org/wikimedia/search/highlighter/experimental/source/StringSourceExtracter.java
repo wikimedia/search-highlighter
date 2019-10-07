@@ -17,6 +17,15 @@ public final class StringSourceExtracter implements SourceExtracter<String> {
 
     @Override
     public String extract(int startOffset, int endOffset) {
+        return safeSubstring(startOffset, endOffset, source);
+    }
+
+    /**
+     * Extract a substring of the source string paying attention
+     * not to break surrogate pairs. The resulting string may not
+     * have a size equals to endOffset - startOffset
+     */
+    public static String safeSubstring(int startOffset, int endOffset, String source) {
         startOffset = Math.max(0, startOffset);
         endOffset = Math.min(endOffset, source.length());
         // May happen on copy_to fields where the data is not

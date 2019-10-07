@@ -33,6 +33,7 @@ import org.apache.lucene.search.spans.SpanPositionCheckQuery;
 import org.apache.lucene.search.spans.SpanQuery;
 import org.apache.lucene.search.spans.SpanTermQuery;
 import org.apache.lucene.util.BytesRef;
+import org.apache.lucene.util.UnicodeUtil;
 import org.apache.lucene.util.automaton.Automata;
 import org.apache.lucene.util.automaton.Automaton;
 import org.apache.lucene.util.automaton.LevenshteinAutomata;
@@ -384,19 +385,32 @@ public class QueryFlattener {
             return;
         }
         // Make an effort to resolve the fuzzy query to an automata
-        String fuzzed = term.substring(query.getPrefixLength());
+        Automaton automaton = getFuzzyAutomata(query, term);
+        Object source = sourceOverride == null ? key : sourceOverride;
+        callback.flattened(automaton, boost, source.hashCode());
+    }
+
+    private Automaton getFuzzyAutomata(FuzzyQuery query, String term) {
+        int termLength = term.length();
+        int[] termText = new int[term.codePointCount(0, termLength)];
+        for (int cp, i = 0, j = 0; i < termLength; i += Character.charCount(cp)) {
+            cp = term.codePointAt(i);
+            termText[j++] = cp;
+        }
+        int prefixLen = query.getPrefixLength() > termText.length ? termText.length : query.getPrefixLength();
         int editDistance = query.getMaxEdits();
         if (editDistance > LevenshteinAutomata.MAXIMUM_SUPPORTED_DISTANCE) {
             editDistance = LevenshteinAutomata.MAXIMUM_SUPPORTED_DISTANCE;
         }
-        LevenshteinAutomata automata = new LevenshteinAutomata(fuzzed, query.getTranspositions());
-        Automaton automaton = automata.toAutomaton(editDistance);
-        if (query.getPrefixLength() > 0) {
-            Automaton prefix = Automata.makeString(term.substring(0, query.getPrefixLength()));
-            automaton = Operations.concatenate(prefix, automaton);
+        LevenshteinAutomata automata = new LevenshteinAutomata(UnicodeUtil.newString(termText, prefixLen, termText.length - prefixLen),
+                query.getTranspositions());
+        Automaton automaton;
+        if (prefixLen > 0) {
+            automaton = automata.toAutomaton(editDistance, UnicodeUtil.newString(termText, 0, prefixLen));
+        } else {
+            automaton = automata.toAutomaton(editDistance);
         }
-        Object source = sourceOverride == null ? key : sourceOverride;
-        callback.flattened(automaton, boost, source.hashCode());
+        return automaton;
     }
 
     @SuppressWarnings({"checkstyle:CyclomaticComplexity", "checkstyle:NPathComplexity"})
