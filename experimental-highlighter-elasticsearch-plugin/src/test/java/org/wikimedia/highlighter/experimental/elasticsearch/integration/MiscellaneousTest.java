@@ -435,7 +435,7 @@ public class MiscellaneousTest extends AbstractExperimentalHighlighterIntegratio
         buildIndex();
         indexTestData();
 
-        SearchResponse response = client().prepareSearch("test").setTypes("test")
+        SearchResponse response = client().prepareSearch("test")
                 .setQuery(matchQuery("test", "very"))
                 .highlighter(new HighlightBuilder().highlighterType("experimental")
                         .field(new HighlightBuilder.Field("test").matchedFields("test", "doesntexist"))).get();
@@ -450,7 +450,7 @@ public class MiscellaneousTest extends AbstractExperimentalHighlighterIntegratio
         buildIndex();
         indexTestData();
 
-        SearchResponse response = client().prepareSearch("test").setTypes("test")
+        SearchResponse response = client().prepareSearch("test")
                 .setQuery(matchQuery("custom_all", "very")).highlighter(new HighlightBuilder().highlighterType("experimental")
                 .field("*")).get();
         assertHighlight(response, 0, "test", 0, equalTo("tests <em>very</em> simple test"));
@@ -468,7 +468,7 @@ public class MiscellaneousTest extends AbstractExperimentalHighlighterIntegratio
 
         Map<String, Object> options = new HashMap<String, Object>();
         options.put("max_expanded_terms", 1);
-        SearchRequestBuilder search = testSearch(boolQuery().must(rangeQuery("test").from("teso").to("tesz")).filter(idsQuery("test").addIds("1")),
+        SearchRequestBuilder search = testSearch(boolQuery().must(rangeQuery("test").from("teso").to("tesz")).filter(idsQuery().addIds("1")),
                 x -> x.options(options));
         for (String hitSource : HIT_SOURCES) {
             options.put("hit_source", hitSource);
@@ -534,7 +534,7 @@ public class MiscellaneousTest extends AbstractExperimentalHighlighterIntegratio
 
     public void testPosIncGap() throws IOException {
         buildIndex();
-        List data = ImmutableList.of("one gap one", "gap");
+        List<String> data = ImmutableList.of("one gap one", "gap");
         Map<String, Object> doc = new HashMap<>();
         doc.put("pos_gap_big", data);
         doc.put("pos_gap_small", data);
@@ -545,7 +545,7 @@ public class MiscellaneousTest extends AbstractExperimentalHighlighterIntegratio
                 .highlighterType("experimental")
                 .field("pos_gap_big"))
             .get();
-        assertEquals(1, resp.getHits().totalHits);
+        assertEquals(1, resp.getHits().getHits().length);
         assertEquals(1, resp.getHits().getHits()[0].getHighlightFields().size());
         // The second "one gap" is not highlighted because of pos inc offset
         assertEquals(1, resp.getHits().getHits()[0].getHighlightFields().get("pos_gap_big").getFragments().length);
@@ -555,7 +555,7 @@ public class MiscellaneousTest extends AbstractExperimentalHighlighterIntegratio
                         .highlighterType("experimental")
                         .field("pos_gap_small"))
                 .get();
-        assertEquals(1, resp.getHits().totalHits);
+        assertEquals(1, resp.getHits().getHits().length);
         assertEquals(1, resp.getHits().getHits()[0].getHighlightFields().size());
         // The second "one gap" *is* highlighted because of pos inc offset set to 1 on the pos_gap_small field
         assertEquals(2, resp.getHits().getHits()[0].getHighlightFields().get("pos_gap_small").getFragments().length);

@@ -31,9 +31,10 @@ import org.apache.lucene.analysis.en.KStemFilter;
 import org.apache.lucene.analysis.miscellaneous.ASCIIFoldingFilter;
 import org.apache.lucene.analysis.miscellaneous.StemmerOverrideFilter;
 import org.apache.lucene.analysis.miscellaneous.WordDelimiterGraphFilter;
-import org.apache.lucene.analysis.miscellaneous.WordDelimiterIterator;
 import org.apache.lucene.analysis.pattern.PatternTokenizer;
+import org.elasticsearch.Version;
 import org.elasticsearch.action.search.SearchRequestBuilder;
+import org.elasticsearch.common.Booleans;
 import org.elasticsearch.common.ParseField;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.regex.Regex;
@@ -47,7 +48,7 @@ import org.elasticsearch.index.analysis.AbstractTokenizerFactory;
 import org.elasticsearch.index.analysis.Analysis;
 import org.elasticsearch.index.analysis.AnalyzerProvider;
 import org.elasticsearch.index.analysis.CharFilterFactory;
-import org.elasticsearch.index.analysis.MultiTermAwareComponent;
+import org.elasticsearch.index.analysis.NormalizingTokenFilterFactory;
 import org.elasticsearch.index.analysis.PreConfiguredTokenizer;
 import org.elasticsearch.index.analysis.TokenFilterFactory;
 import org.elasticsearch.index.analysis.TokenizerFactory;
@@ -164,7 +165,7 @@ ESIntegTestCase {
             func.accept(hbuilder);
         }
 
-        return client().prepareSearch("test").setTypes("test").setQuery(builder)
+        return client().prepareSearch("test").setQuery(builder)
                 .highlighter(hbuilder)
                 .setSize(1);
     }
@@ -211,7 +212,6 @@ ESIntegTestCase {
             {
                 settings.field("tokenizer", "standard");
                 settings.array("filter", //
-                        "standard", //
                         "aggressive_splitting", //
                         "possessive_english", //
                         //"icu_normalizer", //
@@ -444,8 +444,7 @@ ESIntegTestCase {
                 // If set, causes trailing "'s" to be removed for each subword: "O'Neil's" => "O", "Neil"
                 wflags |= getFlag(WordDelimiterGraphFilter.STEM_ENGLISH_POSSESSIVE, settings, "stem_english_possessive", true);
                 // If not null is the set of tokens to protect from being delimited
-                Set<?> protectedWords = Analysis.getWordSet(env, isettings.getIndexVersionCreated(),
-                        settings, "protected_words");
+                Set<?> protectedWords = Analysis.getWordSet(env, settings, "protected_words");
                 final CharArraySet protoWords = protectedWords == null ? null : CharArraySet.copy(protectedWords);
                 final int flags = wflags;
 
@@ -457,7 +456,7 @@ ESIntegTestCase {
 
                     @Override
                     public TokenStream create(TokenStream tokenStream) {
-                        return new WordDelimiterGraphFilter(tokenStream, WordDelimiterIterator.DEFAULT_WORD_DELIM_TABLE, flags, protoWords);
+                        return new WordDelimiterGraphFilter(tokenStream, flags, protoWords);
                     }
                 };
             }));
@@ -503,7 +502,7 @@ ESIntegTestCase {
         @Override
         public Map<String, AnalysisModule.AnalysisProvider<TokenizerFactory>> getTokenizers() {
             return Collections.singletonMap("pattern",
-                requiresAnalysisSettings((isettings, env, name, settings) -> new AbstractTokenizerFactory(isettings, name, settings) {
+                requiresAnalysisSettings((isettings, env, name, settings) -> new AbstractTokenizerFactory(isettings, settings, name) {
                     @Override
                     public Tokenizer create() {
                         String sPattern = settings.get("pattern", "\\W+" /*PatternAnalyzer.NON_WORD_PATTERN*/);
@@ -522,7 +521,7 @@ ESIntegTestCase {
 
         @Override
         public List<PreConfiguredTokenizer> getPreConfiguredTokenizers() {
-            return Collections.singletonList(PreConfiguredTokenizer.singleton("keyword", KeywordTokenizer::new, null));
+            return Collections.singletonList(PreConfiguredTokenizer.singleton("keyword", KeywordTokenizer::new));
         }
 
         @Override
@@ -532,7 +531,7 @@ ESIntegTestCase {
                         @Override
                         public Analyzer get() {
                             return new EnglishAnalyzer(
-                                    Analysis.parseStopWords(env, isettings.getIndexVersionCreated(), settings, EnglishAnalyzer.getDefaultStopSet()),
+                                    Analysis.parseStopWords(env, settings, EnglishAnalyzer.getDefaultStopSet()),
                                     Analysis.parseStemExclusion(settings, CharArraySet.EMPTY_SET));
                         }
                     });
@@ -566,19 +565,28 @@ ESIntegTestCase {
         }
     }
 
-    static class ASCIIFoldingTokenFilterFactory extends AbstractTokenFilterFactory implements MultiTermAwareComponent {
-
+    static class ASCIIFoldingTokenFilterFactory extends AbstractTokenFilterFactory implements NormalizingTokenFilterFactory {
         static final ParseField PRESERVE_ORIGINAL = new ParseField("preserve_original");
         static final boolean DEFAULT_PRESERVE_ORIGINAL = false;
-
         private final boolean preserveOriginal;
-
         ASCIIFoldingTokenFilterFactory(IndexSettings indexSettings, Environment environment,
                                               String name, Settings settings) {
             super(indexSettings, name, settings);
-            preserveOriginal = settings.getAsBooleanLenientForPreEs6Indices(
-                    indexSettings.getIndexVersionCreated(), PRESERVE_ORIGINAL.getPreferredName(),
-                    DEFAULT_PRESERVE_ORIGINAL, deprecationLogger);
+            if (indexSettings.getIndexVersionCreated().before(Version.V_6_0_0_alpha1)) {
+                //Only emit a warning if the setting's value is not a proper boolean
+                final String value = settings.get(PRESERVE_ORIGINAL.getPreferredName(), "false");
+                if (!Booleans.isBoolean(value)) {
+                    @SuppressWarnings("deprecation")
+                    boolean convertedValue = Booleans.parseBooleanLenient(settings.get(PRESERVE_ORIGINAL.getPreferredName()), DEFAULT_PRESERVE_ORIGINAL);
+                    deprecationLogger.deprecated("The value [{}] of setting [{}] is not coerced into boolean anymore. Please change " +
+                            "this value to [{}].", value, PRESERVE_ORIGINAL.getPreferredName(), String.valueOf(convertedValue));
+                    preserveOriginal =  convertedValue;
+                } else {
+                    preserveOriginal = settings.getAsBoolean(PRESERVE_ORIGINAL.getPreferredName(), DEFAULT_PRESERVE_ORIGINAL);
+                }
+            } else {
+                preserveOriginal = settings.getAsBoolean(PRESERVE_ORIGINAL.getPreferredName(), DEFAULT_PRESERVE_ORIGINAL);
+            }
         }
 
         @Override
@@ -586,24 +594,6 @@ ESIntegTestCase {
             return new ASCIIFoldingFilter(tokenStream, preserveOriginal);
         }
 
-        @Override
-        public Object getMultiTermComponent() {
-            if (!preserveOriginal) {
-                return this;
-            } else {
-                // See https://issues.apache.org/jira/browse/LUCENE-7536 for the reasoning
-                return new TokenFilterFactory() {
-                    @Override
-                    public String name() {
-                        return ASCIIFoldingTokenFilterFactory.this.name();
-                    }
-                    @Override
-                    public TokenStream create(TokenStream tokenStream) {
-                        return new ASCIIFoldingFilter(tokenStream, false);
-                    }
-                };
-            }
-        }
     }
 
 }

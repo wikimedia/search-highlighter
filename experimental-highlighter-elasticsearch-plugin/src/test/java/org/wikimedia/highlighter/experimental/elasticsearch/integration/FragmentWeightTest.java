@@ -83,7 +83,6 @@ public class FragmentWeightTest extends AbstractExperimentalHighlighterIntegrati
         }
 
         // Adding a type doesn't break it.
-        search.setTypes("test");
         for (String hitSource : HIT_SOURCES) {
             options.put("hit_source", hitSource);
             SearchResponse response = search.get();

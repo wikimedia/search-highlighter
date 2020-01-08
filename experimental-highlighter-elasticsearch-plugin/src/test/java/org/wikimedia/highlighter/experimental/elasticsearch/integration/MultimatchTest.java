@@ -85,7 +85,7 @@ public class MultimatchTest extends AbstractExperimentalHighlighterIntegrationTe
         for (String hitSource : HIT_SOURCES) {
             SearchResponse response = testSearch(boolQuery()
                     .must(multiMatchQuery("very test", "test").cutoffFrequency(1f))
-                    .filter(idsQuery("test").addIds("1")), hitSource(hitSource)).get();
+                    .filter(idsQuery().addIds("1")), hitSource(hitSource)).get();
             assertHighlight(response, 0, "test", 0, equalTo("tests <em>very</em> simple <em>test</em>"));
         }
     }

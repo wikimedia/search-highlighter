@@ -85,12 +85,13 @@ public class ElasticsearchQueryFlattenerTest {
         } catch (IOException ioe) {
             throw new RuntimeException(ioe);
         }
-        MultiPhrasePrefixQuery query = new MultiPhrasePrefixQuery();
         Term foo = new Term("test", "foo");
         Term qux = new Term("test", "qux");
         Term quux = new Term("test", "quux");
         Term bar = new Term("test", "bar");
         Term anoth = new Term("test", "anoth");
+
+        MultiPhrasePrefixQuery query = new MultiPhrasePrefixQuery(foo.field());
         query.add(foo);
         query.add(new Term[] {qux, quux});
         query.add(new Term[] {bar, anoth});

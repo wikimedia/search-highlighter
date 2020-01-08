@@ -312,7 +312,7 @@ public class PhraseQueryTest extends AbstractExperimentalHighlighterIntegrationT
      */
     @Test
     public void singlePositionPhraseQueryOnItsOwn() throws IOException {
-        singlePositionPhraseQueryTestCase("forÀ", "forÀ", "for<em>À</em>");
+        singlePositionPhraseQueryTestCase("forÀ", "forÀ", "<em>forÀ</em>");
     }
 
     @Test

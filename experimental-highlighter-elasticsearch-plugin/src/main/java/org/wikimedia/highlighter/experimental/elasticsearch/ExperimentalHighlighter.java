@@ -1,5 +1,6 @@
 package org.wikimedia.highlighter.experimental.elasticsearch;
 
+
 import static java.lang.Boolean.FALSE;
 import static java.lang.Boolean.TRUE;
 
@@ -77,12 +78,12 @@ public class ExperimentalHighlighter implements Highlighter {
             }
         } catch (Exception e) {
             getLogger(context).error("Failed to highlight field [{}]", e, context.fieldName);
-            throw new FetchPhaseExecutionException(context.context, "Failed to highlight field [" + context.fieldName + "]", e);
+            throw new FetchPhaseExecutionException(context.shardTarget, "Failed to highlight field [" + context.fieldName + "]", e);
         }
     }
 
     private Logger getLogger(HighlighterContext context) {
-        return Loggers.getLogger(ExperimentalHighlighter.class, context.context.getQueryShardContext().index());
+        return Loggers.getLogger(ExperimentalHighlighter.class, context.context.convertToShardContext().index());
     }
 
     static class CacheEntry {
