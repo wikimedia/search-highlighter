@@ -1,5 +1,6 @@
 package org.wikimedia.highlighter.experimental.elasticsearch;
 
+
 import static java.lang.Boolean.FALSE;
 import static java.lang.Boolean.TRUE;
 
@@ -146,7 +147,7 @@ public class ExperimentalHighlighter implements Highlighter {
             this.cache = cache;
         }
 
-        HighlightField highlight() throws IOException {
+        HighlightField highlight() throws Exception {
             if (shouldSkip()) {
                 return null;
             }
@@ -278,7 +279,7 @@ public class ExperimentalHighlighter implements Highlighter {
         /**
          * Builds the hit enum including any required wrappers.
          */
-        private HitEnum buildHitEnum() throws IOException {
+        private HitEnum buildHitEnum() throws Exception {
             HitEnum e = buildHitFindingHitEnum();
 
             // Merge any overlapping hits to support matched fields and
@@ -291,7 +292,7 @@ public class ExperimentalHighlighter implements Highlighter {
             return e;
         }
 
-        private HitEnum buildHitFindingHitEnum() throws IOException {
+        private HitEnum buildHitFindingHitEnum() throws Exception {
             List<HitEnum> hitEnums = buildHitFindingHitEnums();
             switch (hitEnums.size()) {
             case 0:
@@ -306,7 +307,7 @@ public class ExperimentalHighlighter implements Highlighter {
         /**
          * Builds the HitEnum that actually finds the hits in the first place.
          */
-        private List<HitEnum> buildHitFindingHitEnums() throws IOException {
+        private List<HitEnum> buildHitFindingHitEnums() throws Exception {
             Boolean skipQuery = (Boolean) getOption("skip_query");
             List<HitEnum> hitEnums = buildRegexHitEnums();
             if (skipQuery == null || !skipQuery) {
@@ -431,7 +432,7 @@ public class ExperimentalHighlighter implements Highlighter {
         /**
          * Builds the HitEnum that finds the hits from Lucene.
          */
-        private List<HitEnum> buildLuceneHitFindingHitEnums() throws IOException {
+        private List<HitEnum> buildLuceneHitFindingHitEnums() throws Exception {
             Set<String> matchedFields = context.field.fieldOptions().matchedFields();
             if (matchedFields == null) {
                 if (!defaultField.canProduceHits()) {

@@ -31,9 +31,10 @@ import org.apache.lucene.analysis.en.KStemFilter;
 import org.apache.lucene.analysis.miscellaneous.ASCIIFoldingFilter;
 import org.apache.lucene.analysis.miscellaneous.StemmerOverrideFilter;
 import org.apache.lucene.analysis.miscellaneous.WordDelimiterGraphFilter;
-import org.apache.lucene.analysis.miscellaneous.WordDelimiterIterator;
 import org.apache.lucene.analysis.pattern.PatternTokenizer;
+import org.elasticsearch.Version;
 import org.elasticsearch.action.search.SearchRequestBuilder;
+import org.elasticsearch.common.Booleans;
 import org.elasticsearch.common.ParseField;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.regex.Regex;
@@ -565,19 +566,34 @@ ESIntegTestCase {
     }
 
     static class ASCIIFoldingTokenFilterFactory extends AbstractTokenFilterFactory {
-
         static final ParseField PRESERVE_ORIGINAL = new ParseField("preserve_original");
         static final boolean DEFAULT_PRESERVE_ORIGINAL = false;
-
+        private final boolean preserveOriginal;
         ASCIIFoldingTokenFilterFactory(IndexSettings indexSettings, Environment environment,
                                               String name, Settings settings) {
             super(indexSettings, name, settings);
+            if (indexSettings.getIndexVersionCreated().before(Version.V_6_0_0_alpha1)) {
+                //Only emit a warning if the setting's value is not a proper boolean
+                final String value = settings.get(PRESERVE_ORIGINAL.getPreferredName(), "false");
+                if (!Booleans.isBoolean(value)) {
+                    @SuppressWarnings("deprecation")
+                    boolean convertedValue = Booleans.parseBooleanLenient(settings.get(PRESERVE_ORIGINAL.getPreferredName()), DEFAULT_PRESERVE_ORIGINAL);
+                    deprecationLogger.deprecated("The value [{}] of setting [{}] is not coerced into boolean anymore. Please change " +
+                            "this value to [{}].", value, PRESERVE_ORIGINAL.getPreferredName(), String.valueOf(convertedValue));
+                    preserveOriginal =  convertedValue;
+                } else {
+                    preserveOriginal = settings.getAsBoolean(PRESERVE_ORIGINAL.getPreferredName(), DEFAULT_PRESERVE_ORIGINAL);
+                }
+            } else {
+                preserveOriginal = settings.getAsBoolean(PRESERVE_ORIGINAL.getPreferredName(), DEFAULT_PRESERVE_ORIGINAL);
+            }
         }
 
         @Override
         public TokenStream create(TokenStream tokenStream) {
-            return new ASCIIFoldingFilter(tokenStream, false);
+            return new ASCIIFoldingFilter(tokenStream, preserveOriginal);
         }
+
     }
 
 }

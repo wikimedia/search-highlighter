@@ -13,7 +13,6 @@ import java.util.TreeMap;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.index.IndexOptions;
-import org.apache.lucene.search.Query;
 import org.apache.lucene.util.BytesRef;
 import org.elasticsearch.common.util.BigArrays;
 import org.elasticsearch.index.analysis.NamedAnalyzer;
@@ -21,12 +20,8 @@ import org.elasticsearch.index.mapper.KeywordFieldMapper;
 import org.elasticsearch.index.mapper.MappedFieldType;
 import org.elasticsearch.index.mapper.Mapper;
 import org.elasticsearch.index.mapper.TextFieldMapper;
-import org.elasticsearch.index.query.QueryShardContext;
-import org.elasticsearch.search.SearchShardTarget;
-import org.elasticsearch.search.fetch.FetchSubPhase;
 import org.elasticsearch.search.fetch.subphase.highlight.HighlightUtils;
 import org.elasticsearch.search.fetch.subphase.highlight.HighlighterContext;
-import org.elasticsearch.search.fetch.subphase.highlight.SearchContextHighlight;
 import org.elasticsearch.search.fetch.subphase.highlight.SearchContextHighlight.FieldOptions;
 import org.wikimedia.highlighter.experimental.elasticsearch.ExperimentalHighlighter.HighlightExecutionContext;
 import org.wikimedia.highlighter.experimental.lucene.hit.PostingsHitEnum;
@@ -177,7 +172,7 @@ public class FieldWrapper {
         return weigher.maxTermWeight() > 0 || weigher.areTherePhrasesOnField(context.fieldName);
     }
 
-    public HitEnum buildHitEnum() throws IOException {
+    public HitEnum buildHitEnum() throws Exception {
         HitEnum e = buildHitEnumForSource();
 
         // Support phrase matches. Note that this must be done here rather than
@@ -222,7 +217,7 @@ public class FieldWrapper {
         return new WeightFilteredHitEnumWrapper(e, 0f);
     }
 
-    private HitEnum buildHitEnumForSource() throws IOException {
+    private HitEnum buildHitEnumForSource() throws Exception {
         if (context.field.fieldOptions().options() != null) {
             String hitSource = (String) context.field.fieldOptions().options().get("hit_source");
             if (hitSource != null) {
@@ -277,22 +272,13 @@ public class FieldWrapper {
                 weigher.acceptableTerms(), getQueryWeigher(), getCorpusWeigher(false), weigher);
     }
 
-    private HitEnum buildTokenStreamHitEnum() throws IOException {
+    private HitEnum buildTokenStreamHitEnum() throws Exception {
         Analyzer analyzer;
         if (context.fieldType instanceof KeywordFieldMapper.KeywordFieldType) {
-
-            try
-            {
-                final Method method = context.fieldType.getClass().getDeclaredMethod("normalizer");
-                method.setAccessible(true);
-                method.invoke(context.fieldType);
-                analyzer = ((NamedAnalyzer) method.invoke(context.fieldType)).analyzer();
-            }
-            catch (Exception exp)
-            {
-                throw new RuntimeException("Can't use named analyzer", exp);
-            }
-
+            final Method method = context.fieldType.getClass().getDeclaredMethod("normalizer");
+            method.setAccessible(true);
+            method.invoke(context.fieldType);
+            analyzer = ((NamedAnalyzer) method.invoke(context.fieldType)).analyzer();
         } else {
             analyzer = context.fieldType.indexAnalyzer();
         }
