@@ -47,7 +47,6 @@ import org.elasticsearch.index.analysis.AbstractTokenizerFactory;
 import org.elasticsearch.index.analysis.Analysis;
 import org.elasticsearch.index.analysis.AnalyzerProvider;
 import org.elasticsearch.index.analysis.CharFilterFactory;
-import org.elasticsearch.index.analysis.MultiTermAwareComponent;
 import org.elasticsearch.index.analysis.PreConfiguredTokenizer;
 import org.elasticsearch.index.analysis.TokenFilterFactory;
 import org.elasticsearch.index.analysis.TokenizerFactory;
@@ -444,8 +443,7 @@ ESIntegTestCase {
                 // If set, causes trailing "'s" to be removed for each subword: "O'Neil's" => "O", "Neil"
                 wflags |= getFlag(WordDelimiterGraphFilter.STEM_ENGLISH_POSSESSIVE, settings, "stem_english_possessive", true);
                 // If not null is the set of tokens to protect from being delimited
-                Set<?> protectedWords = Analysis.getWordSet(env, isettings.getIndexVersionCreated(),
-                        settings, "protected_words");
+                Set<?> protectedWords = Analysis.getWordSet(env, settings, "protected_words");
                 final CharArraySet protoWords = protectedWords == null ? null : CharArraySet.copy(protectedWords);
                 final int flags = wflags;
 
@@ -457,7 +455,7 @@ ESIntegTestCase {
 
                     @Override
                     public TokenStream create(TokenStream tokenStream) {
-                        return new WordDelimiterGraphFilter(tokenStream, WordDelimiterIterator.DEFAULT_WORD_DELIM_TABLE, flags, protoWords);
+                        return new WordDelimiterGraphFilter(tokenStream, flags, protoWords);
                     }
                 };
             }));
@@ -503,7 +501,7 @@ ESIntegTestCase {
         @Override
         public Map<String, AnalysisModule.AnalysisProvider<TokenizerFactory>> getTokenizers() {
             return Collections.singletonMap("pattern",
-                requiresAnalysisSettings((isettings, env, name, settings) -> new AbstractTokenizerFactory(isettings, name, settings) {
+                requiresAnalysisSettings((isettings, env, name, settings) -> new AbstractTokenizerFactory(isettings, settings, name) {
                     @Override
                     public Tokenizer create() {
                         String sPattern = settings.get("pattern", "\\W+" /*PatternAnalyzer.NON_WORD_PATTERN*/);
@@ -522,7 +520,7 @@ ESIntegTestCase {
 
         @Override
         public List<PreConfiguredTokenizer> getPreConfiguredTokenizers() {
-            return Collections.singletonList(PreConfiguredTokenizer.singleton("keyword", KeywordTokenizer::new, null));
+            return Collections.singletonList(PreConfiguredTokenizer.singleton("keyword", KeywordTokenizer::new));
         }
 
         @Override
@@ -532,7 +530,7 @@ ESIntegTestCase {
                         @Override
                         public Analyzer get() {
                             return new EnglishAnalyzer(
-                                    Analysis.parseStopWords(env, isettings.getIndexVersionCreated(), settings, EnglishAnalyzer.getDefaultStopSet()),
+                                    Analysis.parseStopWords(env, settings, EnglishAnalyzer.getDefaultStopSet()),
                                     Analysis.parseStemExclusion(settings, CharArraySet.EMPTY_SET));
                         }
                     });
@@ -566,43 +564,19 @@ ESIntegTestCase {
         }
     }
 
-    static class ASCIIFoldingTokenFilterFactory extends AbstractTokenFilterFactory implements MultiTermAwareComponent {
+    static class ASCIIFoldingTokenFilterFactory extends AbstractTokenFilterFactory {
 
         static final ParseField PRESERVE_ORIGINAL = new ParseField("preserve_original");
         static final boolean DEFAULT_PRESERVE_ORIGINAL = false;
 
-        private final boolean preserveOriginal;
-
         ASCIIFoldingTokenFilterFactory(IndexSettings indexSettings, Environment environment,
                                               String name, Settings settings) {
             super(indexSettings, name, settings);
-            preserveOriginal = settings.getAsBooleanLenientForPreEs6Indices(
-                    indexSettings.getIndexVersionCreated(), PRESERVE_ORIGINAL.getPreferredName(),
-                    DEFAULT_PRESERVE_ORIGINAL, deprecationLogger);
         }
 
         @Override
         public TokenStream create(TokenStream tokenStream) {
-            return new ASCIIFoldingFilter(tokenStream, preserveOriginal);
-        }
-
-        @Override
-        public Object getMultiTermComponent() {
-            if (!preserveOriginal) {
-                return this;
-            } else {
-                // See https://issues.apache.org/jira/browse/LUCENE-7536 for the reasoning
-                return new TokenFilterFactory() {
-                    @Override
-                    public String name() {
-                        return ASCIIFoldingTokenFilterFactory.this.name();
-                    }
-                    @Override
-                    public TokenStream create(TokenStream tokenStream) {
-                        return new ASCIIFoldingFilter(tokenStream, false);
-                    }
-                };
-            }
+            return new ASCIIFoldingFilter(tokenStream, false);
         }
     }
 

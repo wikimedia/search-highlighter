@@ -3,6 +3,7 @@ package org.wikimedia.highlighter.experimental.elasticsearch;
 import static java.util.stream.Collectors.toCollection;
 
 import java.io.IOException;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -12,14 +13,20 @@ import java.util.TreeMap;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.index.IndexOptions;
+import org.apache.lucene.search.Query;
 import org.apache.lucene.util.BytesRef;
 import org.elasticsearch.common.util.BigArrays;
+import org.elasticsearch.index.analysis.NamedAnalyzer;
 import org.elasticsearch.index.mapper.KeywordFieldMapper;
 import org.elasticsearch.index.mapper.MappedFieldType;
 import org.elasticsearch.index.mapper.Mapper;
 import org.elasticsearch.index.mapper.TextFieldMapper;
+import org.elasticsearch.index.query.QueryShardContext;
+import org.elasticsearch.search.SearchShardTarget;
+import org.elasticsearch.search.fetch.FetchSubPhase;
 import org.elasticsearch.search.fetch.subphase.highlight.HighlightUtils;
 import org.elasticsearch.search.fetch.subphase.highlight.HighlighterContext;
+import org.elasticsearch.search.fetch.subphase.highlight.SearchContextHighlight;
 import org.elasticsearch.search.fetch.subphase.highlight.SearchContextHighlight.FieldOptions;
 import org.wikimedia.highlighter.experimental.elasticsearch.ExperimentalHighlighter.HighlightExecutionContext;
 import org.wikimedia.highlighter.experimental.lucene.hit.PostingsHitEnum;
@@ -73,10 +80,11 @@ public class FieldWrapper {
     public FieldWrapper(HighlightExecutionContext executionContext, HighlighterContext context,
             BasicQueryWeigher weigher, String fieldName) {
         assert !context.fieldName.equals(fieldName);
-        MappedFieldType fieldType = context.context.mapperService().fullName(fieldName);
+        MappedFieldType fieldType = context.context.getMapperService().fullName(fieldName);
         this.executionContext = executionContext;
-        this.context = new HighlighterContext(fieldName, context.field, fieldType, context.context,
-                context.hitContext, context.query);
+
+        this.context = new HighlighterContext(fieldName, context.field, fieldType, context.shardTarget, context.context,
+                context.highlight, context.hitContext, context.query);
         this.weigher = weigher;
     }
 
@@ -107,8 +115,9 @@ public class FieldWrapper {
 
     public List<String> getFieldValues() throws IOException {
         if (values == null) {
-            List<Object> objs = HighlightUtils.loadFieldValues(context.field, context.fieldType,
-                    context.context, context.hitContext);
+            boolean forceSource = context.highlight.forceSource(context.field);
+            List<Object> objs = HighlightUtils.loadFieldValues(context.fieldType,
+                    context.context, context.hitContext, forceSource);
             values = objs.stream().map(Object::toString).collect(toCollection(() -> new ArrayList<>(objs.size())));
         }
         return values;
@@ -271,13 +280,25 @@ public class FieldWrapper {
     private HitEnum buildTokenStreamHitEnum() throws IOException {
         Analyzer analyzer;
         if (context.fieldType instanceof KeywordFieldMapper.KeywordFieldType) {
-            analyzer = ((KeywordFieldMapper.KeywordFieldType) context.fieldType).normalizer().analyzer();
+
+            try
+            {
+                final Method method = context.fieldType.getClass().getDeclaredMethod("normalizer");
+                method.setAccessible(true);
+                method.invoke(context.fieldType);
+                analyzer = ((NamedAnalyzer) method.invoke(context.fieldType)).analyzer();
+            }
+            catch (Exception exp)
+            {
+                throw new RuntimeException("Can't use named analyzer", exp);
+            }
+
         } else {
             analyzer = context.fieldType.indexAnalyzer();
         }
 
         if (analyzer == null) {
-            analyzer = context.context.mapperService().indexAnalyzer();
+            analyzer = context.context.getMapperService().indexAnalyzer();
         }
         return buildTokenStreamHitEnum(analyzer);
     }
@@ -363,7 +384,7 @@ public class FieldWrapper {
             if (!exists()) {
                 positionGap = 1;
             }
-            Mapper mapper = context.context.mapperService()
+            Mapper mapper = context.context.getMapperService()
                     .documentMapper(context.hitContext.hit().getType()).mappers()
                     .getMapper(context.fieldType.name());
             if (mapper instanceof TextFieldMapper) {
