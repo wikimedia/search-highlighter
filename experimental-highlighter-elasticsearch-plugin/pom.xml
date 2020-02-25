@@ -4,7 +4,7 @@
     <parent>
         <groupId>org.wikimedia.search.highlighter</groupId>
         <artifactId>experimental</artifactId>
-        <version>6.5.5-SNAPSHOT</version>
+        <version>7.5.1-SNAPSHOT</version>
     </parent>
     <artifactId>experimental-highlighter-elasticsearch-plugin</artifactId>
     <packaging>jar</packaging>

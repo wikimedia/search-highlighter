@@ -10,7 +10,7 @@
 
     <groupId>org.wikimedia.search.highlighter</groupId>
     <artifactId>experimental</artifactId>
-    <version>6.5.5-SNAPSHOT</version>
+    <version>7.5.1-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <name>Elasticsearch experimental highlighter plugin</name>
