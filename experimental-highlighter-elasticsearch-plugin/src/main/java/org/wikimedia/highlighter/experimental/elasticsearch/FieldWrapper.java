@@ -5,6 +5,7 @@ import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.util.BytesRef;
 import org.elasticsearch.common.util.BigArrays;
 import org.elasticsearch.index.mapper.MappedFieldType;
+import org.elasticsearch.index.mapper.TextSearchInfo;
 import org.elasticsearch.search.fetch.subphase.highlight.FieldHighlightContext;
 import org.elasticsearch.search.fetch.subphase.highlight.HighlightUtils;
 import org.elasticsearch.search.fetch.subphase.highlight.SearchHighlightContext;
@@ -241,7 +242,7 @@ public class FieldWrapper {
     }
 
     private boolean canUseVectorsHitEnum() {
-        return context.fieldType.isStored()
+        return context.fieldType.getTextSearchInfo().termVectors() != TextSearchInfo.TermVector.NONE
                 && context.fieldType.getTextSearchInfo().hasOffsets()
                 && context.fieldType.getTextSearchInfo().hasPositions();
     }
