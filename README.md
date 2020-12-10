@@ -34,6 +34,7 @@ Elasticsearch installation
 
 | Experimental Highlighter Plugin |  ElasticSearch  |
 |---------------------------------|-----------------|
+| 7.10.0, DWD-7.10.0 branch       | 7.10.0          |
 | 7.5.1, master branch            | 7.5.1           |
 | 6.3.1.2                         | 6.3.1           |
 | 5.5.2.2                         | 5.5.2           |

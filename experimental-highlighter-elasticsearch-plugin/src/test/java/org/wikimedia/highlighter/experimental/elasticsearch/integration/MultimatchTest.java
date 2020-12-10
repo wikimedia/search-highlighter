@@ -31,7 +31,7 @@ public class MultimatchTest extends AbstractExperimentalHighlighterIntegrationTe
         indexTestData();
 
         for (String hitSource : HIT_SOURCES) {
-            SearchResponse response = testSearch(multiMatchQuery("very test", "test").cutoffFrequency(1f), hitSource(hitSource)).get();
+            SearchResponse response = testSearch(multiMatchQuery("very test", "test"), hitSource(hitSource)).get();
             assertHighlight(response, 0, "test", 0, equalTo("tests <em>very</em> simple <em>test</em>"));
         }
     }
@@ -43,7 +43,7 @@ public class MultimatchTest extends AbstractExperimentalHighlighterIntegrationTe
         indexTestData();
 
         for (String hitSource : HIT_SOURCES) {
-            SearchResponse response = testSearch(multiMatchQuery("very test", "test").cutoffFrequency(1f), hitSource(hitSource)).get();
+            SearchResponse response = testSearch(multiMatchQuery("very test", "test"), hitSource(hitSource)).get();
             assertHighlight(response, 0, "test", 0, equalTo("tests <em>very</em> simple test"));
         }
     }
@@ -56,8 +56,8 @@ public class MultimatchTest extends AbstractExperimentalHighlighterIntegrationTe
 
         // Looks like phrase doesn't respect cutoff in multimatch
         for (String hitSource : HIT_SOURCES) {
-            SearchResponse response = testSearch(multiMatchQuery("very simple", "test").type(MultiMatchQueryBuilder.Type.PHRASE)
-                    .cutoffFrequency(1), hitSource(hitSource)).get();
+            SearchResponse response = testSearch(multiMatchQuery("very simple", "test").type(MultiMatchQueryBuilder.Type.PHRASE),
+                    hitSource(hitSource)).get();
             assertHighlight(response, 0, "test", 0, equalTo("tests <em>very</em> <em>simple</em> test"));
         }
     }
@@ -70,8 +70,7 @@ public class MultimatchTest extends AbstractExperimentalHighlighterIntegrationTe
 
         // Looks like phrase doesn't respect cutoff in multimatch
         for (String hitSource : HIT_SOURCES) {
-            SearchResponse response = testSearch(multiMatchQuery("very simple", "test").type(MultiMatchQueryBuilder.Type.PHRASE_PREFIX)
-                    .cutoffFrequency(1), hitSource(hitSource)).get();
+            SearchResponse response = testSearch(multiMatchQuery("very simple", "test").type(MultiMatchQueryBuilder.Type.PHRASE_PREFIX), hitSource(hitSource)).get();
             assertHighlight(response, 0, "test", 0, equalTo("tests <em>very</em> <em>simple</em> test"));
         }
     }
@@ -84,7 +83,7 @@ public class MultimatchTest extends AbstractExperimentalHighlighterIntegrationTe
 
         for (String hitSource : HIT_SOURCES) {
             SearchResponse response = testSearch(boolQuery()
-                    .must(multiMatchQuery("very test", "test").cutoffFrequency(1f))
+                    .must(multiMatchQuery("very test", "test"))
                     .filter(idsQuery().addIds("1")), hitSource(hitSource)).get();
             assertHighlight(response, 0, "test", 0, equalTo("tests <em>very</em> simple <em>test</em>"));
         }

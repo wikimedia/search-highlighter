@@ -578,7 +578,7 @@ ESIntegTestCase {
                 if (!Booleans.isBoolean(value)) {
                     @SuppressWarnings("deprecation")
                     boolean convertedValue = Booleans.parseBooleanLenient(settings.get(PRESERVE_ORIGINAL.getPreferredName()), DEFAULT_PRESERVE_ORIGINAL);
-                    deprecationLogger.deprecated("The value [{}] of setting [{}] is not coerced into boolean anymore. Please change " +
+                    deprecationLogger.deprecate("The value [{}] of setting [{}] is not coerced into boolean anymore. Please change " +
                             "this value to [{}].", value, PRESERVE_ORIGINAL.getPreferredName(), String.valueOf(convertedValue));
                     preserveOriginal =  convertedValue;
                 } else {
