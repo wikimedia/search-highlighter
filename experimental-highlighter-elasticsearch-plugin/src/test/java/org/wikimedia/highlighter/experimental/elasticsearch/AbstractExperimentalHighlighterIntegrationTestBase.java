@@ -189,10 +189,14 @@ ESIntegTestCase {
         mapping.startObject("pos_gap_big")
                 .field("type").value("text")
                 .field("position_increment_gap", 1000)
+                .field("index_options", "offsets")
+                .field("term_vector", "with_positions_offsets")
             .endObject();
         mapping.startObject("pos_gap_small")
                 .field("type").value("text")
                 .field("position_increment_gap", 1)
+                .field("index_options", "offsets")
+                .field("term_vector", "with_positions_offsets")
             .endObject();
         mapping.startObject("foo").field("type").value("object").startObject("properties");
         addField(mapping, "test", offsetsInPostings, fvhLikeTermVectors, true);
