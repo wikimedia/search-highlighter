@@ -177,7 +177,7 @@ ESIntegTestCase {
     protected void buildIndex(boolean offsetsInPostings, boolean fvhLikeTermVectors, int shards)
             throws IOException {
         XContentBuilder mapping = jsonBuilder().startObject();
-        mapping.startObject("test").startObject("properties");
+        mapping.startObject("properties");
         mapping.startObject("bar").field("type", "integer").endObject();
         addField(mapping, "custom_all", offsetsInPostings, fvhLikeTermVectors, false);
         addField(mapping, "test", offsetsInPostings, fvhLikeTermVectors, true);
@@ -200,7 +200,7 @@ ESIntegTestCase {
             .endObject();
         mapping.startObject("foo").field("type").value("object").startObject("properties");
         addField(mapping, "test", offsetsInPostings, fvhLikeTermVectors, true);
-        mapping.endObject().endObject().endObject().endObject().endObject();
+        mapping.endObject().endObject().endObject().endObject();
 
         XContentBuilder settings = jsonBuilder().startObject().startObject("index");
         settings.field("number_of_shards", shards);
@@ -306,7 +306,7 @@ ESIntegTestCase {
         settings.endObject();
         settings.endObject();
         settings.endObject();
-        assertAcked(prepareCreate("test").setSettings(settings).addMapping("test", mapping));
+        assertAcked(prepareCreate("test").setSettings(settings).addMapping("_doc", mapping));
         ensureYellow();
     }
 
@@ -351,7 +351,7 @@ ESIntegTestCase {
     }
 
     protected void indexTestData(Object contents) {
-        client().prepareIndex("test", "test", "1").setSource("test", contents).get();
+        client().prepareIndex("test", "_doc", "1").setSource("test", contents).get();
         refresh();
     }
 

@@ -1,35 +1,11 @@
 package org.wikimedia.highlighter.experimental.elasticsearch.integration;
 
-import static org.elasticsearch.index.query.QueryBuilders.boolQuery;
-import static org.elasticsearch.index.query.QueryBuilders.fuzzyQuery;
-import static org.elasticsearch.index.query.QueryBuilders.idsQuery;
-import static org.elasticsearch.index.query.QueryBuilders.matchPhrasePrefixQuery;
-import static org.elasticsearch.index.query.QueryBuilders.matchQuery;
-import static org.elasticsearch.index.query.QueryBuilders.prefixQuery;
-import static org.elasticsearch.index.query.QueryBuilders.queryStringQuery;
-import static org.elasticsearch.index.query.QueryBuilders.rangeQuery;
-import static org.elasticsearch.index.query.QueryBuilders.regexpQuery;
-import static org.elasticsearch.index.query.QueryBuilders.termQuery;
-import static org.elasticsearch.index.query.QueryBuilders.wildcardQuery;
-import static org.elasticsearch.index.query.QueryBuilders.wrapperQuery;
-import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertHighlight;
-import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertHitCount;
-import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertNoFailures;
-import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertNotHighlighted;
-import static org.hamcrest.Matchers.both;
-import static org.hamcrest.Matchers.containsString;
-import static org.hamcrest.Matchers.equalTo;
-
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.concurrent.ExecutionException;
-
+import com.google.common.base.Charsets;
+import com.google.common.collect.ImmutableList;
+import com.google.common.io.Resources;
 import org.elasticsearch.action.admin.indices.forcemerge.ForceMergeResponse;
+import org.elasticsearch.action.admin.indices.mapping.get.GetMappingsRequest;
+import org.elasticsearch.action.admin.indices.mapping.get.GetMappingsResponse;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.index.IndexRequestBuilder;
 import org.elasticsearch.action.search.SearchRequestBuilder;
@@ -46,9 +22,13 @@ import org.elasticsearch.search.fetch.subphase.highlight.HighlightBuilder;
 import org.junit.Test;
 import org.wikimedia.highlighter.experimental.elasticsearch.AbstractExperimentalHighlighterIntegrationTestBase;
 
-import com.google.common.base.Charsets;
-import com.google.common.collect.ImmutableList;
-import com.google.common.io.Resources;
+import java.io.IOException;
+import java.util.*;
+import java.util.concurrent.ExecutionException;
+
+import static org.elasticsearch.index.query.QueryBuilders.*;
+import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.*;
+import static org.hamcrest.Matchers.*;
 
 /**
  * Miscellaneous integration test that don't really have a good home.
@@ -113,9 +93,9 @@ public class MiscellaneousTest extends AbstractExperimentalHighlighterIntegratio
     public void multiValued() throws IOException {
         buildIndex();
         indexTestData(new String[] {"tests very simple test", "with two fields to test"});
-        client().prepareIndex("test", "test", "2")
+        client().prepareIndex("test", "_doc", "2")
             .setSource("test", new String[] {"no match here", "this one"}, "fetched", new Integer[] {0, 1}).get();
-        client().prepareIndex("test", "test", "3")
+        client().prepareIndex("test", "_doc", "3")
             .setSource("test", new String[] {"sentences.", "two sentences."}, "fetched", new Integer[] {0, 1}).get();
         refresh();
 
@@ -124,7 +104,6 @@ public class MiscellaneousTest extends AbstractExperimentalHighlighterIntegratio
             assertHighlight(response, 0, "test", 0, equalTo("tests very simple <em>test</em>"));
             assertHighlight(response, 0, "test", 1, equalTo("with two fields to <em>test</em>"));
         }
-
 
         for (String hitSource : HIT_SOURCES) {
             SearchResponse response = testSearch(termQuery("test", "test"), hitSource(hitSource))
@@ -169,7 +148,7 @@ public class MiscellaneousTest extends AbstractExperimentalHighlighterIntegratio
     @Test
     public void dataInOtherFields() throws IOException {
         buildIndex();
-        client().prepareIndex("test", "test", "1")
+        client().prepareIndex("test", "_doc", "1")
                 .setSource("test", "tests very simple test", "other",
                         "break me maybe?  lets make this pretty long tests").get();
         refresh();
@@ -183,7 +162,7 @@ public class MiscellaneousTest extends AbstractExperimentalHighlighterIntegratio
     @Test
     public void dataInOtherDocuments() throws IOException {
         buildIndex();
-        client().prepareIndex("test", "test", "2")
+        client().prepareIndex("test", "_doc", "2")
                 .setSource("test", "break me maybe?  lets make this pretty long tests").get();
         indexTestData();
 
@@ -199,14 +178,14 @@ public class MiscellaneousTest extends AbstractExperimentalHighlighterIntegratio
         buildIndex();
         // This is the doc we're looking for and it doesn't have a match in the
         // column we're highlighting
-        client().prepareIndex("test", "test", "1")
+        client().prepareIndex("test", "_doc", "1")
                 .setSource("test", "no match here", "find_me", "test").get();
         // These docs have a match in the column we're highlighting. We need a
         // bunch of them to make sure some end up in the same segment as what
         // we're looking for.
         List<IndexRequestBuilder> extra = new ArrayList<IndexRequestBuilder>();
         for (int i = 0; i < 100; i++) {
-            extra.add(client().prepareIndex("test", "test", "other " + i).setSource("test", "test"));
+            extra.add(client().prepareIndex("test", "_doc", "other " + i).setSource("test", "test"));
         }
         indexRandom(true, extra);
 
@@ -334,7 +313,7 @@ public class MiscellaneousTest extends AbstractExperimentalHighlighterIntegratio
                     for (char l4 = 'a'; l4 <= 'z'; l4++) {
                         b.append('z').append(l1).append(l2).append(l3).append(l4).append(' ');
                     }
-                    request.add(client().prepareIndex("test", "test").setSource("test", b.toString()));
+                    request.add(client().prepareIndex("test", "_doc").setSource("test", b.toString()));
                 }
             }
             request.get();
@@ -463,7 +442,7 @@ public class MiscellaneousTest extends AbstractExperimentalHighlighterIntegratio
     @Test
     public void singleRangeQueryWithSmallRewrites() throws IOException {
         buildIndex(true, true, 1);
-        client().prepareIndex("test", "test", "2").setSource("test", "test").get();
+        client().prepareIndex("test", "_doc", "2").setSource("test", "test").get();
         indexTestData();
 
         Map<String, Object> options = new HashMap<String, Object>();
@@ -525,7 +504,7 @@ public class MiscellaneousTest extends AbstractExperimentalHighlighterIntegratio
 
     public void testKeywordNormalizer() throws IOException {
         buildIndex();
-        client().prepareIndex("test", "test", "1").setSource("keyword_field", "Héllö").get();
+        client().prepareIndex("test", "_doc", "1").setSource("keyword_field", "Héllö").get();
         refresh();
         SearchResponse response = testSearch(matchQuery("keyword_field", "Hèllô"),
                 x -> x.field("keyword_field")).get();
@@ -538,7 +517,7 @@ public class MiscellaneousTest extends AbstractExperimentalHighlighterIntegratio
         Map<String, Object> doc = new HashMap<>();
         doc.put("pos_gap_big", data);
         doc.put("pos_gap_small", data);
-        client().prepareIndex("test", "test", "1").setSource(doc).get();
+        client().prepareIndex("test", "_doc", "1").setSource(doc).get();
         refresh();
         SearchResponse resp = client().prepareSearch().setQuery(QueryBuilders.matchPhraseQuery("pos_gap_big", "one gap"))
                 .highlighter(new HighlightBuilder()
