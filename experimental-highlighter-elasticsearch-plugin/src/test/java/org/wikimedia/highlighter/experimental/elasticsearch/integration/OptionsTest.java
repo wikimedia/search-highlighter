@@ -14,7 +14,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.ExecutionException;
 
 import org.elasticsearch.action.index.IndexRequestBuilder;
 import org.elasticsearch.action.search.SearchRequestBuilder;
@@ -156,11 +155,11 @@ public class OptionsTest extends AbstractExperimentalHighlighterIntegrationTestB
     }
 
     @Test
-    public void useDefaultSimilarity() throws IOException, InterruptedException, ExecutionException {
+    public void useDefaultSimilarity() throws IOException, InterruptedException {
         buildIndex(true, true, 1);
         client().prepareIndex("test", "_doc").setSource("test", new String[] {"test", "foo foo"}).get();
         // We need enough "foo" so that a whole bunch end up on the shard with the above entry.
-        List<IndexRequestBuilder> indexes = new ArrayList<IndexRequestBuilder>();
+        List<IndexRequestBuilder> indexes = new ArrayList<>();
         for (int i = 0; i < 1000; i++) {
             indexes.add(client().prepareIndex("test", "_doc").setSource("test", "foo"));
         }
@@ -408,8 +407,7 @@ public class OptionsTest extends AbstractExperimentalHighlighterIntegrationTestB
     // it tests multiple things and if the test is failing, it is not clear
     // what caused the failure. That being said, it is not worth refactoring
     // unless we actually have changes to make to that area of the code.
-    public void fetchedFields() throws IOException, InterruptedException,
-            ExecutionException {
+    public void fetchedFields() throws IOException {
         buildIndex();
         // This is the doc we're looking for and it doesn't have a match in the
         // column we're highlighting
@@ -507,7 +505,7 @@ public class OptionsTest extends AbstractExperimentalHighlighterIntegrationTestB
             SearchResponse response = testSearch(qb,
                     hitSource(hitSource)
                         .andThen(field("foo.test"))
-                        .andThen(option("fetch_fields", Arrays.asList(new String[] {"foo.fetched", "foo.fetched2"}))))
+                        .andThen(option("fetch_fields", Arrays.asList("foo.fetched", "foo.fetched2"))))
                     .get();
             assertHighlight(response, 0, "foo.test", 0, equalTo("<em>nested99</em>"));
             assertHighlight(response, 0, "foo.test", 1, equalTo("99"));
