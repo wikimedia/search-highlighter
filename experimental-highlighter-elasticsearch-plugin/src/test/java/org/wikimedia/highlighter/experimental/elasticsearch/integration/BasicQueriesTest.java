@@ -187,7 +187,7 @@ public class BasicQueriesTest extends AbstractExperimentalHighlighterIntegration
     @Test
     public void functionScoreQueryWithoutFilter() throws IOException {
         buildIndex();
-        client().prepareIndex("test", "test", "1").setSource("test", "test", "bar", 2).get();
+        client().prepareIndex("test", "_doc", "1").setSource("test", "test", "bar", 2).get();
         refresh();
 
         for (String hitSource : HIT_SOURCES) {
@@ -199,7 +199,7 @@ public class BasicQueriesTest extends AbstractExperimentalHighlighterIntegration
     @Test
     public void functionScoreQueryWithFilter() throws IOException {
         buildIndex();
-        client().prepareIndex("test", "test", "1").setSource("test", "test", "bar", 2).get();
+        client().prepareIndex("test", "_doc", "1").setSource("test", "test", "bar", 2).get();
         refresh();
 
         QueryBuilder fbuilder = functionScoreQuery(
