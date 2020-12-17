@@ -77,7 +77,7 @@ public class ExperimentalHighlighter implements Highlighter {
                 executionContext.cleanup();
             }
         } catch (Exception e) {
-            getLogger(context).error("Failed to highlight field [{}]", e, context.fieldName);
+            getLogger(context).error("Failed to highlight field [{}]", context.fieldName, e);
             throw new FetchPhaseExecutionException(context.hitContext.hit().getShard(), "Failed to highlight field [" + context.fieldName + "]", e);
         }
     }
