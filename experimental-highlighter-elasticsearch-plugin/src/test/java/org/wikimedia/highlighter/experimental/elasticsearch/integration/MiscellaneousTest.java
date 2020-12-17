@@ -106,8 +106,10 @@ public class MiscellaneousTest extends AbstractExperimentalHighlighterIntegratio
         }
 
         for (String hitSource : HIT_SOURCES) {
-            SearchResponse response = testSearch(termQuery("test", "test"), hitSource(hitSource))
-                    .highlighter(newHLBuilder().field(
+            SearchResponse response = testSearch(queryStringQuery("test").field("test").field("test.english")
+                    , hitSource(hitSource))
+                    .highlighter(new HighlightBuilder()
+                            .highlighterType("experimental").field(
                             new HighlightBuilder.Field("test").matchedFields("test.english"))
             ).get();
             assertHighlight(response, 0, "test", 0,
@@ -418,7 +420,7 @@ public class MiscellaneousTest extends AbstractExperimentalHighlighterIntegratio
                 .setQuery(matchQuery("test", "very"))
                 .highlighter(new HighlightBuilder().highlighterType("experimental")
                         .field(new HighlightBuilder.Field("test").matchedFields("test", "doesntexist"))).get();
-        assertHighlight(response, 0, "test", 0, equalTo("tests <em>very</em> simple test"));
+        assertFailures(response);
     }
 
     /**
