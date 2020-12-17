@@ -151,6 +151,17 @@ ESIntegTestCase {
     protected void buildIndex(boolean offsetsInPostings, boolean fvhLikeTermVectors, int shards)
             throws IOException {
         XContentBuilder mapping = jsonBuilder().startObject();
+        mapping.startArray("dynamic_templates").startObject()
+                .startObject("strings")
+                .field("match_mapping_type", "string")
+                .startObject("mapping")
+                .field("type", "text")
+                .field("index_options", "offsets")
+                .field("term_vector", "with_positions_offsets")
+                .endObject()
+                .endObject()
+                .endObject()
+                .endArray();
         mapping.startObject("properties");
         mapping.startObject("bar").field("type", "integer").endObject();
         addField(mapping, "custom_all", offsetsInPostings, fvhLikeTermVectors, false);
