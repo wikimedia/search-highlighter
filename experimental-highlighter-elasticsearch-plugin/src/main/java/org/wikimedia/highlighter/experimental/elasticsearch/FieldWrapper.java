@@ -62,7 +62,7 @@ public class FieldWrapper {
     public FieldWrapper(HighlightExecutionContext executionContext, FieldHighlightContext context,
             BasicQueryWeigher weigher, String fieldName) {
         assert !context.fieldName.equals(fieldName);
-        MappedFieldType fieldType = context.context.mapperService().unmappedFieldType(fieldName);
+        MappedFieldType fieldType = context.context.mapperService().fieldType(fieldName);
         this.executionContext = executionContext;
 
         this.context = new FieldHighlightContext(fieldName, context.field, fieldType, context.context, context.hitContext,
