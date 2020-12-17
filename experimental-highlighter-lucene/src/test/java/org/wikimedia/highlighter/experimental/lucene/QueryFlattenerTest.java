@@ -209,7 +209,8 @@ public class QueryFlattenerTest extends LuceneTestCase {
     @Test
     public void testSynonym() {
         Callback callback = mock(Callback.class);
-        new QueryFlattener().flatten(new SynonymQuery(bar, baz), null, callback);
+        SynonymQuery.Builder synonymBuilder = new SynonymQuery.Builder("foo");
+        new QueryFlattener().flatten(synonymBuilder.addTerm(bar).addTerm(baz).build(), null, callback);
         verify(callback).flattened(bar.bytes(), 1f, null);
         verify(callback).flattened(baz.bytes(), 1f, null);
     }
