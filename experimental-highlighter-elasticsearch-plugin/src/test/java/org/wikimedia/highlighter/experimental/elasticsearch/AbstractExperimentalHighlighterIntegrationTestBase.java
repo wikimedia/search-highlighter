@@ -194,7 +194,7 @@ ESIntegTestCase {
             .endObject();
         mapping.startObject("pos_gap_small")
                 .field("type").value("text")
-                .field("position_increment_gap", 1)
+                .field("position_increment_gap", 0)
                 .field("index_options", "offsets")
                 .field("term_vector", "with_positions_offsets")
             .endObject();
