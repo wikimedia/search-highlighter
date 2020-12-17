@@ -132,6 +132,9 @@ public class PostingsHitEnum extends AbstractHitEnum {
         current++;
         try {
             position = dp.nextPosition();
+            if (dp.startOffset() == -1 || dp.endOffset() == -1) {
+               throw new IllegalArgumentException("Can't use vectors as a hit source without setting term_vector to with_positions_offsets");
+            }
             assert dp.startOffset() < dp.endOffset();
             return true;
         } catch (IOException e) {
