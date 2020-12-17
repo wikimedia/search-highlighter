@@ -416,7 +416,7 @@ public class MiscellaneousTest extends AbstractExperimentalHighlighterIntegratio
                 .setQuery(matchQuery("test", "very"))
                 .highlighter(new HighlightBuilder().highlighterType("experimental")
                         .field(new HighlightBuilder.Field("test").matchedFields("test", "doesntexist"))).get();
-        assertFailures(response);
+        assertHighlight(response, 0, "test", 0, equalTo("tests <em>very</em> simple test"));
     }
 
     /**
