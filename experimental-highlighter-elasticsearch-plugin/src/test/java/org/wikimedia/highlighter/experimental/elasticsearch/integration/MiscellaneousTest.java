@@ -4,8 +4,6 @@ import com.google.common.base.Charsets;
 import com.google.common.collect.ImmutableList;
 import com.google.common.io.Resources;
 import org.elasticsearch.action.admin.indices.forcemerge.ForceMergeResponse;
-import org.elasticsearch.action.admin.indices.mapping.get.GetMappingsRequest;
-import org.elasticsearch.action.admin.indices.mapping.get.GetMappingsResponse;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.index.IndexRequestBuilder;
 import org.elasticsearch.action.search.SearchRequestBuilder;
@@ -24,7 +22,6 @@ import org.wikimedia.highlighter.experimental.elasticsearch.AbstractExperimental
 
 import java.io.IOException;
 import java.util.*;
-import java.util.concurrent.ExecutionException;
 
 import static org.elasticsearch.index.query.QueryBuilders.*;
 import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.*;
@@ -175,8 +172,7 @@ public class MiscellaneousTest extends AbstractExperimentalHighlighterIntegratio
     }
 
     @Test
-    public void noMatchesThisDocButMatchesOthers() throws IOException, InterruptedException,
-            ExecutionException {
+    public void noMatchesThisDocButMatchesOthers() throws IOException, InterruptedException {
         buildIndex();
         // This is the doc we're looking for and it doesn't have a match in the
         // column we're highlighting
@@ -185,7 +181,7 @@ public class MiscellaneousTest extends AbstractExperimentalHighlighterIntegratio
         // These docs have a match in the column we're highlighting. We need a
         // bunch of them to make sure some end up in the same segment as what
         // we're looking for.
-        List<IndexRequestBuilder> extra = new ArrayList<IndexRequestBuilder>();
+        List<IndexRequestBuilder> extra = new ArrayList<>();
         for (int i = 0; i < 100; i++) {
             extra.add(client().prepareIndex("test", "_doc", "other " + i).setSource("test", "test"));
         }
@@ -303,7 +299,7 @@ public class MiscellaneousTest extends AbstractExperimentalHighlighterIntegratio
      * spitting out performance information though.
      */
 //    @Test
-    public void lotsOfTerms() throws IOException, InterruptedException, ExecutionException {
+    public void lotsOfTerms() throws IOException {
         StopWatch watch = new StopWatch();
         watch.start("load");
         buildIndex(true, true, 1);
@@ -447,7 +443,7 @@ public class MiscellaneousTest extends AbstractExperimentalHighlighterIntegratio
         client().prepareIndex("test", "_doc", "2").setSource("test", "test").get();
         indexTestData();
 
-        Map<String, Object> options = new HashMap<String, Object>();
+        Map<String, Object> options = new HashMap<>();
         options.put("max_expanded_terms", 1);
         SearchRequestBuilder search = testSearch(boolQuery().must(rangeQuery("test").from("teso").to("tesz")).filter(idsQuery().addIds("1")),
                 x -> x.options(options));
@@ -463,7 +459,7 @@ public class MiscellaneousTest extends AbstractExperimentalHighlighterIntegratio
     public void returnOffsets() throws IOException {
         buildIndex();
         indexTestData();
-        Map<String, Object> options = new HashMap<String, Object>();
+        Map<String, Object> options = new HashMap<>();
         options.put("return_offsets", true);
         SearchResponse response = testSearch(matchQuery("test.english", "test"),
             x -> x.options(options).field("test.english")).get();
@@ -474,7 +470,7 @@ public class MiscellaneousTest extends AbstractExperimentalHighlighterIntegratio
     public void offsetsAugmenter() throws IOException {
         buildIndex();
         indexTestData();
-        Map<String, Object> options = new HashMap<String, Object>();
+        Map<String, Object> options = new HashMap<>();
         options.put("return_snippets_and_offsets", true);
         SearchResponse response = testSearch(matchQuery("test.english", "test"),
             x -> x.options(options).field("test.english")).get();
@@ -485,7 +481,7 @@ public class MiscellaneousTest extends AbstractExperimentalHighlighterIntegratio
     public void offsetsAugmenterWithEmptyArray() throws IOException {
         buildIndex();
         indexTestData(Arrays.asList("", "after_empty_array"));
-        Map<String, Object> options = new HashMap<String, Object>();
+        Map<String, Object> options = new HashMap<>();
         options.put("return_snippets_and_offsets", true);
         SearchResponse response = testSearch(matchQuery("test.english", "after_empty_array"),
             x -> x.options(options).field("test.english")).get();

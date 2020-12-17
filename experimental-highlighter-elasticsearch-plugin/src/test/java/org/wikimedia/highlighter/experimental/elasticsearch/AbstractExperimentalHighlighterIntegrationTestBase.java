@@ -94,62 +94,36 @@ ESIntegTestCase {
     }
 
     protected Consumer<HighlightBuilder> field(HighlightBuilder.Field field) {
-        return new Consumer<HighlightBuilder>() {
-            @Override
-            public void accept(HighlightBuilder hb) {
-                hb.field(field);
-            }
-        };
+        return hb -> hb.field(field);
     }
 
     protected Consumer<HighlightBuilder> field(String field) {
-        return new Consumer<HighlightBuilder>() {
-            @Override
-            public void accept(HighlightBuilder hb) {
-                hb.field(field);
-            }
-        };
+        return hb -> hb.field(field);
     }
 
     protected Consumer<HighlightBuilder> order(String order) {
-        return new Consumer<HighlightBuilder>() {
-            @Override
-            public void accept(HighlightBuilder hb) {
-                hb.order(order);
-            }
-        };
+        return hb -> hb.order(order);
     }
 
     protected Consumer<HighlightBuilder> options(Map<String, Object> options) {
-        return new Consumer<HighlightBuilder>() {
-            @Override
-            public void accept(HighlightBuilder hb) {
-                if (hb.options() == null) {
-                    hb.options(new HashMap<>());
-                }
-                hb.options().putAll(options);
+        return hb -> {
+            if (hb.options() == null) {
+                hb.options(new HashMap<>());
             }
+            hb.options().putAll(options);
         };
     }
 
     protected Consumer<HighlightBuilder> fragmentSize(Integer size) {
-        return new Consumer<HighlightBuilder>() {
-            @Override
-            public void accept(HighlightBuilder hb) {
-                hb.fragmentSize(size);
-            }
-        };
+        return hb -> hb.fragmentSize(size);
     }
 
     protected Consumer<HighlightBuilder> option(String name, Object value) {
-        return new Consumer<HighlightBuilder>() {
-            @Override
-            public void accept(HighlightBuilder hb) {
-                if (hb.options() == null) {
-                    hb.options(new HashMap<>());
-                }
-                hb.options().put(name, value);
+        return hb -> {
+            if (hb.options() == null) {
+                hb.options(new HashMap<>());
             }
+            hb.options().put(name, value);
         };
     }
 
@@ -413,18 +387,16 @@ ESIntegTestCase {
             // org/elasticsearch/analysis/common/ASCIIFoldingTokenFilterFactory.java
             map.put("asciifolding", requiresAnalysisSettings(ASCIIFoldingTokenFilterFactory::new));
             // org/elasticsearch/analysis/common/KStemTokenFilterFactory.java
-            map.put("kstem", (isettings, env, name, settings) -> {
-                return new TokenFilterFactory() {
-                    @Override
-                    public String name() {
-                        return name;
-                    }
+            map.put("kstem", (isettings, env, name, settings) -> new TokenFilterFactory() {
+                @Override
+                public String name() {
+                    return name;
+                }
 
-                    @Override
-                    public TokenStream create(TokenStream tokenStream) {
-                        return new KStemFilter(tokenStream);
-                    }
-                };
+                @Override
+                public TokenStream create(TokenStream tokenStream) {
+                    return new KStemFilter(tokenStream);
+                }
             });
             // org/elasticsearch/analysis/common/WordDelimiterGraphTokenFilterFactory.java
             map.put("word_delimiter_graph", requiresAnalysisSettings((isettings, env, name, settings) -> {
@@ -465,18 +437,16 @@ ESIntegTestCase {
                 };
             }));
             // org/elasticsearch/analysis/common/StemmerTokenFilterFactory.java#L138
-            map.put("stemmer_possessive_english", (isettings, env, name, settings) -> {
-                return new TokenFilterFactory() {
-                    @Override
-                    public String name() {
-                        return name;
-                    }
+            map.put("stemmer_possessive_english", (isettings, env, name, settings) -> new TokenFilterFactory() {
+                @Override
+                public String name() {
+                    return name;
+                }
 
-                    @Override
-                    public TokenStream create(TokenStream tokenStream) {
-                        return new EnglishPossessiveFilter(tokenStream);
-                    }
-                };
+                @Override
+                public TokenStream create(TokenStream tokenStream) {
+                    return new EnglishPossessiveFilter(tokenStream);
+                }
             });
             // org/elasticsearch/analysis/common/StemmerOverrideTokenFilterFactory.java
             map.put("stemmer_override", requiresAnalysisSettings((isettings, env, name, settings) -> {
