@@ -39,7 +39,7 @@ public class MultimatchTest extends AbstractExperimentalHighlighterIntegrationTe
     @Test
     public void multiMatchCutoffHighAndLow() throws IOException {
         buildIndex(true, true, 1);
-        client().prepareIndex("test", "test", "2").setSource("test", "test").get();
+        client().prepareIndex("test", "_doc", "2").setSource("test", "test").get();
         indexTestData();
 
         for (String hitSource : HIT_SOURCES) {
@@ -51,7 +51,7 @@ public class MultimatchTest extends AbstractExperimentalHighlighterIntegrationTe
     @Test
     public void multiMatchPhraseCutoffHighAndLow() throws IOException {
         buildIndex(true, true, 1);
-        client().prepareIndex("test", "test", "2").setSource("test", "simple").get();
+        client().prepareIndex("test", "_doc", "2").setSource("test", "simple").get();
         indexTestData();
 
         // Looks like phrase doesn't respect cutoff in multimatch
@@ -65,7 +65,7 @@ public class MultimatchTest extends AbstractExperimentalHighlighterIntegrationTe
     @Test
     public void multiMatchPhrasePrefixCutoffHighAndLow() throws IOException {
         buildIndex(true, true, 1);
-        client().prepareIndex("test", "test", "2").setSource("test", "simple").get();
+        client().prepareIndex("test", "_doc", "2").setSource("test", "simple").get();
         indexTestData();
 
         // Looks like phrase doesn't respect cutoff in multimatch
@@ -79,7 +79,7 @@ public class MultimatchTest extends AbstractExperimentalHighlighterIntegrationTe
     @Test
     public void multiMatchCutoffAllHigh() throws IOException {
         buildIndex(true, true, 1);
-        client().prepareIndex("test", "test", "2").setSource("test", "very test").get();
+        client().prepareIndex("test", "_doc", "2").setSource("test", "very test").get();
         indexTestData();
 
         for (String hitSource : HIT_SOURCES) {

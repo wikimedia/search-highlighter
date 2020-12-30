@@ -26,8 +26,8 @@ import org.elasticsearch.index.mapper.MappedFieldType;
 import org.elasticsearch.search.fetch.FetchPhaseExecutionException;
 import org.elasticsearch.search.fetch.subphase.highlight.HighlightField;
 import org.elasticsearch.search.fetch.subphase.highlight.Highlighter;
-import org.elasticsearch.search.fetch.subphase.highlight.HighlighterContext;
-import org.elasticsearch.search.fetch.subphase.highlight.SearchContextHighlight.FieldOptions;
+import org.elasticsearch.search.fetch.subphase.highlight.FieldHighlightContext;
+import org.elasticsearch.search.fetch.subphase.highlight.SearchHighlightContext.FieldOptions;
 import org.wikimedia.highlighter.experimental.lucene.hit.AutomatonHitEnum;
 import org.wikimedia.highlighter.experimental.lucene.hit.weight.BasicQueryWeigher;
 import org.wikimedia.search.highlighter.experimental.HitEnum;
@@ -63,7 +63,7 @@ public class ExperimentalHighlighter implements Highlighter {
 
     @Override
     @SuppressWarnings("checkstyle:IllegalCatch")
-    public HighlightField highlight(HighlighterContext context) {
+    public HighlightField highlight(FieldHighlightContext context) {
         try {
             CacheEntry entry = (CacheEntry) context.hitContext.cache().get(CACHE_KEY);
             if (entry == null) {
@@ -77,13 +77,13 @@ public class ExperimentalHighlighter implements Highlighter {
                 executionContext.cleanup();
             }
         } catch (Exception e) {
-            getLogger(context).error("Failed to highlight field [{}]", e, context.fieldName);
-            throw new FetchPhaseExecutionException(context.shardTarget, "Failed to highlight field [" + context.fieldName + "]", e);
+            getLogger(context).error("Failed to highlight field [{}]", context.fieldName, e);
+            throw new FetchPhaseExecutionException(context.hitContext.hit().getShard(), "Failed to highlight field [" + context.fieldName + "]", e);
         }
     }
 
-    private Logger getLogger(HighlighterContext context) {
-        return Loggers.getLogger(ExperimentalHighlighter.class, context.context.convertToShardContext().index());
+    private Logger getLogger(FieldHighlightContext context) {
+        return Loggers.getLogger(ExperimentalHighlighter.class, context.context.getIndexName());
     }
 
     static class CacheEntry {
@@ -131,7 +131,7 @@ public class ExperimentalHighlighter implements Highlighter {
         private static final String OPTION_RETURN_DEBUG_GRAPH = "return_debug_graph";
         private static final String OPTION_RETURN_SNIPPETS_WITH_OFFSET = "return_snippets_and_offsets";
         private static final int DEFAULT_MAX_DETERMINIZED_STATES = 20000;
-        private final HighlighterContext context;
+        private final FieldHighlightContext context;
         private final CacheEntry cache;
         private BasicQueryWeigher weigher;
         private FieldWrapper defaultField;
@@ -142,7 +142,7 @@ public class ExperimentalHighlighter implements Highlighter {
         private Locale locale;
         private int maxDeterminizedStates;
 
-        HighlightExecutionContext(HighlighterContext context, CacheEntry cache) {
+        HighlightExecutionContext(FieldHighlightContext context, CacheEntry cache) {
             this.context = context;
             this.cache = cache;
         }

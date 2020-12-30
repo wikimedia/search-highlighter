@@ -40,7 +40,7 @@ public class PhraseQueryTest extends AbstractExperimentalHighlighterIntegrationT
     @Test
     public void singlePhraseWithPhraseAsTermsSwitch() throws IOException {
         buildIndex();
-        client().prepareIndex("test", "test", "1").setSource("test", "phrase test test", "test2", "phrase phrase test").get();
+        client().prepareIndex("test", "_doc", "1").setSource("test", "phrase test test", "test2", "phrase phrase test").get();
         refresh();
 
         for (String hitSource : HIT_SOURCES) {
@@ -98,7 +98,7 @@ public class PhraseQueryTest extends AbstractExperimentalHighlighterIntegrationT
         for (int i = 0; i < size; i++) {
             b.append("test ");
         }
-        client().prepareIndex("test", "test", "1").setSource("test", b.toString(), "test2", "simple test").get();
+        client().prepareIndex("test", "_doc", "1").setSource("test", b.toString(), "test2", "simple test").get();
         refresh();
         QueryBuilder qb = matchPhraseQuery("test2", "simple test");
         SearchRequestBuilder search = testSearch(qb, hitSource("analyze"));

@@ -14,7 +14,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.ExecutionException;
 
 import org.elasticsearch.action.index.IndexRequestBuilder;
 import org.elasticsearch.action.search.SearchRequestBuilder;
@@ -156,13 +155,13 @@ public class OptionsTest extends AbstractExperimentalHighlighterIntegrationTestB
     }
 
     @Test
-    public void useDefaultSimilarity() throws IOException, InterruptedException, ExecutionException {
+    public void useDefaultSimilarity() throws IOException, InterruptedException {
         buildIndex(true, true, 1);
-        client().prepareIndex("test", "test").setSource("test", new String[] {"test", "foo foo"}).get();
+        client().prepareIndex("test", "_doc").setSource("test", new String[] {"test", "foo foo"}).get();
         // We need enough "foo" so that a whole bunch end up on the shard with the above entry.
-        List<IndexRequestBuilder> indexes = new ArrayList<IndexRequestBuilder>();
+        List<IndexRequestBuilder> indexes = new ArrayList<>();
         for (int i = 0; i < 1000; i++) {
-            indexes.add(client().prepareIndex("test", "test").setSource("test", "foo"));
+            indexes.add(client().prepareIndex("test", "_doc").setSource("test", "foo"));
         }
         indexRandom(true, indexes);
 
@@ -312,9 +311,9 @@ public class OptionsTest extends AbstractExperimentalHighlighterIntegrationTestB
                 + "everything because that'd be too much don't you think?  Yes.";
 
         buildIndex();
-        client().prepareIndex("test", "test", "short")
+        client().prepareIndex("test", "_doc", "short")
                 .setSource("test", shortString, "find_me", "shortstring").get();
-        client().prepareIndex("test", "test", "long")
+        client().prepareIndex("test", "_doc", "long")
                 .setSource("test", longString, "find_me", "longstring").get();
         refresh();
 
@@ -408,16 +407,15 @@ public class OptionsTest extends AbstractExperimentalHighlighterIntegrationTestB
     // it tests multiple things and if the test is failing, it is not clear
     // what caused the failure. That being said, it is not worth refactoring
     // unless we actually have changes to make to that area of the code.
-    public void fetchedFields() throws IOException, InterruptedException,
-            ExecutionException {
+    public void fetchedFields() throws IOException {
         buildIndex();
         // This is the doc we're looking for and it doesn't have a match in the
         // column we're highlighting
-        client().prepareIndex("test", "test", "1")
+        client().prepareIndex("test", "_doc", "1")
                 .setSource("test", new String[] {"no match here", "this one"}, "fetched", new Integer[] {0, 1}).get();
-        client().prepareIndex("test", "test", "2")
+        client().prepareIndex("test", "_doc", "2")
                 .setSource("test", new String[] {"firstplace", "no match here"}, "fetched", new Integer[] {0, 1, 2}).get();
-        client().prepareIndex("test", "test", "3")
+        client().prepareIndex("test", "_doc", "3")
                 .setSource("test", new String[] {"no match here", "nobuddy"}, "fetched", new Integer[] {0}).get();
         XContentBuilder nested = jsonBuilder().startObject().startArray("foo");
         for (int i = 0; i < 200; i++) {
@@ -429,7 +427,7 @@ public class OptionsTest extends AbstractExperimentalHighlighterIntegrationTestB
             nested.endObject();
         }
         nested.endArray().endObject();
-        client().prepareIndex("test", "test", "4").setSource(nested).get();
+        client().prepareIndex("test", "_doc", "4").setSource(nested).get();
         refresh();
         QueryBuilder qb = termQuery("test", "one");
         for (String hitSource : HIT_SOURCES) {
@@ -507,7 +505,7 @@ public class OptionsTest extends AbstractExperimentalHighlighterIntegrationTestB
             SearchResponse response = testSearch(qb,
                     hitSource(hitSource)
                         .andThen(field("foo.test"))
-                        .andThen(option("fetch_fields", Arrays.asList(new String[] {"foo.fetched", "foo.fetched2"}))))
+                        .andThen(option("fetch_fields", Arrays.asList("foo.fetched", "foo.fetched2"))))
                     .get();
             assertHighlight(response, 0, "foo.test", 0, equalTo("<em>nested99</em>"));
             assertHighlight(response, 0, "foo.test", 1, equalTo("99"));
@@ -518,7 +516,7 @@ public class OptionsTest extends AbstractExperimentalHighlighterIntegrationTestB
     @Test
     public void highlightQuery() throws IOException {
         buildIndex();
-        client().prepareIndex("test", "test").setSource("test", "foo", "test2", "bar").get();
+        client().prepareIndex("test", "_doc").setSource("test", "foo", "test2", "bar").get();
         refresh();
 
         for (String hitSource : HIT_SOURCES) {
@@ -535,7 +533,7 @@ public class OptionsTest extends AbstractExperimentalHighlighterIntegrationTestB
     @Test
     public void testDebugGraph() throws IOException {
         buildIndex();
-        client().prepareIndex("test", "test").setSource("test", "foo", "test2", "bar").get();
+        client().prepareIndex("test", "_doc").setSource("test", "foo", "test2", "bar").get();
         refresh();
 
         for (String hitSource : HIT_SOURCES) {

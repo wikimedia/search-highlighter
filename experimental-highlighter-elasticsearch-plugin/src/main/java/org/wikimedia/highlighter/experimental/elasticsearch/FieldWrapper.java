@@ -11,15 +11,13 @@ import java.util.TreeMap;
 
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.TokenStream;
-import org.apache.lucene.index.IndexOptions;
 import org.apache.lucene.util.BytesRef;
 import org.elasticsearch.common.util.BigArrays;
 import org.elasticsearch.index.mapper.MappedFieldType;
-import org.elasticsearch.index.mapper.Mapper;
-import org.elasticsearch.index.mapper.TextFieldMapper;
+import org.elasticsearch.index.mapper.TextSearchInfo;
+import org.elasticsearch.search.fetch.subphase.highlight.FieldHighlightContext;
 import org.elasticsearch.search.fetch.subphase.highlight.HighlightUtils;
-import org.elasticsearch.search.fetch.subphase.highlight.HighlighterContext;
-import org.elasticsearch.search.fetch.subphase.highlight.SearchContextHighlight.FieldOptions;
+import org.elasticsearch.search.fetch.subphase.highlight.SearchHighlightContext;
 import org.wikimedia.highlighter.experimental.elasticsearch.ExperimentalHighlighter.HighlightExecutionContext;
 import org.wikimedia.highlighter.experimental.lucene.hit.PostingsHitEnum;
 import org.wikimedia.highlighter.experimental.lucene.hit.TokenStreamHitEnum;
@@ -43,22 +41,24 @@ import org.wikimedia.search.highlighter.experimental.source.StringSourceExtracte
 @SuppressWarnings("checkstyle:classfanoutcomplexity") // to improve if we ever touch that code again
 public class FieldWrapper {
     private final HighlightExecutionContext executionContext;
-    private final HighlighterContext context;
+    private final FieldHighlightContext context;
     private final BasicQueryWeigher weigher;
     private List<String> values;
     /**
      * If there is a TokenStream still open during the highlighting.
      */
     private TokenStream tokenStream;
+
     /**
      * Position gap for the field.  Only looked up if needed.  < 0 means not looked up.
      */
-    private int positionGap = -1;
+    private static final int POSITION_GAP_INIT = -1;
+    private int positionGap = POSITION_GAP_INIT;
 
     /**
      * Build a wrapper around the default field in the context.
      */
-    public FieldWrapper(HighlightExecutionContext executionContext, HighlighterContext context,
+    public FieldWrapper(HighlightExecutionContext executionContext, FieldHighlightContext context,
             BasicQueryWeigher weigher) {
         this.executionContext = executionContext;
         this.context = context;
@@ -69,14 +69,14 @@ public class FieldWrapper {
      * Build a wrapper around fieldName which is not the default field in the
      * context.
      */
-    public FieldWrapper(HighlightExecutionContext executionContext, HighlighterContext context,
+    public FieldWrapper(HighlightExecutionContext executionContext, FieldHighlightContext context,
             BasicQueryWeigher weigher, String fieldName) {
         assert !context.fieldName.equals(fieldName);
-        MappedFieldType fieldType = context.context.getMapperService().fullName(fieldName);
+        MappedFieldType fieldType = context.context.mapperService().fieldType(fieldName);
         this.executionContext = executionContext;
 
-        this.context = new HighlighterContext(fieldName, context.field, fieldType, context.shardTarget, context.context,
-                context.highlight, context.hitContext, context.query);
+        this.context = new FieldHighlightContext(fieldName, context.field, fieldType, context.context, context.hitContext,
+                context.query, false);
         this.weigher = weigher;
     }
 
@@ -107,9 +107,8 @@ public class FieldWrapper {
 
     public List<String> getFieldValues() throws IOException {
         if (values == null) {
-            boolean forceSource = context.highlight.forceSource(context.field);
-            List<Object> objs = HighlightUtils.loadFieldValues(context.fieldType,
-                    context.context, context.hitContext, forceSource);
+            boolean forceSource = context.forceSource;
+            List<Object> objs = HighlightUtils.loadFieldValues(context.fieldType, context.hitContext, forceSource);
             values = objs.stream().map(Object::toString).collect(toCollection(() -> new ArrayList<>(objs.size())));
         }
         return values;
@@ -179,7 +178,7 @@ public class FieldWrapper {
         // horribly. Don't do it. I've tried.
         e = weigher.wrap(context.fieldName, e);
 
-        FieldOptions options = context.field.fieldOptions();
+        SearchHighlightContext.FieldOptions options = context.field.fieldOptions();
         if (!options.scoreOrdered()) {
             Boolean topScoring = (Boolean)executionContext.getOption("top_scoring");
             if (topScoring == null || !topScoring) {
@@ -248,13 +247,12 @@ public class FieldWrapper {
     }
 
     private boolean canUsePostingsHitEnum() {
-        return context.fieldType.indexOptions() == IndexOptions.DOCS_AND_FREQS_AND_POSITIONS_AND_OFFSETS;
+        return context.fieldType.getTextSearchInfo().hasPositions()
+                && context.fieldType.getTextSearchInfo().hasOffsets();
     }
 
     private boolean canUseVectorsHitEnum() {
-        return context.fieldType.storeTermVectors()
-                && context.fieldType.storeTermVectorOffsets()
-                && context.fieldType.storeTermVectorPositions();
+        return context.fieldType.getTextSearchInfo().termVectors() == TextSearchInfo.TermVector.OFFSETS;
     }
 
     private HitEnum buildPostingsHitEnum() throws IOException {
@@ -273,7 +271,7 @@ public class FieldWrapper {
         Analyzer analyzer = context.fieldType.indexAnalyzer();
 
         if (analyzer == null) {
-            analyzer = context.context.getMapperService().indexAnalyzer();
+            analyzer = context.context.mapperService().indexAnalyzer();
         }
         return buildTokenStreamHitEnum(analyzer);
     }
@@ -355,20 +353,10 @@ public class FieldWrapper {
     }
 
     public int getPositionGap() {
-        if (positionGap < 0) {
-            if (!exists()) {
-                positionGap = 1;
-            }
-            Mapper mapper = context.context.getMapperService()
-                    .documentMapper().mappers()
-                    .getMapper(context.fieldType.name());
-            if (mapper instanceof TextFieldMapper) {
-                this.positionGap = ((TextFieldMapper) mapper).getPositionIncrementGap();
-            } else {
-                this.positionGap = 1;
-            }
+        if (this.positionGap == POSITION_GAP_INIT) {
+            this.positionGap = context.fieldType.indexAnalyzer().getPositionIncrementGap(context.fieldType.name());
         }
-        return positionGap;
+        return this.positionGap;
     }
 
     /**

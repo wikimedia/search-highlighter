@@ -32,9 +32,10 @@ This highlighter does not (currently):
 Elasticsearch installation
 --------------------------
 
-| Experimental Highlighter Plugin |  ElasticSearch  |
+| Experimental Highlighter Plugin |  Elasticsearch  |
 |---------------------------------|-----------------|
-| 7.5.1, master branch            | 7.5.1           |
+| 7.10.0, master branch           | 7.10.0          |
+| 7.5.1                           | 7.5.1           |
 | 6.3.1.2                         | 6.3.1           |
 | 5.5.2.2                         | 5.5.2           |
 | 5.4.3                           | 5.4.3           |
