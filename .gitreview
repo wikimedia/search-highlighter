@@ -2,5 +2,5 @@
 host=gerrit.wikimedia.org
 port=29418
 project=search/highlighter.git
-defaultbranch=master
+defaultbranch=6.8.20
 defaultrebase=0
