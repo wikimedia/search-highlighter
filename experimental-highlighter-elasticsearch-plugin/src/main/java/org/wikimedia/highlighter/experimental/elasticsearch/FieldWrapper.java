@@ -76,7 +76,7 @@ public class FieldWrapper {
         this.executionContext = executionContext;
 
         this.context = new FieldHighlightContext(fieldName, context.field, fieldType, context.context, context.hitContext,
-                context.query, false);
+                context.query, false, context.cache);
         this.weigher = weigher;
     }
 

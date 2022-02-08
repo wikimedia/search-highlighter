@@ -65,10 +65,10 @@ public class ExperimentalHighlighter implements Highlighter {
     @SuppressWarnings("checkstyle:IllegalCatch")
     public HighlightField highlight(FieldHighlightContext context) {
         try {
-            CacheEntry entry = (CacheEntry) context.hitContext.cache().get(CACHE_KEY);
+            CacheEntry entry = (CacheEntry) context.cache.get(CACHE_KEY);
             if (entry == null) {
                 entry = new CacheEntry();
-                context.hitContext.cache().put(CACHE_KEY, entry);
+                context.cache.put(CACHE_KEY, entry);
             }
             HighlightExecutionContext executionContext = new HighlightExecutionContext(context, entry);
             try {
