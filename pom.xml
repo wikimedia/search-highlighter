@@ -10,7 +10,7 @@
 
     <groupId>org.wikimedia.search.highlighter</groupId>
     <artifactId>experimental</artifactId>
-    <version>7.10.2-SNAPSHOT</version>
+    <version>7.10.2</version>
     <packaging>pom</packaging>
 
     <name>Elasticsearch experimental highlighter plugin</name>
@@ -43,7 +43,7 @@
     <scm>
         <connection>scm:git:https://gerrit.wikimedia.org/r/search/highlighter</connection>
         <developerConnection>scm:git:ssh://gerrit.wikimedia.org:29418/search/highlighter</developerConnection>
-        <tag>HEAD</tag>
+        <tag>experimental-7.10.2</tag>
         <url>https://gerrit.wikimedia.org/r/#/admin/projects/search/highlighter</url>
     </scm>
 
