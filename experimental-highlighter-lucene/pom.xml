@@ -4,7 +4,7 @@
     <parent>
         <groupId>org.wikimedia.search.highlighter</groupId>
         <artifactId>experimental</artifactId>
-        <version>7.10.2</version>
+        <version>7.10.3-SNAPSHOT</version>
     </parent>
     <artifactId>experimental-highlighter-lucene</artifactId>
     <packaging>jar</packaging>
