@@ -11,12 +11,12 @@ import java.util.TreeMap;
 
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.TokenStream;
-import org.apache.lucene.index.IndexOptions;
 import org.apache.lucene.util.BytesRef;
 import org.elasticsearch.common.util.BigArrays;
 import org.elasticsearch.index.mapper.MappedFieldType;
 import org.elasticsearch.index.mapper.Mapper;
 import org.elasticsearch.index.mapper.TextFieldMapper;
+import org.elasticsearch.index.mapper.TextSearchInfo;
 import org.elasticsearch.search.fetch.subphase.highlight.HighlightUtils;
 import org.elasticsearch.search.fetch.subphase.highlight.HighlighterContext;
 import org.elasticsearch.search.fetch.subphase.highlight.SearchContextHighlight.FieldOptions;
@@ -72,7 +72,7 @@ public class FieldWrapper {
     public FieldWrapper(HighlightExecutionContext executionContext, HighlighterContext context,
             BasicQueryWeigher weigher, String fieldName) {
         assert !context.fieldName.equals(fieldName);
-        MappedFieldType fieldType = context.context.getMapperService().fullName(fieldName);
+        MappedFieldType fieldType = context.context.getMapperService().fieldType(fieldName);
         this.executionContext = executionContext;
 
         this.context = new HighlighterContext(fieldName, context.field, fieldType, context.shardTarget, context.context,
@@ -248,13 +248,12 @@ public class FieldWrapper {
     }
 
     private boolean canUsePostingsHitEnum() {
-        return context.fieldType.indexOptions() == IndexOptions.DOCS_AND_FREQS_AND_POSITIONS_AND_OFFSETS;
+        return context.fieldType.getTextSearchInfo().hasPositions()
+                && context.fieldType.getTextSearchInfo().hasOffsets();
     }
 
     private boolean canUseVectorsHitEnum() {
-        return context.fieldType.storeTermVectors()
-                && context.fieldType.storeTermVectorOffsets()
-                && context.fieldType.storeTermVectorPositions();
+        return context.fieldType.getTextSearchInfo().termVectors() == TextSearchInfo.TermVector.OFFSETS;
     }
 
     private HitEnum buildPostingsHitEnum() throws IOException {
