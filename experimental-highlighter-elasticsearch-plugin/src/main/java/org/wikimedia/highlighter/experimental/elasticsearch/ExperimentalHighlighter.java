@@ -295,12 +295,12 @@ public class ExperimentalHighlighter implements Highlighter {
         private HitEnum buildHitFindingHitEnum() throws IOException {
             List<HitEnum> hitEnums = buildHitFindingHitEnums();
             switch (hitEnums.size()) {
-            case 0:
-                return EmptyHitEnum.INSTANCE;
-            case 1:
-                return hitEnums.get(0);
-            default:
-                return new MergingHitEnum(hitEnums, HitEnum.LessThans.OFFSETS);
+                case 0:
+                    return EmptyHitEnum.INSTANCE;
+                case 1:
+                    return hitEnums.get(0);
+                default:
+                    return new MergingHitEnum(hitEnums, HitEnum.LessThans.OFFSETS);
             }
         }
 

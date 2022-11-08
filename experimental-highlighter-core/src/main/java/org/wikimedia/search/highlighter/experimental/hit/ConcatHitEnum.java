@@ -7,7 +7,7 @@ import org.wikimedia.search.highlighter.experimental.tools.GraphvizHitEnumGenera
 
 /**
  * HitEnum that concatenates multiple HitEnums. It should behave exactly the
- * same as a lazy version of {@link ReplayingHitEnum#record(Iterator, int, int)}
+ * same as a lazy version of {@link ReplayingHitEnum#recordHit(Iterator, int, int)}
  * .
  */
 public class ConcatHitEnum extends AbstractHitEnum {

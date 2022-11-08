@@ -117,19 +117,19 @@ public class FieldWrapper {
     public SourceExtracter<String> buildSourceExtracter() throws IOException {
         List<String> fieldValues = getFieldValues();
         switch (fieldValues.size()) {
-        case 0:
-            return new StringSourceExtracter("");
-        case 1:
-            return new StringSourceExtracter(fieldValues.get(0));
-        default:
-            // Elasticsearch uses a string offset gap of 1, the default on the
-            // builder.
-            NonMergingMultiSourceExtracter.Builder<String> builder = NonMergingMultiSourceExtracter
-                    .builder();
-            for (String s : fieldValues) {
-                builder.add(new StringSourceExtracter(s), s.length());
-            }
-            return builder.build();
+            case 0:
+                return new StringSourceExtracter("");
+            case 1:
+                return new StringSourceExtracter(fieldValues.get(0));
+            default:
+                // Elasticsearch uses a string offset gap of 1, the default on the
+                // builder.
+                NonMergingMultiSourceExtracter.Builder<String> builder = NonMergingMultiSourceExtracter
+                        .builder();
+                for (String s : fieldValues) {
+                    builder.add(new StringSourceExtracter(s), s.length());
+                }
+                return builder.build();
         }
     }
 
@@ -144,18 +144,18 @@ public class FieldWrapper {
         List<String> fieldValues = getFieldValues();
         SegmenterFactory segmenterFactory = executionContext.getSegmenterFactory();
         switch (fieldValues.size()) {
-        case 0:
-            return segmenterFactory.build("");
-        case 1:
-            return segmenterFactory.build(fieldValues.get(0));
-        default:
-            // Elasticsearch uses a string offset gap of 1, the default on the
-            // builder.
-            MultiSegmenter.Builder builder = MultiSegmenter.builder();
-            for (String s : fieldValues) {
-                builder.add(segmenterFactory.build(s), s.length());
-            }
-            return builder.build();
+            case 0:
+                return segmenterFactory.build("");
+            case 1:
+                return segmenterFactory.build(fieldValues.get(0));
+            default:
+                // Elasticsearch uses a string offset gap of 1, the default on the
+                // builder.
+                MultiSegmenter.Builder builder = MultiSegmenter.builder();
+                for (String s : fieldValues) {
+                    builder.add(segmenterFactory.build(s), s.length());
+                }
+                return builder.build();
         }
     }
 
@@ -218,22 +218,22 @@ public class FieldWrapper {
             String hitSource = (String) context.field.fieldOptions().options().get("hit_source");
             if (hitSource != null) {
                 switch (hitSource) {
-                case "postings":
-                    if (!canUsePostingsHitEnum()) {
-                        throw new IllegalArgumentException(
-                                "Can't use postings as a hit source without setting index_options to postings");
-                    }
-                    return buildPostingsHitEnum();
-                case "vectors":
-                    if (!canUseVectorsHitEnum()) {
-                        throw new IllegalArgumentException(
-                                "Can't use vectors as a hit source without setting term_vector to with_positions_offsets");
-                    }
-                    return buildTermVectorsHitEnum();
-                case "analyze":
-                    return buildTokenStreamHitEnum();
-                default:
-                    throw new IllegalArgumentException("Unknown hit source:  " + hitSource);
+                    case "postings":
+                        if (!canUsePostingsHitEnum()) {
+                            throw new IllegalArgumentException(
+                                    "Can't use postings as a hit source without setting index_options to postings");
+                        }
+                        return buildPostingsHitEnum();
+                    case "vectors":
+                        if (!canUseVectorsHitEnum()) {
+                            throw new IllegalArgumentException(
+                                    "Can't use vectors as a hit source without setting term_vector to with_positions_offsets");
+                        }
+                        return buildTermVectorsHitEnum();
+                    case "analyze":
+                        return buildTokenStreamHitEnum();
+                    default:
+                        throw new IllegalArgumentException("Unknown hit source:  " + hitSource);
                 }
             }
         }
@@ -279,23 +279,23 @@ public class FieldWrapper {
     private HitEnum buildTokenStreamHitEnum(final Analyzer analyzer) throws IOException {
         List<String> fieldValues = getFieldValues();
         switch (fieldValues.size()) {
-        case 0:
-            // If there isn't any data then we assume there can't be any hits.
-            // This is more right than building the token stream hit enum
-            // against empty string.
-            return EmptyHitEnum.INSTANCE;
-        case 1:
-            return buildTokenStreamHitEnum(analyzer, fieldValues.get(0));
-        default:
-            /*
-             * Note that it is super important that this process is _lazy_
-             * because we can't have multiple TokenStreams open per analyzer.
-             */
-            Iterator<HitEnumAndLength> hitEnumsFromStreams = fieldValues
-                .stream()
-                .map(fieldValue -> buildTokenStreamHitEnumAndLength(fieldValue, analyzer))
-                .iterator();
-            return new ConcatHitEnum(hitEnumsFromStreams, getPositionGap(), 1);
+            case 0:
+                // If there isn't any data then we assume there can't be any hits.
+                // This is more right than building the token stream hit enum
+                // against empty string.
+                return EmptyHitEnum.INSTANCE;
+            case 1:
+                return buildTokenStreamHitEnum(analyzer, fieldValues.get(0));
+            default:
+                /*
+                 * Note that it is super important that this process is _lazy_
+                 * because we can't have multiple TokenStreams open per analyzer.
+                 */
+                Iterator<HitEnumAndLength> hitEnumsFromStreams = fieldValues
+                    .stream()
+                    .map(fieldValue -> buildTokenStreamHitEnumAndLength(fieldValue, analyzer))
+                    .iterator();
+                return new ConcatHitEnum(hitEnumsFromStreams, getPositionGap(), 1);
         }
     }
 

@@ -19,22 +19,22 @@ public class ReplayingHitEnum extends AbstractHitEnum {
     /**
      * Record a hit.
      */
-    public void record(int position, int startOffset, int endOffset, float queryWeight, float corpusWeight, int source) {
+    public void recordHit(int position, int startOffset, int endOffset, float queryWeight, float corpusWeight, int source) {
         hits.add(new Hit(position, startOffset, endOffset, queryWeight, corpusWeight, source));
     }
 
     /**
      * Record a hit with the corpusWeight defaulted to 1.
      */
-    public void record(int position, int startOffset, int endOffset, float queryWeight, int source) {
-        record(position, startOffset, endOffset, queryWeight, 1, source);
+    public void recordHit(int position, int startOffset, int endOffset, float queryWeight, int source) {
+        recordHit(position, startOffset, endOffset, queryWeight, 1, source);
     }
 
     /**
      * Record the current position of e.
      */
     public void recordCurrent(HitEnum e) {
-        record(e.position(), e.startOffset(), e.endOffset(), e.queryWeight(), e.corpusWeight(), e.source());
+        recordHit(e.position(), e.startOffset(), e.endOffset(), e.queryWeight(), e.corpusWeight(), e.source());
     }
 
     /**
@@ -42,7 +42,7 @@ public class ReplayingHitEnum extends AbstractHitEnum {
      * @param positionGap positions between enums
      * @param offsetGap offsets between enums
      */
-    public void record(Iterator<HitEnumAndLength> enums, int positionGap, int offsetGap) {
+    public void recordHit(Iterator<HitEnumAndLength> enums, int positionGap, int offsetGap) {
         int relativePosition = 0;
         int relativeOffset = 0;
         while (enums.hasNext()) {
@@ -52,7 +52,7 @@ public class ReplayingHitEnum extends AbstractHitEnum {
             while (e.delegate().next()) {
                 position = e.delegate().position();
                 endOffset = e.delegate().endOffset();
-                record(position + relativePosition, e.delegate().startOffset() + relativeOffset,
+                recordHit(position + relativePosition, e.delegate().startOffset() + relativeOffset,
                         endOffset + relativeOffset, e.delegate().queryWeight(), e.delegate()
                                 .corpusWeight(), e.delegate().source());
             }

@@ -30,7 +30,7 @@ public class OverlapMergingHitEnumWrapperTest extends RandomizedTest {
     @Test
     public void single() {
         ReplayingHitEnum replaying = new ReplayingHitEnum();
-        replaying.record(0, 0, 2, 1.7f, 1);
+        replaying.recordHit(0, 0, 2, 1.7f, 1);
         HitEnum e = new OverlapMergingHitEnumWrapper(replaying);
         assertThat(e, advances());
         assertThat(e, allOf(atPosition(0), atStartOffset(0), atEndOffset(2), atWeight(1.7f), atSource(1)));
@@ -40,9 +40,9 @@ public class OverlapMergingHitEnumWrapperTest extends RandomizedTest {
     @Test
     public void noOverlaps() {
         ReplayingHitEnum replaying = new ReplayingHitEnum();
-        replaying.record(0, 0, 2, 0, 1);
-        replaying.record(0, 2, 3, 0, 2);
-        replaying.record(0, 10, 13, 0, 3);
+        replaying.recordHit(0, 0, 2, 0, 1);
+        replaying.recordHit(0, 2, 3, 0, 2);
+        replaying.recordHit(0, 10, 13, 0, 3);
         HitEnum e = new OverlapMergingHitEnumWrapper(replaying);
         assertThat(e, advances());
         assertThat(e, allOf(atPosition(0), atStartOffset(0), atEndOffset(2), atWeight(0), atSource(1)));
@@ -56,13 +56,13 @@ public class OverlapMergingHitEnumWrapperTest extends RandomizedTest {
     @Test
     public void overlaps() {
         ReplayingHitEnum replaying = new ReplayingHitEnum();
-        replaying.record(0, 0, 2, 0, 1);
-        replaying.record(0, 1, 3, 1, 2);
-        replaying.record(0, 10, 13, 2, 3);
-        replaying.record(0, 17, 20, 0, 4);
-        replaying.record(0, 17, 20, 3, 5);
-        replaying.record(0, 21, 22, 4, 6);
-        replaying.record(0, 22, 23, 5, 7);
+        replaying.recordHit(0, 0, 2, 0, 1);
+        replaying.recordHit(0, 1, 3, 1, 2);
+        replaying.recordHit(0, 10, 13, 2, 3);
+        replaying.recordHit(0, 17, 20, 0, 4);
+        replaying.recordHit(0, 17, 20, 3, 5);
+        replaying.recordHit(0, 21, 22, 4, 6);
+        replaying.recordHit(0, 22, 23, 5, 7);
         HitEnum e = new OverlapMergingHitEnumWrapper(replaying);
         assertThat(e, advances());
         assertThat(e, allOf(atPosition(0), atStartOffset(0), atEndOffset(3), atWeight(1), atSource(33)));
@@ -81,9 +81,9 @@ public class OverlapMergingHitEnumWrapperTest extends RandomizedTest {
     public void overlapPicksMaxWeightAndSize() {
         ReplayingHitEnum replaying = new ReplayingHitEnum();
         // The first overlapping hit has corpus weight of 3
-        replaying.record(0, 0, 5, 2, 3, 1);
+        replaying.recordHit(0, 0, 5, 2, 3, 1);
         // The second has query weight of 3
-        replaying.record(0, 1, 3, 3, 2, 2);
+        replaying.recordHit(0, 1, 3, 3, 2, 2);
         HitEnum e = new OverlapMergingHitEnumWrapper(replaying);
         assertThat(e, advances());
         assertThat(e, allOf(

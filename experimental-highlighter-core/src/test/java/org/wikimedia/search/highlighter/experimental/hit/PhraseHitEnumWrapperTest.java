@@ -136,7 +136,7 @@ public class PhraseHitEnumWrapperTest {
 
     private void inputs(int... sources) {
         for (int p = 0; p < sources.length; p++) {
-            input.record(p, 0, 0, 1, p, sources[p]);
+            input.recordHit(p, 0, 0, 1, p, sources[p]);
         }
     }
 

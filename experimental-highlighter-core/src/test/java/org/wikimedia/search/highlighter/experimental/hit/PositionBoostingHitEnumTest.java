@@ -28,7 +28,7 @@ public class PositionBoostingHitEnumTest {
     @Test
     public void singleNoBoost() {
         ReplayingHitEnum replaying = new ReplayingHitEnum();
-        replaying.record(0, 0, 2, 1f, 0);
+        replaying.recordHit(0, 0, 2, 1f, 0);
         PositionBoostingHitEnumWrapper e = new PositionBoostingHitEnumWrapper(replaying);
         assertThat(e, advances());
         assertThat(e, allOf(atPosition(0), atWeight(1f)));
@@ -38,7 +38,7 @@ public class PositionBoostingHitEnumTest {
     @Test
     public void singleBoost() {
         ReplayingHitEnum replaying = new ReplayingHitEnum();
-        replaying.record(0, 0, 2, 1f, 0);
+        replaying.recordHit(0, 0, 2, 1f, 0);
         PositionBoostingHitEnumWrapper e = new PositionBoostingHitEnumWrapper(replaying);
         e.add(10, 2f);
         assertThat(e, advances());
@@ -50,7 +50,7 @@ public class PositionBoostingHitEnumTest {
     public void manyBoost() {
         ReplayingHitEnum replaying = new ReplayingHitEnum();
         for (int i = 0; i < 100; i++) {
-            replaying.record(i, 0, 0, i, 0);
+            replaying.recordHit(i, 0, 0, i, 0);
         }
         PositionBoostingHitEnumWrapper e = new PositionBoostingHitEnumWrapper(replaying);
         e.add(10, 2f);

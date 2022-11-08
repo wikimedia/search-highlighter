@@ -10,7 +10,7 @@ import org.wikimedia.search.highlighter.experimental.Snippet.Hit;
  */
 public final class GraphvizHit extends Hit {
     private final String graph;
-    public static Snippet.HitBuilder GRAPHVIZ_HIT_BUILDER = e -> {
+    public static final Snippet.HitBuilder GRAPHVIZ_HIT_BUILDER = e -> {
         GraphvizHitEnum graphvizHitEnum = (GraphvizHitEnum) e;
         return new GraphvizHit(e.startOffset(), e.endOffset(), e.corpusWeight()*e.queryWeight(), e.source(), graphvizHitEnum.graph());
     };

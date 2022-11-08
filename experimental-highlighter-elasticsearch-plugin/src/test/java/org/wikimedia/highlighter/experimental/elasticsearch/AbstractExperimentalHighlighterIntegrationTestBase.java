@@ -67,8 +67,7 @@ import com.google.common.collect.ImmutableList;
 
 @SuppressWarnings("checkstyle:classfanoutcomplexity") // do not care too much about complexity of test classes
 @ClusterScope(scope = ESIntegTestCase.Scope.SUITE, transportClientRatio = 0.0)
-public abstract class AbstractExperimentalHighlighterIntegrationTestBase extends
-ESIntegTestCase {
+public abstract class AbstractExperimentalHighlighterIntegrationTestBase extends ESIntegTestCase {
     protected static final List<String> HIT_SOURCES = ImmutableList.of("postings", "vectors",
             "analyze");
 
@@ -193,7 +192,7 @@ ESIntegTestCase {
                         "kstem", //
                         "custom_stem", //
                         "asciifolding_preserve" //
-                        );
+                );
                 settings.array("char_filter", "word_break_helper");
             }
             settings.endObject();
@@ -535,6 +534,7 @@ ESIntegTestCase {
         }
     }
 
+    @SuppressWarnings("checkstyle:AbbreviationAsWordInName")
     static class ASCIIFoldingTokenFilterFactory extends AbstractTokenFilterFactory implements NormalizingTokenFilterFactory {
         static final ParseField PRESERVE_ORIGINAL = new ParseField("preserve_original");
         static final boolean DEFAULT_PRESERVE_ORIGINAL = false;

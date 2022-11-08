@@ -38,14 +38,14 @@ public class ConcatHitEnumTest extends RandomizedTest {
                 float queryWeight = randomFloat();
                 float corpusWeight = randomFloat();
                 int source = randomInt();
-                inputForReplaying.record(position, startOffset, endOffset, queryWeight, corpusWeight, source);
-                inputForConcat.record(position, startOffset, endOffset, queryWeight, corpusWeight, source);
+                inputForReplaying.recordHit(position, startOffset, endOffset, queryWeight, corpusWeight, source);
+                inputForConcat.recordHit(position, startOffset, endOffset, queryWeight, corpusWeight, source);
             }
             allEnumsForReplaying.add(new HitEnumAndLength(inputForReplaying, 99));
             allEnumsForConcat.add(new HitEnumAndLength(inputForConcat, 99));
         }
         ReplayingHitEnum replaying = new ReplayingHitEnum();
-        replaying.record(allEnumsForReplaying.iterator(), 1, 1);
+        replaying.recordHit(allEnumsForReplaying.iterator(), 1, 1);
         HitEnum concat = new ConcatHitEnum(allEnumsForConcat.iterator(), 1, 1);
         while (replaying.next()) {
             assertThat(concat, advances());

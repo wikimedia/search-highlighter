@@ -29,12 +29,12 @@ public class ExponentialSnippetWeigher implements SnippetWeigher {
     public float weigh(List<Hit> hits) {
         // Bail out quickly on some simple corner cases
         switch (hits.size()) {
-        case 0:
-            return 0;
-        case 1:
-            return base * hits.get(0).weight();
-        default:
-            // do nothing, we only care about the simple cases
+            case 0:
+                return 0;
+            case 1:
+                return base * hits.get(0).weight();
+            default:
+                // do nothing, we only care about the simple cases
         }
 
         // Since there are normally few hits it _should_ be more efficient to

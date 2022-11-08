@@ -205,10 +205,10 @@ public class BasicQueriesTest extends AbstractExperimentalHighlighterIntegration
         QueryBuilder fbuilder = functionScoreQuery(
                         termQuery("test", "test"),
                         new FilterFunctionBuilder[]{
-                                new FilterFunctionBuilder(
-                                        termQuery("test", "test"),
-                                        fieldValueFactorFunction("bar")
-                                 )
+                            new FilterFunctionBuilder(
+                                    termQuery("test", "test"),
+                                    fieldValueFactorFunction("bar")
+                             )
                         });
         for (String hitSource : HIT_SOURCES) {
             SearchResponse response = testSearch(fbuilder, hitSource(hitSource)).get();

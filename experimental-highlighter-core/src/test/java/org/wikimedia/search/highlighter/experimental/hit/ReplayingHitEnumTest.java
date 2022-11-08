@@ -32,7 +32,7 @@ public class ReplayingHitEnumTest extends RandomizedTest {
     @Test
     public void single() {
         ReplayingHitEnum e = new ReplayingHitEnum();
-        e.record(0, 0, 2, 1.7f, 1);
+        e.recordHit(0, 0, 2, 1.7f, 1);
         assertEquals(e.waiting(), 1);
         assertThat(e, advances());
         assertThat(e, allOf(atPosition(0), atStartOffset(0), atEndOffset(2), atWeight(1.7f), atSource(1)));
@@ -42,9 +42,9 @@ public class ReplayingHitEnumTest extends RandomizedTest {
     @Test
     public void aFew() {
         ReplayingHitEnum e = new ReplayingHitEnum();
-        e.record(0, 0, 2, 0, 1);
-        e.record(0, 0, 2, 0, 2);
-        e.record(0, 0, 2, 0, 3);
+        e.recordHit(0, 0, 2, 0, 1);
+        e.recordHit(0, 0, 2, 0, 2);
+        e.recordHit(0, 0, 2, 0, 3);
         assertEquals(e.waiting(), 3);
         assertThat(e, advances());
         assertThat(e, allOf(atPosition(0), atStartOffset(0), atEndOffset(2), atWeight(0), atSource(1)));
@@ -62,7 +62,7 @@ public class ReplayingHitEnumTest extends RandomizedTest {
     public void many() {
         ReplayingHitEnum e = new ReplayingHitEnum();
         for (int i = 0; i < 10000; i++) {
-            e.record(i, i, i, i, i);
+            e.recordHit(i, i, i, i, i);
         }
         assertEquals(e.waiting(), 10000);
         for (int i = 0; i < 10000; i++) {
@@ -79,7 +79,7 @@ public class ReplayingHitEnumTest extends RandomizedTest {
         // We also check that multiple calls to next after it returns false
         // continues to return false until it is filled again.
         ReplayingHitEnum e = new ReplayingHitEnum();
-        e.record(0, 0, 2, 0, 0);
+        e.recordHit(0, 0, 2, 0, 0);
         assertThat(e, advances());
         assertThat(e, allOf(atPosition(0), atStartOffset(0), atEndOffset(2), atWeight(0), atSource(0)));
         assertThat(e, isEmpty());
@@ -87,7 +87,7 @@ public class ReplayingHitEnumTest extends RandomizedTest {
         assertThat(e, isEmpty());
         assertThat(e, isEmpty());
         assertEquals(e.waiting(), 0);
-        e.record(10, 4, 20, 0, 1);
+        e.recordHit(10, 4, 20, 0, 1);
         assertEquals(e.waiting(), 1);
         assertThat(e, advances());
         assertThat(e, allOf(atPosition(10), atStartOffset(4), atEndOffset(20), atWeight(0), atSource(1)));
@@ -98,9 +98,9 @@ public class ReplayingHitEnumTest extends RandomizedTest {
     @Test
     public void clearable() {
         ReplayingHitEnum e = new ReplayingHitEnum();
-        e.record(0, 0, 2, 0, 1);
-        e.record(0, 0, 2, 0, 1);
-        e.record(0, 0, 2, 0, 1);
+        e.recordHit(0, 0, 2, 0, 1);
+        e.recordHit(0, 0, 2, 0, 1);
+        e.recordHit(0, 0, 2, 0, 1);
         assertThat(e, advances());
         assertThat(e, allOf(atPosition(0), atStartOffset(0), atEndOffset(2), atWeight(0), atSource(1)));
         e.clear();
@@ -113,12 +113,12 @@ public class ReplayingHitEnumTest extends RandomizedTest {
         for (int i = 0; i < 100; i++) {
             ReplayingHitEnum input = new ReplayingHitEnum();
             for (int j = 0; j < 100; j++) {
-                input.record(j, j - 10, j, i * 100 + j, i * 100 + j);
+                input.recordHit(j, j - 10, j, i * 100 + j, i * 100 + j);
             }
             allEnums.add(new HitEnumAndLength(input, 99));
         }
         ReplayingHitEnum e = new ReplayingHitEnum();
-        e.record(allEnums.iterator(), 1, 1);
+        e.recordHit(allEnums.iterator(), 1, 1);
         assertEquals(e.waiting(), 10000);
         for (int i = 0; i < 10000; i++) {
             assertEquals(e.waiting(), 10000 - i);

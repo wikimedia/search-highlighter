@@ -50,7 +50,7 @@ public class MergingHitEnumTest extends RandomizedTest {
         Collections.sort(expectedPositions);
         ReplayingHitEnum e = new ReplayingHitEnum();
         for (Integer position : expectedPositions) {
-            e.record(position, 0, 0, 0, 0);
+            e.recordHit(position, 0, 0, 0, 0);
         }
 
         MergingHitEnum merged = new MergingHitEnum(Collections.singletonList(e),
@@ -79,7 +79,7 @@ public class MergingHitEnumTest extends RandomizedTest {
             ReplayingHitEnum e = new ReplayingHitEnum();
             enums.add(e);
             for (Integer position : expectedPositions) {
-                e.record(position, 0, 0, 0, 0);
+                e.recordHit(position, 0, 0, 0, 0);
             }
         }
 

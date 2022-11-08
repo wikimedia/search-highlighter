@@ -22,7 +22,7 @@ public class WeightFilteredHitEnumWrapperTest {
     @Test
     public void single() {
         ReplayingHitEnum replaying = new ReplayingHitEnum();
-        replaying.record(0, 0, 2, 1.7f, 0);
+        replaying.recordHit(0, 0, 2, 1.7f, 0);
         WeightFilteredHitEnumWrapper e = new WeightFilteredHitEnumWrapper(replaying, 0);
         assertThat(e, advances());
         assertThat(e, allOf(atPosition(0), atStartOffset(0), atEndOffset(2), atWeight(1.7f), atSource(0)));
@@ -32,9 +32,9 @@ public class WeightFilteredHitEnumWrapperTest {
     @Test
     public void filters() {
         ReplayingHitEnum replaying = new ReplayingHitEnum();
-        replaying.record(0, 0, 2, 1.7f, 1);
-        replaying.record(1, 0, 2, 0f, 2);
-        replaying.record(2, 0, 2, 1.7f, 3);
+        replaying.recordHit(0, 0, 2, 1.7f, 1);
+        replaying.recordHit(1, 0, 2, 0f, 2);
+        replaying.recordHit(2, 0, 2, 1.7f, 3);
         WeightFilteredHitEnumWrapper e = new WeightFilteredHitEnumWrapper(replaying, 0);
         assertThat(e, advances());
         assertThat(e, allOf(atPosition(0), atStartOffset(0), atEndOffset(2), atWeight(1.7f), atSource(1)));
@@ -46,9 +46,9 @@ public class WeightFilteredHitEnumWrapperTest {
     @Test
     public void filtersAll() {
         ReplayingHitEnum replaying = new ReplayingHitEnum();
-        replaying.record(0, 0, 2, 1.7f, 1);
-        replaying.record(1, 0, 2, 0f, 2);
-        replaying.record(2, 0, 2, 1.7f, 3);
+        replaying.recordHit(0, 0, 2, 1.7f, 1);
+        replaying.recordHit(1, 0, 2, 0f, 2);
+        replaying.recordHit(2, 0, 2, 1.7f, 3);
         WeightFilteredHitEnumWrapper e = new WeightFilteredHitEnumWrapper(replaying, 2f);
         assertThat(e, isEmpty());
     }
