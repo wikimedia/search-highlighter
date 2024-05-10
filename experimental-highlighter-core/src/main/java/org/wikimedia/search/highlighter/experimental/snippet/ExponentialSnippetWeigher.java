@@ -63,7 +63,7 @@ public class ExponentialSnippetWeigher implements SnippetWeigher {
         return weight;
     }
 
-    private static class SourceComparator implements Comparator<Hit>, Serializable {
+    private static final class SourceComparator implements Comparator<Hit>, Serializable {
         @Override
         public int compare(Hit lhs, Hit rhs) {
             return Integer.compare(lhs.source(), rhs.source());

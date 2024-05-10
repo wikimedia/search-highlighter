@@ -102,11 +102,11 @@
                 <configuration>
                     <signaturesArtifacts combine.children="append">
                         <signaturesArtifact>
-                            <groupId>org.wikimedia.discovery</groupId>
-                            <artifactId>discovery-maven-tool-configs</artifactId>
-                            <version>${discovery-maven-tool-configs.version}</version>
+                            <groupId>org.wikimedia</groupId>
+                            <artifactId>wmf-maven-tool-configs</artifactId>
+                            <version>${wmf-maven-tool-configs.version}</version>
                             <type>jar</type>
-                            <path>org/wikimedia/discovery/build/tools/forbidden/lucene-signatures.txt</path>
+                            <path>org/wikimedia/build/tools/forbidden/lucene-signatures.txt</path>
                         </signaturesArtifact>
                     </signaturesArtifacts>
                 </configuration>

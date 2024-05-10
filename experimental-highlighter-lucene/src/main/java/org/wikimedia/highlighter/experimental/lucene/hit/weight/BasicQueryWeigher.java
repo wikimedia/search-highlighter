@@ -213,7 +213,7 @@ public class BasicQueryWeigher implements TermWeigher<BytesRef>, TermSourceFinde
         }
     }
 
-    private class FlattenerCallback implements QueryFlattener.Callback {
+    private final class FlattenerCallback implements QueryFlattener.Callback {
         private float maxTermWeight;
         private int[][] phrase;
         private int phrasePosition;
