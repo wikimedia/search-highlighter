@@ -24,7 +24,7 @@ Here is the query:
   "highlight": {
     "fields": {
       "test.foo": {
-        "type": "experimental",
+        "type": "cirrus",
         "options": {
           "fetch_fields": [ "test.bar" ]
         }

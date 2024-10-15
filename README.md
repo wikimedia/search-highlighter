@@ -1,20 +1,20 @@
-Experimental Highlighter [![Build Status](https://integration.wikimedia.org/ci/buildStatus/icon?job=search-highlighter)](https://integration.wikimedia.org/ci/job/search-highlighter/)
+Cirrus Highlighter [![Build Status](https://integration.wikimedia.org/ci/buildStatus/icon?job=search-highlighter)](https://integration.wikimedia.org/ci/job/search-highlighter/)
 ========================
 
 Text highlighter for Java designed to be pluggable enough for easy
 experimentation.  The idea being that it should be possible to play with how
 hits are weighed or how they are grouped into snippets without knowing about
-the guts of Lucene or Elasticsearch.
+the guts of Lucene or OpenSearch.
 
 Comes in three flavors:
 * Core: No dependencies jar containing most of the interesting logic
 * Lucene: A jar containing a bridge between the core and lucene
-* Elasticsearch: An Elasticsearch plugin
+* OpenSearch: An OpenSearch plugin
 
 You can read more on how it works [here](docs/how_it_works.md).
 
 
-Elasticsearch value proposition
+Value proposition
 -------------------------------
 This highlighter
 * Doesn't need offsets in postings or term enums with offsets but can use
@@ -29,8 +29,23 @@ support).
 This highlighter does not (currently):
 * Support require_field_match
 
+OpenSearch installation
+-----------------------
+
+| Cirrus Highlighter Plugin | OpenSearch |
+| --------------------------|------------|
+| 1.3.17                    | 1.3.17     |
+
+Install it like so for OpenSearch 1.x.x:
+```bash
+./bin/opensearch-plugin install org.wikimedia.search.highlighter:cirrus-highlighter-opensearch-plugin:1.x.x
+```
+
 Elasticsearch installation
 --------------------------
+
+Prior to the migration to OpenSearch this plugin was known as the
+experimental highlighter plugin.
 
 | Experimental Highlighter Plugin |  Elasticsearch  |
 |---------------------------------|-----------------|
@@ -91,14 +106,14 @@ Then you can use it by searching like so:
     "fields": {
       "title": {
         "number_of_fragments": 1,
-        "type": "experimental"
+        "type": "cirrus"
       }
     }
   }
 }
 ```
 
-Elasticsearch options
+OpenSearch options
 ---------------------
 The ```fragmenter``` field defaults to ```scan``` but can also be set to
 ```sentence``` or ```none```.  ```scan``` produces results that look like the
@@ -110,7 +125,7 @@ fragment between each value, even on ```none```.  Example:
   "highlight": {
     "fields": {
       "title": {
-        "type": "experimental",
+        "type": "cirrus",
         "fragmenter": "sentence",
         "options": {
           "locale": "en_us"
@@ -149,7 +164,7 @@ order.  Example:
   "highlight": {
     "fields": {
       "text": {
-        "type": "experimental",
+        "type": "cirrus",
         "number_of_fragments": 2,
         "fragmenter": "sentence",
         "sort": "source",
@@ -171,7 +186,7 @@ query it will never be used.
   "highlight": {
     "fields": {
       "title": {
-        "type": "experimental",
+        "type": "cirrus",
         "options": {
           "default_similarity": false
         }
@@ -190,7 +205,7 @@ to using the first option that wouldn't throw an error.
   "highlight": {
     "fields": {
       "title": {
-        "type": "experimental",
+        "type": "cirrus",
         "options": {
           "hit_source": "analyze"
         }
@@ -206,7 +221,7 @@ example, this will multiply the weight of matches before the 20th position by
   "highlight": {
     "fields": {
       "title": {
-        "type": "experimental",
+        "type": "cirrus",
         "order": "score",
         "options": {
           "boost_before": {
@@ -261,7 +276,7 @@ the locale specified by ```locale```.  Example:
   "highlight": {
     "fields": {
       "title": {
-        "type": "experimental",
+        "type": "cirrus",
         "options": {
           "regex": [
             "fo+",
@@ -290,7 +305,7 @@ if the last field matched.  This can be used to form "chains" of fields only one
 of which will return a match:
 ```js
   "highlight": {
-    "type": "experimental",
+    "type": "cirrus",
     "fields": {
       "text": {},
       "aux_text": { "options": { "skip_if_last_matched": true } },
@@ -337,8 +352,8 @@ Multi-valued fields have a single character worth of offset between them.
 Offsets in postings or term vectors
 -----------------------------------
 Since adding offsets to the postings (set ```index_options``` to ```offsets```
-in Elasticsearch) and creating term vectors with offsets (set ```term_vector```
-to ```with_positions_offsets``` in Elasticsearch) both act to speed up
+in OpenSearch) and creating term vectors with offsets (set ```term_vector```
+to ```with_positions_offsets``` in OpenSearch) both act to speed up
 highlighting of this highlighter you have a choice which one to use.  Unless
 you have a compelling reason to use term vectors, go with adding offsets to the
 postings because that is faster (by my tests, at least) and uses much less

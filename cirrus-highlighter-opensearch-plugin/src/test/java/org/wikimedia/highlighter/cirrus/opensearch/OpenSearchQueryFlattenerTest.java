@@ -1,0 +1,126 @@
+package org.wikimedia.highlighter.cirrus.opensearch;
+
+import static org.mockito.Mockito.anyFloat;
+import static org.mockito.Mockito.anyInt;
+import static org.mockito.Mockito.anyString;
+import static org.mockito.Mockito.eq;
+import static org.mockito.Mockito.isNull;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+
+import java.io.IOException;
+
+import org.apache.lucene.analysis.standard.StandardAnalyzer;
+import org.apache.lucene.document.Field.Store;
+import org.apache.lucene.document.TextField;
+import org.apache.lucene.index.DirectoryReader;
+import org.apache.lucene.index.IndexReader;
+import org.apache.lucene.index.IndexWriter;
+import org.apache.lucene.index.IndexWriterConfig;
+import org.apache.lucene.index.Term;
+import org.apache.lucene.search.Query;
+import org.apache.lucene.search.TermQuery;
+import org.apache.lucene.store.ByteBuffersDirectory;
+import org.apache.lucene.store.Directory;
+import org.opensearch.common.lucene.search.MultiPhrasePrefixQuery;
+import org.opensearch.common.lucene.search.function.CombineFunction;
+import org.opensearch.common.lucene.search.function.FieldValueFactorFunction;
+import org.opensearch.common.lucene.search.function.FunctionScoreQuery;
+import org.opensearch.common.lucene.search.function.ScoreFunction;
+import org.opensearch.index.mapper.ParseContext.Document;
+import org.junit.Test;
+import org.wikimedia.highlighter.cirrus.lucene.QueryFlattener.Callback;
+
+
+public class OpenSearchQueryFlattenerTest {
+    private final Term bar = new Term("foo", "bar");
+    private final ScoreFunction scoreFunction = new FieldValueFactorFunction("foo", 1, FieldValueFactorFunction.Modifier.LN, null, null);
+
+    @Test
+    public void phrasePrefixQueryPhraseAsPhrase() {
+        phrasePrefixQueryTestCase(false);
+    }
+
+    @Test
+    public void phrasePrefixQueryPhraseAsTerms() {
+        phrasePrefixQueryTestCase(true);
+    }
+
+    @Test
+    public void functionScoreQuery() {
+        Callback callback = mock(Callback.class);
+        new ElasticsearchQueryFlattener().flatten(new FunctionScoreQuery(new TermQuery(bar), scoreFunction), null, callback);
+        verify(callback).flattened(bar.bytes(), 1f, null);
+    }
+
+    @Test
+    public void filtersFunctionScoreQuery() {
+        Callback callback = mock(Callback.class);
+        Query query = new FunctionScoreQuery(new TermQuery(bar), null, new ScoreFunction[]{}, CombineFunction.AVG, 0f, Float.MAX_VALUE);
+        new ElasticsearchQueryFlattener().flatten(query, null, callback);
+        verify(callback).flattened(bar.bytes(), 1f, null);
+    }
+
+    private void phrasePrefixQueryTestCase(boolean phraseAsTerms) {
+        final IndexReader ir;
+        try {
+            // Previously MultiPhraseQuery was flattened directly
+            // This is not possible anymore, so we need to rewrite
+            // but to rewrite we need an IndexReader with a doc.
+            Directory dir = new ByteBuffersDirectory();
+            IndexWriter iw = new IndexWriter(dir, new IndexWriterConfig(new StandardAnalyzer()));
+            Document doc = new Document();
+            doc.add(new TextField("test", "foo qux bart foo quux another", Store.NO));
+            iw.addDocument(doc);
+            iw.close();
+            ir = DirectoryReader.open(dir);
+        } catch (IOException ioe) {
+            throw new RuntimeException(ioe);
+        }
+        Term foo = new Term("test", "foo");
+        Term qux = new Term("test", "qux");
+        Term quux = new Term("test", "quux");
+        Term bar = new Term("test", "bar");
+        Term anoth = new Term("test", "anoth");
+
+        MultiPhrasePrefixQuery query = new MultiPhrasePrefixQuery(foo.field());
+        query.add(foo);
+        query.add(new Term[] {qux, quux});
+        query.add(new Term[] {bar, anoth});
+
+        Term bart = new Term("test", "bart");
+        Term another = new Term("test", "another");
+
+        Callback callback = mock(Callback.class);
+        new ElasticsearchQueryFlattener(1, phraseAsTerms, true).flatten(query, ir, callback);
+
+        verify(callback).flattened(foo.bytes(), boost(phraseAsTerms), query);
+        verify(callback).flattened(qux.bytes(), boost(phraseAsTerms), query);
+        verify(callback).flattened(quux.bytes(), boost(phraseAsTerms), query);
+        verify(callback).flattened(bart.bytes(), boost(phraseAsTerms), query);
+        verify(callback).flattened(another.bytes(), boost(phraseAsTerms), query);
+        verify(callback, never()).flattened(eq(bar.bytes()), anyFloat(), isNull(Query.class));
+        verify(callback, never()).flattened(eq(anoth.bytes()), anyFloat(), isNull(Query.class));
+
+        verify(callback).flattened(another.bytes(), boost(phraseAsTerms), query);
+
+        if (phraseAsTerms) {
+            verify(callback, never()).startPhrase(anyInt(), anyFloat());
+            verify(callback, never()).startPhrasePosition(anyInt());
+            verify(callback, never()).endPhrasePosition();
+            verify(callback, never()).endPhrase(anyString(), anyInt(), anyFloat());
+        } else {
+            verify(callback).startPhrase(3, 1);
+            verify(callback).startPhrasePosition(1);
+            verify(callback, times(2)).startPhrasePosition(2);
+            verify(callback, times(3)).endPhrasePosition();
+            verify(callback).endPhrase("test", 0, 1);
+        }
+    }
+
+    private float boost(boolean phraseAsTerms) {
+        return phraseAsTerms ? 1f : 0;
+    }
+}

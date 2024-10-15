@@ -1,0 +1,29 @@
+<?xml version="1.0"?>
+<assembly>
+    <id>plugin</id>
+    <formats>
+        <format>zip</format>
+    </formats>
+    <includeBaseDirectory>false</includeBaseDirectory>
+    <dependencySets>
+        <dependencySet>
+            <outputDirectory></outputDirectory>
+            <useProjectArtifact>true</useProjectArtifact>
+            <useTransitiveFiltering>true</useTransitiveFiltering>
+            <excludes>
+                <exclude>org.opensearch:opensearch</exclude>
+                <exclude>org.apache.lucene:*</exclude>
+            </excludes>
+        </dependencySet>
+    </dependencySets>
+    <fileSets>
+        <fileSet>
+            <directory>src/main/resources/plugin-metadata</directory>
+            <outputDirectory></outputDirectory>
+            <filtered>true</filtered>
+            <includes>
+                <include>plugin-descriptor.properties</include>
+            </includes>
+        </fileSet>
+    </fileSets>
+</assembly>

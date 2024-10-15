@@ -9,11 +9,11 @@
     </parent>
 
     <groupId>org.wikimedia.search.highlighter</groupId>
-    <artifactId>experimental</artifactId>
-    <version>7.10.3-SNAPSHOT</version>
+    <artifactId>cirrus</artifactId>
+    <version>1.3.19-SNAPSHOT</version>
     <packaging>pom</packaging>
 
-    <name>Elasticsearch experimental highlighter plugin</name>
+    <name>OpenSearch highlighter plugin for CirrusSearch</name>
 
     <url>https://doc.wikimedia.org/search-highlighter/</url>
 
@@ -35,15 +35,14 @@
     </developers>
 
     <modules>
-        <module>experimental-highlighter-core</module>
-        <module>experimental-highlighter-lucene</module>
-        <module>experimental-highlighter-elasticsearch-plugin</module>
+        <module>cirrus-highlighter-core</module>
+        <module>cirrus-highlighter-lucene</module>
+        <module>cirrus-highlighter-opensearch-plugin</module>
     </modules>
 
     <scm>
         <connection>scm:git:https://gerrit.wikimedia.org/r/search/highlighter</connection>
         <developerConnection>scm:git:ssh://gerrit.wikimedia.org:29418/search/highlighter</developerConnection>
-        <tag>experimental-7.10.2</tag>
         <url>https://gerrit.wikimedia.org/r/#/admin/projects/search/highlighter</url>
     </scm>
 
@@ -53,11 +52,11 @@
     </issueManagement>
 
     <properties>
-        <elasticsearch.version>7.10.2</elasticsearch.version>
         <log4j.version>2.17.1</log4j.version>
-        <!-- For the Elasticsearch plugin to work this should match the version of Lucene that Elasticsearch
+        <!-- For the OpenSearch plugin to work this should match the version of Lucene that OpenSearch
       uses. -->
-        <lucene.version>8.7.0</lucene.version>
+        <lucene.version>8.10.1</lucene.version>
+        <opensearch.version>1.3.19</opensearch.version>
         <randomizedtesting.version>2.7.1</randomizedtesting.version>
     </properties>
 
@@ -66,7 +65,7 @@
             <?SORTPOM IGNORE?>
             <dependency>
                 <!-- Must come before lucene-core -->
-                <!-- This must come before experimental-highlighter-lucene or it won't work. -->
+                <!-- This must come before cirrus-highlighter-lucene or it won't work. -->
                 <groupId>org.apache.lucene</groupId>
                 <artifactId>lucene-test-framework</artifactId>
                 <version>${lucene.version}</version>
@@ -94,25 +93,25 @@
                 <version>${lucene.version}</version>
             </dependency>
             <dependency>
-                <groupId>org.elasticsearch</groupId>
-                <artifactId>elasticsearch</artifactId>
-                <version>${elasticsearch.version}</version>
+                <groupId>org.opensearch</groupId>
+                <artifactId>opensearch</artifactId>
+                <version>${opensearch.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.wikimedia.search.highlighter</groupId>
-                <artifactId>experimental-highlighter-core</artifactId>
+                <artifactId>cirrus-highlighter-core</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.wikimedia.search.highlighter</groupId>
-                <artifactId>experimental-highlighter-lucene</artifactId>
+                <artifactId>cirrus-highlighter-lucene</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <!--  FIXME: switch to gradle and reuse elastic integ testing framework -->
             <!--     <dependency> -->
-            <!--       <groupId>org.elasticsearch.plugin</groupId> -->
+            <!--       <groupId>org.opensearch.plugin</groupId> -->
             <!--       <artifactId>analysis-icu</artifactId> -->
-            <!--       <version>${elasticsearch.version}</version> -->
+            <!--       <version>${opensearch.version}</version> -->
             <!--       <scope>test</scope> -->
             <!--     </dependency> -->
             <dependency>
@@ -164,23 +163,21 @@
                 <scope>test</scope>
             </dependency>
             <dependency>
-                <groupId>org.elasticsearch</groupId>
-                <artifactId>securemock</artifactId>
-                <!-- NOTE: make sure that this version is the same granted by elasticsearch
-            test framework. e.g. : https://github.com/elastic/elasticsearch/blob/v2.2.1/core/src/main/resources/org/elasticsearch/bootstrap/test-framework.policy -->
-                <version>1.2</version>
-                <scope>test</scope>
-            </dependency>
-            <dependency>
-                <groupId>org.elasticsearch.test</groupId>
-                <artifactId>framework</artifactId>
-                <version>${elasticsearch.version}</version>
-                <scope>test</scope>
-            </dependency>
-            <dependency>
                 <groupId>org.hamcrest</groupId>
                 <artifactId>hamcrest-core</artifactId>
                 <version>2.2</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.mockito</groupId>
+                <artifactId>mockito-core</artifactId>
+                <version>2.21.0</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.opensearch.test</groupId>
+                <artifactId>framework</artifactId>
+                <version>${opensearch.version}</version>
                 <scope>test</scope>
             </dependency>
         </dependencies>
@@ -218,19 +215,19 @@
                             <phase>test</phase>
                             <configuration>
                                 <excludes>
-                                    <exclude>**/ElasticsearchQueryFlattenerTest.class</exclude>
+                                    <exclude>**/OpenSearchQueryFlattenerTest.class</exclude>
                                 </excludes>
                                 <skipTests>${skip.unit.tests}</skipTests>
                                 <listeners>
-                                    <report-text showNumFailures="30" showOutput="onerror" showStackTraces="true" showStatusError="true" showStatusFailure="true" showStatusIgnored="true" showStatusOk="false" showSuiteSummary="true" showThrowable="true" timestamps="false" />
-                                    <report-ant-xml dir="${project.build.directory}/surefire-reports" mavenExtensions="true" />
+                                    <report-text showNumFailures="30" showOutput="onerror" showStackTraces="true" showStatusError="true" showStatusFailure="true" showStatusIgnored="true" showStatusOk="false" showSuiteSummary="true" showThrowable="true" timestamps="false"/>
+                                    <report-ant-xml dir="${project.build.directory}/surefire-reports" mavenExtensions="true"/>
                                 </listeners>
                                 <heartbeat>20</heartbeat>
                                 <jvmOutputAction>warn</jvmOutputAction>
                                 <leaveTemporary>true</leaveTemporary>
                                 <sysouts>false</sysouts>
                                 <assertions>
-                                    <enable />
+                                    <enable/>
                                 </assertions>
                                 <jvmArgs>
                                     <param>-Xmx512m</param>
@@ -241,8 +238,8 @@
                             </configuration>
                         </execution>
                         <!-- 
-            	FIXME: Separate execution for ElasticsearchQueryFlattenerTest
-            	This one does not use Elasticsearch integration testing framework
+            	FIXME: Separate execution for OpenSearchQueryFlattenerTest
+            	This one does not use OpenSearch integration testing framework
             	but it needs to run in a separate JVM otherwize the security manager
             	may be loaded and will prevent this test from running correctly.
             	Should be fixed with clear separation of unit tests and integ test
@@ -256,19 +253,19 @@
                             <phase>test</phase>
                             <configuration>
                                 <includes>
-                                    <include>**/ElasticsearchQueryFlattenerTest.class</include>
+                                    <include>**/OpenSearchQueryFlattenerTest.class</include>
                                 </includes>
                                 <skipTests>${skip.unit.tests}</skipTests>
                                 <listeners>
-                                    <report-text showNumFailures="30" showOutput="onerror" showStackTraces="true" showStatusError="true" showStatusFailure="true" showStatusIgnored="true" showStatusOk="false" showSuiteSummary="true" showThrowable="true" timestamps="false" />
-                                    <report-ant-xml dir="${project.build.directory}/surefire-reports" mavenExtensions="true" />
+                                    <report-text showNumFailures="30" showOutput="onerror" showStackTraces="true" showStatusError="true" showStatusFailure="true" showStatusIgnored="true" showStatusOk="false" showSuiteSummary="true" showThrowable="true" timestamps="false"/>
+                                    <report-ant-xml dir="${project.build.directory}/surefire-reports" mavenExtensions="true"/>
                                 </listeners>
                                 <heartbeat>20</heartbeat>
                                 <jvmOutputAction>warn</jvmOutputAction>
                                 <leaveTemporary>true</leaveTemporary>
                                 <sysouts>false</sysouts>
                                 <assertions>
-                                    <enable />
+                                    <enable/>
                                 </assertions>
                                 <jvmArgs>
                                     <param>-Xmx512m</param>
@@ -285,7 +282,7 @@
                     <artifactId>deadcode4j-maven-plugin</artifactId>
                     <configuration>
                         <superClassesMarkingLiveCode>
-                            <liveCode>org.elasticsearch.plugins.Plugin</liveCode>
+                            <liveCode>org.opensearch.plugins.Plugin</liveCode>
                         </superClassesMarkingLiveCode>
                     </configuration>
                 </plugin>
@@ -313,7 +310,7 @@
                                         </goals>
                                     </pluginExecutionFilter>
                                     <action>
-                                        <ignore />
+                                        <ignore/>
                                     </action>
                                 </pluginExecution>
                                 <pluginExecution>
@@ -327,7 +324,7 @@
                                         </goals>
                                     </pluginExecutionFilter>
                                     <action>
-                                        <ignore />
+                                        <ignore/>
                                     </action>
                                 </pluginExecution>
                             </pluginExecutions>
