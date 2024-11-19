@@ -10,7 +10,7 @@
 
     <groupId>org.wikimedia.search.highlighter</groupId>
     <artifactId>cirrus</artifactId>
-    <version>1.3.19-SNAPSHOT</version>
+    <version>1.3.19</version>
     <packaging>pom</packaging>
 
     <name>OpenSearch highlighter plugin for CirrusSearch</name>
@@ -43,6 +43,7 @@
     <scm>
         <connection>scm:git:https://gerrit.wikimedia.org/r/search/highlighter</connection>
         <developerConnection>scm:git:ssh://gerrit.wikimedia.org:29418/search/highlighter</developerConnection>
+        <tag>cirrus-1.3.19</tag>
         <url>https://gerrit.wikimedia.org/r/#/admin/projects/search/highlighter</url>
     </scm>
 
