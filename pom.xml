@@ -108,6 +108,11 @@
                 <artifactId>cirrus-highlighter-lucene</artifactId>
                 <version>${project.version}</version>
             </dependency>
+            <dependency>
+                <groupId>org.wikimedia.utils</groupId>
+                <artifactId>lucene-regex-rewriter</artifactId>
+                <version>1.0.1</version>
+            </dependency>
             <!--  FIXME: switch to gradle and reuse elastic integ testing framework -->
             <!--     <dependency> -->
             <!--       <groupId>org.opensearch.plugin</groupId> -->

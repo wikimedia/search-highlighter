@@ -15,6 +15,7 @@ import org.opensearch.action.search.SearchRequestBuilder;
 import org.opensearch.action.search.SearchResponse;
 import org.opensearch.rest.RestStatus;
 import org.junit.Test;
+import org.opensearch.search.fetch.subphase.highlight.HighlightField;
 import org.wikimedia.highlighter.cirrus.opensearch.AbstractCirrusHighlighterIntegrationTestBase;
 
 import com.google.common.collect.ImmutableList;
@@ -43,6 +44,84 @@ public class RegexTest extends AbstractCirrusHighlighterIntegrationTestBase {
             SearchRequestBuilder search = testSearch(hitSource(hitSource).andThen(options(options)));
             SearchResponse response = search.get();
             assertHighlight(response, 0, "test", 0, equalTo("tests <em>very</em> simple test"));
+        }
+    }
+
+    @Test
+    public void extendedLuceneRegex() throws IOException {
+        buildIndex();
+        indexTestData();
+
+        Map<String, Object> options = new HashMap<>();
+        options.put("regex", "\\w+");
+        options.put("skip_query", true);
+        options.put("regex_flavor", "lucene_extended");
+        for (String hitSource : HIT_SOURCES) {
+            SearchRequestBuilder search = testSearch(hitSource(hitSource).andThen(options(options)));
+            SearchResponse response = search.get();
+            assertHighlight(response, 0, "test", 0, equalTo(
+                "<em>tests</em> <em>very</em> <em>simple</em> <em>test</em>"));
+        }
+
+        // no anchor support, no highlight
+        options.put("regex", "^\\w+");
+        for (String hitSource : HIT_SOURCES) {
+            SearchRequestBuilder search = testSearch(hitSource(hitSource).andThen(options(options)));
+            SearchResponse response = search.get();
+            assertNotHighlighted(response, 0, "test");
+        }
+    }
+
+    @Test
+    public void anchoredLuceneRegex() throws IOException {
+        buildIndex();
+        indexTestData();
+
+        Map<String, Object> options = new HashMap<>();
+        options.put("regex", "^t[^\\s]+");
+        options.put("skip_query", true);
+        options.put("regex_flavor", "lucene_anchored");
+        for (String hitSource : HIT_SOURCES) {
+            SearchRequestBuilder search = testSearch(hitSource(hitSource).andThen(options(options)));
+            SearchResponse response = search.get();
+            assertHighlight(response, 0, "test", 0, equalTo("<em>tests</em> very simple test"));
+        }
+
+        options.put("regex", "t[^\\s]+$");
+        for (String hitSource : HIT_SOURCES) {
+            SearchRequestBuilder search = testSearch(hitSource(hitSource).andThen(options(options)));
+            SearchResponse response = search.get();
+            assertHighlight(response, 0, "test", 0, equalTo("tests very simple <em>test</em>"));
+        }
+    }
+
+    @Test
+    public void anchoredLuceneRegexOffsets() throws IOException {
+        buildIndex();
+        indexTestData(new String[]{"test data", "also test data"});
+        Map<String, Object> options = new HashMap<>();
+        options.put("skip_query", true);
+        options.put("return_snippets_and_offsets", true);
+
+        String field = "test";
+        int hit = 0;
+
+        String[] regexes = new String[]{"test", "^test", "^also", "data$", "t\\w+$", "t[^\\s]+$"};
+        for (String regex : regexes) {
+            options.put("regex", regex);
+            for (String hitSource : HIT_SOURCES) {
+                options.put("regex_flavor", "java");
+                SearchRequestBuilder searchJava = testSearch(hitSource(hitSource).andThen(options(options)));
+                SearchResponse responseJava = searchJava.get();
+                HighlightField javaHighlight = responseJava.getHits().getAt(hit).getHighlightFields().get(field);
+
+                options.put("regex_flavor", "lucene_anchored");
+                SearchRequestBuilder searchExtended = testSearch(hitSource(hitSource).andThen(options(options)));
+                SearchResponse responseExtended = searchExtended.get();
+                HighlightField extendedHighlight = responseExtended.getHits().getAt(hit).getHighlightFields().get(field);
+
+                assertEquals(regex, javaHighlight, extendedHighlight);
+            }
         }
     }
 

@@ -6,6 +6,7 @@ import static java.lang.Boolean.TRUE;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -36,6 +37,7 @@ import org.wikimedia.search.highlighter.cirrus.Snippet.HitBuilder;
 import org.wikimedia.search.highlighter.cirrus.SnippetChooser;
 import org.wikimedia.search.highlighter.cirrus.SnippetFormatter;
 import org.wikimedia.search.highlighter.cirrus.SnippetWeigher;
+import org.wikimedia.search.highlighter.cirrus.hit.AbstractHitEnumWrapper;
 import org.wikimedia.search.highlighter.cirrus.hit.ConcatHitEnum;
 import org.wikimedia.search.highlighter.cirrus.hit.EmptyHitEnum;
 import org.wikimedia.search.highlighter.cirrus.hit.MergingHitEnum;
@@ -49,6 +51,7 @@ import org.wikimedia.search.highlighter.cirrus.snippet.SumSnippetWeigher;
 import org.wikimedia.search.highlighter.cirrus.tools.GraphvizHit;
 import org.wikimedia.search.highlighter.cirrus.tools.GraphvizHitEnum;
 import org.wikimedia.search.highlighter.cirrus.tools.GraphvizSnippetFormatter;
+import org.wikimedia.utils.regex.RegexRewriter;
 
 @SuppressWarnings("checkstyle:classfanoutcomplexity") // to improve if we ever touch that code again
 public class CirrusHighlighter implements Highlighter {
@@ -317,11 +320,11 @@ public class CirrusHighlighter implements Highlighter {
             return hitEnums;
         }
 
-        @SuppressWarnings("checkstyle:ModifiedControlVariable")
+        @SuppressWarnings({"checkstyle:ModifiedControlVariable", "CyclomaticComplexity", "NPathComplexity"})
         // cleanup the re-assignment of `regex` if we revisit that code
         private List<HitEnum> buildRegexHitEnums() throws IOException {
-            boolean luceneRegex = isLuceneRegexFlavor();
-            if (luceneRegex) {
+            RegexFlavor flavor = RegexFlavor.from(getOption("regex_flavor"));
+            if (flavor.isLuceneFlavor) {
                 cache.automatonHitEnumFactories = new HashMap<>();
             }
             Boolean caseInsensitiveOption = (Boolean) getOption("regex_case_insensitive");
@@ -334,7 +337,10 @@ public class CirrusHighlighter implements Highlighter {
             }
 
             for (String regex : getRegexes()) {
-                if (luceneRegex) {
+                if (flavor.isLuceneFlavor) {
+                    if (flavor.expandRegex) {
+                        regex = RegexRewriter.rewrite(regex, flavor.replaceAnchors).toString();
+                    }
                     if (caseInsensitive) {
                         regex = regex.toLowerCase(getLocale());
                     }
@@ -343,7 +349,7 @@ public class CirrusHighlighter implements Highlighter {
                         factory = buildFactoryForRegex(regex);
                         cache.automatonHitEnumFactories.put(regex, factory);
                     }
-                    hitEnums.add(buildLuceneRegexHitEnumForRegex(factory, fieldValues, caseInsensitive));
+                    hitEnums.add(buildLuceneRegexHitEnumForRegex(factory, fieldValues, caseInsensitive, flavor));
                 } else {
                     int options = 0;
                     if (caseInsensitive) {
@@ -387,21 +393,75 @@ public class CirrusHighlighter implements Highlighter {
             return (List<String>) regexes;
         }
 
+        private static class AnchoredLuceneRegexHitEnum extends AbstractHitEnumWrapper {
+            /**
+             * The length of the source prior to applying anchor transformation.
+             */
+            private final int initialLength;
+
+            AnchoredLuceneRegexHitEnum(HitEnum delegate, int initialLength) {
+                super(delegate);
+                this.initialLength = initialLength;
+            }
+
+            @Override
+            public int startOffset() {
+                return adjustOffset(super.startOffset());
+            }
+
+            @Override
+            public int endOffset() {
+                return adjustOffset(super.endOffset());
+            }
+
+            /**
+             * False characters were added to the beginning and end of the string to support the
+             * anchored regex syntax, remove them from the offsets such that we have the positions in
+             * the source and not the transformed value.
+             */
+            private int adjustOffset(int offset) {
+                if (offset == initialLength + 2) {
+                    // Correct for value added at beginning and end
+                    return offset - 2;
+                } else if (offset > 0) {
+                    // Correct for value added at beginning
+                    return offset - 1;
+                }
+                return offset; // == 0
+            }
+        }
+
         private HitEnum buildLuceneRegexHitEnumForRegex(final AutomatonHitEnum.Factory factory, List<String> fieldValues,
-                final boolean caseInsensitive) {
+                final boolean caseInsensitive, final RegexFlavor flavor) {
             final int positionGap = defaultField.getPositionGap();
             if (fieldValues.size() == 1) {
                 String fieldValue = fieldValues.get(0);
+                final int sourceLength = fieldValue.length();
+                if (flavor.replaceAnchors) {
+                    fieldValue = RegexRewriter.anchorTransformation(fieldValue);
+                }
                 if (caseInsensitive) {
                     fieldValue = fieldValue.toLowerCase(getLocale());
                 }
-                return factory.build(fieldValue);
+                HitEnum e = factory.build(fieldValue);
+                if (flavor.replaceAnchors) {
+                    e = new AnchoredLuceneRegexHitEnum(e, sourceLength);
+                }
+                return e;
             } else {
                 Iterator<HitEnumAndLength> hitEnumsFromStreams = fieldValues.stream().map(fieldValue -> {
+                    final int sourceLength = fieldValue.length();
+                    if (flavor.replaceAnchors) {
+                        fieldValue = RegexRewriter.anchorTransformation(fieldValue);
+                    }
                     if (caseInsensitive) {
                         fieldValue = fieldValue.toLowerCase(getLocale());
                     }
-                    return new HitEnumAndLength(factory.build(fieldValue), fieldValue.length());
+                    HitEnum e = factory.build(fieldValue);
+                    if (flavor.replaceAnchors) {
+                        e = new AnchoredLuceneRegexHitEnum(e, sourceLength);
+                    }
+                    return new HitEnumAndLength(e, sourceLength);
                 }).iterator();
                 return new ConcatHitEnum(hitEnumsFromStreams, positionGap, 1);
             }
@@ -419,15 +479,33 @@ public class CirrusHighlighter implements Highlighter {
             }
         }
 
-        private boolean isLuceneRegexFlavor() {
-            Object regexFlavor = getOption("regex_flavor");
-            if (regexFlavor == null || "lucene".equals(regexFlavor)) {
-                return true;
+        private enum RegexFlavor {
+            JAVA("java", false, false, false),
+            LUCENE("lucene", true, false, false),
+            LUCENE_EXTENDED("lucene_extended", true, true, false),
+            LUCENE_ANCHORED("lucene_anchored", true, true, true);
+
+            private final String value;
+            private final boolean isLuceneFlavor;
+            private final boolean expandRegex;
+            private final boolean replaceAnchors;
+
+            RegexFlavor(String value, boolean isLuceneFlavor, boolean expandRegex, boolean replaceAnchors) {
+                this.value = value;
+                this.isLuceneFlavor = isLuceneFlavor;
+                this.expandRegex = expandRegex;
+                this.replaceAnchors = replaceAnchors;
             }
-            if ("java".equals(regexFlavor)) {
-                return false;
+
+            public static RegexFlavor from(Object regexFlavor) {
+                if (regexFlavor == null) {
+                    return LUCENE;
+                }
+                return Arrays.stream(RegexFlavor.values())
+                    .filter(flavor -> flavor.value.equals(regexFlavor))
+                    .findFirst()
+                    .orElseThrow(() -> new IllegalArgumentException("Unknown regex flavor:  " + regexFlavor));
             }
-            throw new IllegalArgumentException("Unknown regex flavor:  " + regexFlavor);
         }
 
         /**
