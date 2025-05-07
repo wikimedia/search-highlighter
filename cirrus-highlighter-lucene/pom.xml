@@ -4,7 +4,7 @@
     <parent>
         <groupId>org.wikimedia.search.highlighter</groupId>
         <artifactId>cirrus</artifactId>
-        <version>1.3.21-SNAPSHOT</version>
+        <version>1.3.20-wmf1</version>
     </parent>
     <artifactId>cirrus-highlighter-lucene</artifactId>
     <packaging>jar</packaging>
