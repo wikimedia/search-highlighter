@@ -112,7 +112,7 @@
             <dependency>
                 <groupId>org.wikimedia.utils</groupId>
                 <artifactId>lucene-regex-rewriter</artifactId>
-                <version>1.0.5</version>
+                <version>1.0.6</version>
             </dependency>
             <!--  FIXME: switch to gradle and reuse elastic integ testing framework -->
             <!--     <dependency> -->
