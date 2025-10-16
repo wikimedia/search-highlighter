@@ -6,3 +6,5 @@ target/
 data/
 *.iml
 .idea
+
+.DS_Store

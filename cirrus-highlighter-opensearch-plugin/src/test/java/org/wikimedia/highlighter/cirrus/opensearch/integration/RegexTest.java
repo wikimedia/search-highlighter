@@ -329,4 +329,65 @@ public class RegexTest extends AbstractCirrusHighlighterIntegrationTestBase {
         SearchResponse response = search.get();
         assertNotHighlighted(response, 0, "test");
     }
+
+    @Test
+    public void multiByteMultiCodePoint() throws IOException {
+        buildIndex(); // only need to build the index once
+        multiByteMultiCodePointHelper("ABCDEXYZ"); // plain ASCII (1 byte)
+        multiByteMultiCodePointHelper("ĂƁĆĐĖ"); // extended ASCII (2 bytes)
+        multiByteMultiCodePointHelper("αбγдε"); // Greek & Cyrillic (2 bytes)
+        multiByteMultiCodePointHelper("ႠႡႢႣႤ"); // Georgian (3 bytes)
+        multiByteMultiCodePointHelper("ᴁᴃᴄᴆᴈ"); // Phonetic Extensions (3 bytes)
+        multiByteMultiCodePointHelper("𐌀𐌁𐌂𐌃𐌄𐌅𐌆"); // Old Italic (4 bytes / surrogates)
+        multiByteMultiCodePointHelper("𐌰𐌱𐌲𐌳𐌴"); // Gothic (4 bytes / surrogates)
+        multiByteMultiCodePointHelper("\udbff\udffa\udbff\udffb\udbff\udffc\udbff\udffd\udbff\udffe");
+            // Private Use Area B, U+10FFFA - U+10FFFE (4 bytes / surrogates)
+        multiByteMultiCodePointHelper("AБᴄ𐌃𐌴"); // Mix-n-match (1, 2, 3, 4, 4 bytes)
+        multiByteMultiCodePointHelper("𐌰ᴃγde"); // Mix-n-match (4, 3, 2, 1, 1 bytes)
+    }
+
+    protected void multiByteMultiCodePointHelper(String myStr) throws IOException {
+        int[] letters = myStr.codePoints().toArray();
+        assert letters.length > 4; // should be at least 5 characters, with no repeats
+
+        // add the first two letters to the end of the string, in reverse order,
+        // and reinit letters codepoints array
+        myStr = myStr + new String(letters, 1, 1) + new String(letters, 0, 1); // "ABCDEBA"
+        letters = myStr.codePoints().toArray();
+
+        String testStr = "test";
+        String openEm = "<em>";
+        String closeEm = "</em>";
+        String testData = testStr + " " + myStr; // "test ABCDEBA"
+        indexTestData(testData);
+
+        // general regex search settings
+        Map<String, Object> options = new HashMap<>();
+        options.put("skip_query", true);
+        options.put("locale", "en_US");
+        options.put("regex_case_insensitive", false);
+        String[] flavors = new String[] {"java", "lucene"};
+
+        // test matching BA, AB, BC, and CD
+        // BA (offset == -1) is a single match at the end of the string
+        // AB is a single match with a partial match at the end of the string
+        // BC is a single match with a partial match in the middle of the string
+        // CD is a single match
+        for (int i = -1; i < 3; i++) {
+            // i indexes the nth bigram, with negative numbers counting from the end
+            int offset = (i < 0) ? letters.length + i - 1 : i;
+            String preMatch = new String(letters, 0, offset);
+            String regex = new String(letters, offset, 2);
+            String postMatch = new String(letters, offset + 2, letters.length - offset - 2);
+            String result = testStr + " " + preMatch + openEm + regex + closeEm + postMatch;
+
+            options.put("regex", regex);
+            for (String flavor: flavors) {
+                options.put("regex_flavor", flavor);
+                SearchRequestBuilder search = testSearch(options(options));
+                SearchResponse response = search.get();
+                assertHighlight(response, 0, testStr, 0, equalTo(result));
+            }
+        }
+    }
 }
