@@ -20,7 +20,7 @@ import java.util.regex.Pattern;
 import org.apache.logging.log4j.Logger;
 import org.apache.lucene.search.Query;
 import org.opensearch.common.logging.Loggers;
-import org.opensearch.common.text.Text;
+import org.opensearch.core.common.text.Text;
 import org.opensearch.common.util.BigArrays;
 import org.opensearch.common.util.LocaleUtils;
 import org.opensearch.index.mapper.MappedFieldType;
@@ -274,7 +274,7 @@ public class CirrusHighlighter implements Highlighter {
             BytesRefHashTermInfos infos = new BytesRefHashTermInfos(BigArrays.NON_RECYCLING_INSTANCE);
             // context.context.addReleasable(infos);
             weigher = new BasicQueryWeigher(new ElasticsearchQueryFlattener(maxExpandedTerms, phraseAsTerms,
-                    removeHighFrequencyTermsFromCommonTerms), infos, context.hitContext.topLevelReader(), context.query);
+                    removeHighFrequencyTermsFromCommonTerms), infos, context.context.searcher(), context.query);
             // Build the QueryWeigher with the top level reader to get all
             // the frequency information
             cache.queryWeighers.put(key, weigher);

@@ -1,6 +1,6 @@
 package org.wikimedia.highlighter.cirrus.opensearch;
 
-import org.apache.lucene.index.IndexReader;
+import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.Query;
 import org.opensearch.common.lucene.search.function.FunctionScoreQuery;
 import org.wikimedia.highlighter.cirrus.lucene.QueryFlattener;
@@ -19,9 +19,9 @@ public class ElasticsearchQueryFlattener extends QueryFlattener {
 
     @Override
     protected boolean flattenUnknown(Query query, float pathBoost, Object sourceOverride,
-            IndexReader reader, Callback callback) {
+            IndexSearcher searcher, Callback callback) {
         if (query instanceof FunctionScoreQuery) {
-            flattenQuery((FunctionScoreQuery) query, pathBoost, sourceOverride, reader,
+            flattenQuery((FunctionScoreQuery) query, pathBoost, sourceOverride, searcher,
                     callback);
             return true;
         }
@@ -29,9 +29,9 @@ public class ElasticsearchQueryFlattener extends QueryFlattener {
     }
 
     protected void flattenQuery(FunctionScoreQuery query, float pathBoost,
-            Object sourceOverride, IndexReader reader, Callback callback) {
+            Object sourceOverride, IndexSearcher searcher, Callback callback) {
         if (query.getSubQuery() != null) {
-            flatten(query.getSubQuery(), pathBoost, sourceOverride, reader, callback);
+            flatten(query.getSubQuery(), pathBoost, sourceOverride, searcher, callback);
         }
     }
 }

@@ -1,12 +1,12 @@
 package org.wikimedia.highlighter.cirrus.lucene;
 
 import static org.hamcrest.Matchers.not;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyFloat;
-import static org.mockito.Matchers.anyInt;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.eq;
-import static org.mockito.Matchers.isNull;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyFloat;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -24,9 +24,9 @@ import org.apache.lucene.analysis.core.KeywordAnalyzer;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.document.TextField;
 import org.apache.lucene.index.DirectoryReader;
-import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.Term;
+import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.queries.CommonTermsQuery;
 import org.apache.lucene.search.BooleanClause;
 import org.apache.lucene.search.BooleanClause.Occur;
@@ -41,8 +41,8 @@ import org.apache.lucene.search.SynonymQuery;
 import org.apache.lucene.search.TermQuery;
 import org.apache.lucene.search.WildcardQuery;
 import org.apache.lucene.store.Directory;
-import org.apache.lucene.util.LuceneTestCase;
-import org.apache.lucene.util.TestUtil;
+import org.apache.lucene.tests.util.LuceneTestCase;
+import org.apache.lucene.tests.util.TestUtil;
 import org.apache.lucene.util.automaton.Automaton;
 import org.hamcrest.Matcher;
 import org.junit.Test;
@@ -103,7 +103,7 @@ public class QueryFlattenerTest extends LuceneTestCase {
         bq.add(new BooleanClause(new TermQuery(baz), Occur.MUST_NOT));
         new QueryFlattener().flatten(bq.build(), null, callback);
         verify(callback).flattened(bar.bytes(), 1f, null);
-        verify(callback, never()).flattened(eq(baz.bytes()), anyFloat(), isNull(Query.class));
+        verify(callback, never()).flattened(eq(baz.bytes()), anyFloat(), isNull());
     }
 
     @Test
@@ -118,7 +118,7 @@ public class QueryFlattenerTest extends LuceneTestCase {
     public void rewritten() throws IOException {
         Callback callback = mock(Callback.class);
         Query rewritten = mock(Query.class);
-        when(rewritten.rewrite(null)).thenReturn(new TermQuery(bar));
+        when(rewritten.rewrite((IndexSearcher) null)).thenReturn(new TermQuery(bar));
         new QueryFlattener().flatten(rewritten, null, callback);
         verify(callback).flattened(bar.bytes(), 1f, rewritten);
     }
@@ -160,48 +160,48 @@ public class QueryFlattenerTest extends LuceneTestCase {
 
     @Test
     public void commonTermsQueryNoRemove() {
-        IndexReader reader = readerWithTerms(bar, randomIntBetween(1, 20), baz, randomIntBetween(1, 20));
+        IndexSearcher searcher = searcherWithTerms(bar, randomIntBetween(1, 20), baz, randomIntBetween(1, 20));
         Callback callback = mock(Callback.class);
         CommonTermsQuery q = new CommonTermsQuery(Occur.SHOULD, Occur.MUST, 10f);
         q.add(bar);
         q.add(baz);
-        new QueryFlattener(100, false, false).flatten(q, reader, callback);
+        new QueryFlattener(100, false, false).flatten(q, searcher, callback);
         verify(callback).flattened(bar.bytes(), 1f, null);
         verify(callback).flattened(baz.bytes(), 1f, null);
     }
 
     @Test
     public void commonTermsQueryAllCommon() {
-        IndexReader reader = readerWithTerms(bar, randomIntBetween(11, 20), baz, randomIntBetween(11, 20));
+        IndexSearcher searcher = searcherWithTerms(bar, randomIntBetween(11, 20), baz, randomIntBetween(11, 20));
         Callback callback = mock(Callback.class);
         CommonTermsQuery q = new CommonTermsQuery(Occur.SHOULD, Occur.MUST, 10f);
         q.add(bar);
         q.add(baz);
-        new QueryFlattener().flatten(q, reader, callback);
+        new QueryFlattener().flatten(q, searcher, callback);
         verify(callback).flattened(bar.bytes(), 1f, null);
         verify(callback).flattened(baz.bytes(), 1f, null);
     }
 
     @Test
     public void commonTermsQueryAllUncommon() {
-        IndexReader reader = readerWithTerms(bar, randomIntBetween(1, 10), baz, randomIntBetween(1, 10));
+        IndexSearcher searcher = searcherWithTerms(bar, randomIntBetween(1, 10), baz, randomIntBetween(1, 10));
         Callback callback = mock(Callback.class);
         CommonTermsQuery q = new CommonTermsQuery(Occur.SHOULD, Occur.MUST, 10f);
         q.add(bar);
         q.add(baz);
-        new QueryFlattener().flatten(q, reader, callback);
+        new QueryFlattener().flatten(q, searcher, callback);
         verify(callback).flattened(bar.bytes(), 1f, null);
         verify(callback).flattened(baz.bytes(), 1f, null);
     }
 
     @Test
     public void commonTermsQueryOneUncommon() {
-        IndexReader reader = readerWithTerms(bar, randomIntBetween(1, 10), baz, randomIntBetween(11, 20));
+        IndexSearcher searcher = searcherWithTerms(bar, randomIntBetween(1, 10), baz, randomIntBetween(11, 20));
         Callback callback = mock(Callback.class);
         CommonTermsQuery q = new CommonTermsQuery(Occur.SHOULD, Occur.MUST, 10f);
         q.add(bar);
         q.add(baz);
-        new QueryFlattener().flatten(q, reader, callback);
+        new QueryFlattener().flatten(q, searcher, callback);
         verify(callback).flattened(bar.bytes(), 1f, null);
         verify(callback, never()).flattened(eq(baz.bytes()), anyFloat(), any(Object.class));
     }
@@ -226,7 +226,7 @@ public class QueryFlattenerTest extends LuceneTestCase {
         }
     }
 
-    private IndexReader readerWithTerms(Object... termsAndFreqs) {
+    private IndexSearcher searcherWithTerms(Object... termsAndFreqs) {
         try {
             assertEquals("Expected an even number of terms and freqs", 0, termsAndFreqs.length % 2);
             Directory dir = newDirectory();
@@ -240,9 +240,9 @@ public class QueryFlattenerTest extends LuceneTestCase {
                     }
                 }
             }
-            IndexReader reader = DirectoryReader.open(dir);
+            DirectoryReader reader = DirectoryReader.open(dir);
             toClose.add(reader);
-            return reader;
+            return new IndexSearcher(reader);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

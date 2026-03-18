@@ -6,9 +6,14 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 
-import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.queries.CommonTermsQuery;
+import org.apache.lucene.queries.spans.SpanNearQuery;
+import org.apache.lucene.queries.spans.SpanNotQuery;
+import org.apache.lucene.queries.spans.SpanOrQuery;
+import org.apache.lucene.queries.spans.SpanPositionCheckQuery;
+import org.apache.lucene.queries.spans.SpanQuery;
+import org.apache.lucene.queries.spans.SpanTermQuery;
 import org.apache.lucene.search.BooleanClause;
 import org.apache.lucene.search.BooleanClause.Occur;
 import org.apache.lucene.search.BooleanQuery;
@@ -16,6 +21,7 @@ import org.apache.lucene.search.BoostQuery;
 import org.apache.lucene.search.ConstantScoreQuery;
 import org.apache.lucene.search.DisjunctionMaxQuery;
 import org.apache.lucene.search.FuzzyQuery;
+import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.MultiPhraseQuery;
 import org.apache.lucene.search.MultiTermQuery;
 import org.apache.lucene.search.MultiTermQuery.TopTermsScoringBooleanQueryRewrite;
@@ -26,12 +32,6 @@ import org.apache.lucene.search.RegexpQuery;
 import org.apache.lucene.search.SynonymQuery;
 import org.apache.lucene.search.TermQuery;
 import org.apache.lucene.search.WildcardQuery;
-import org.apache.lucene.search.spans.SpanNearQuery;
-import org.apache.lucene.search.spans.SpanNotQuery;
-import org.apache.lucene.search.spans.SpanOrQuery;
-import org.apache.lucene.search.spans.SpanPositionCheckQuery;
-import org.apache.lucene.search.spans.SpanQuery;
-import org.apache.lucene.search.spans.SpanTermQuery;
 import org.apache.lucene.util.BytesRef;
 import org.apache.lucene.util.UnicodeUtil;
 import org.apache.lucene.util.automaton.Automata;
@@ -107,8 +107,8 @@ public class QueryFlattener {
         void endPhrase(String field, int slop, float boost);
     }
 
-    public void flatten(Query query, IndexReader reader, Callback callback) {
-        flatten(query, 1f, null, reader, callback);
+    public void flatten(Query query, IndexSearcher searcher, Callback callback) {
+        flatten(query, 1f, null, searcher, callback);
     }
 
     /**
@@ -122,87 +122,87 @@ public class QueryFlattener {
     }
 
     @SuppressWarnings("checkstyle:CyclomaticComplexity") // cyclomatic complexity is high, but the code is simple to read
-    protected void flatten(Query query, float pathBoost, Object sourceOverride, IndexReader reader,
+    protected void flatten(Query query, float pathBoost, Object sourceOverride, IndexSearcher searcher,
             Callback callback) {
         if (query instanceof TermQuery) {
-            flattenQuery((TermQuery) query, pathBoost, sourceOverride, reader, callback);
+            flattenQuery((TermQuery) query, pathBoost, sourceOverride, searcher, callback);
         } else if (query instanceof BoostQuery) {
-            flattenQuery((BoostQuery) query, pathBoost, sourceOverride, reader, callback);
+            flattenQuery((BoostQuery) query, pathBoost, sourceOverride, searcher, callback);
         } else if (query instanceof PhraseQuery) {
-            flattenQuery((PhraseQuery) query, pathBoost, sourceOverride, reader, callback);
+            flattenQuery((PhraseQuery) query, pathBoost, sourceOverride, searcher, callback);
         } else if (query instanceof BooleanQuery) {
-            flattenQuery((BooleanQuery) query, pathBoost, sourceOverride, reader, callback);
+            flattenQuery((BooleanQuery) query, pathBoost, sourceOverride, searcher, callback);
         } else if (query instanceof DisjunctionMaxQuery) {
-            flattenQuery((DisjunctionMaxQuery) query, pathBoost, sourceOverride, reader, callback);
+            flattenQuery((DisjunctionMaxQuery) query, pathBoost, sourceOverride, searcher, callback);
         } else if (query instanceof ConstantScoreQuery) {
-            flattenQuery((ConstantScoreQuery) query, pathBoost, sourceOverride, reader, callback);
+            flattenQuery((ConstantScoreQuery) query, pathBoost, sourceOverride, searcher, callback);
         } else if (query instanceof MultiPhraseQuery) {
-            flattenQuery((MultiPhraseQuery) query, pathBoost, sourceOverride, reader, callback);
+            flattenQuery((MultiPhraseQuery) query, pathBoost, sourceOverride, searcher, callback);
         } else if (query instanceof SpanQuery
-                && flattenSpan((SpanQuery) query, pathBoost, sourceOverride, reader, callback)) {
+                && flattenSpan((SpanQuery) query, pathBoost, sourceOverride, searcher, callback)) {
             // Actually nothing to do here, but it keeps the code lining up to
             // have it.
         } else if (query instanceof FuzzyQuery) {
-            flattenQuery((FuzzyQuery) query, pathBoost, sourceOverride, reader, callback);
+            flattenQuery((FuzzyQuery) query, pathBoost, sourceOverride, searcher, callback);
         } else if (query instanceof RegexpQuery) {
-            flattenQuery((RegexpQuery) query, pathBoost, sourceOverride, reader, callback);
+            flattenQuery((RegexpQuery) query, pathBoost, sourceOverride, searcher, callback);
         } else if (query instanceof WildcardQuery) {
-            flattenQuery((WildcardQuery) query, pathBoost, sourceOverride, reader, callback);
+            flattenQuery((WildcardQuery) query, pathBoost, sourceOverride, searcher, callback);
         } else if (query instanceof PrefixQuery) {
-            flattenQuery((PrefixQuery) query, pathBoost, sourceOverride, reader, callback);
+            flattenQuery((PrefixQuery) query, pathBoost, sourceOverride, searcher, callback);
         } else if (query instanceof CommonTermsQuery) {
-            flattenQuery((CommonTermsQuery) query, pathBoost, sourceOverride, reader, callback);
+            flattenQuery((CommonTermsQuery) query, pathBoost, sourceOverride, searcher, callback);
         } else if (query instanceof SynonymQuery) {
-            flattenQuery((SynonymQuery) query, pathBoost, sourceOverride, reader, callback);
-        } else if (!flattenUnknown(query, pathBoost, sourceOverride, reader, callback)) {
-            Query newRewritten = rewriteQuery(query, pathBoost, sourceOverride, reader);
+            flattenQuery((SynonymQuery) query, pathBoost, sourceOverride, searcher, callback);
+        } else if (!flattenUnknown(query, pathBoost, sourceOverride, searcher, callback)) {
+            Query newRewritten = rewriteQuery(query, pathBoost, sourceOverride, searcher);
             if (newRewritten != query) {
                 // only rewrite once and then flatten again - the rewritten
                 // query could have a special treatment
-                flatten(newRewritten, pathBoost, query, reader, callback);
+                flatten(newRewritten, pathBoost, query, searcher, callback);
             }
         }
     }
 
     protected boolean flattenSpan(SpanQuery query, float pathBoost, Object sourceOverride,
-            IndexReader reader, Callback callback) {
+            IndexSearcher searcher, Callback callback) {
         if (query instanceof SpanTermQuery) {
-            flattenQuery((SpanTermQuery) query, pathBoost, sourceOverride, reader, callback);
+            flattenQuery((SpanTermQuery) query, pathBoost, sourceOverride, searcher, callback);
             return true;
         } else if (query instanceof SpanPositionCheckQuery) {
-            flattenQuery((SpanPositionCheckQuery) query, pathBoost, sourceOverride, reader,
+            flattenQuery((SpanPositionCheckQuery) query, pathBoost, sourceOverride, searcher,
                     callback);
             return true;
         } else if (query instanceof SpanNearQuery) {
-            flattenQuery((SpanNearQuery) query, pathBoost, sourceOverride, reader, callback);
+            flattenQuery((SpanNearQuery) query, pathBoost, sourceOverride, searcher, callback);
             return true;
         } else if (query instanceof SpanNotQuery) {
-            flattenQuery((SpanNotQuery) query, pathBoost, sourceOverride, reader, callback);
+            flattenQuery((SpanNotQuery) query, pathBoost, sourceOverride, searcher, callback);
             return true;
         } else if (query instanceof SpanOrQuery) {
-            flattenQuery((SpanOrQuery) query, pathBoost, sourceOverride, reader, callback);
+            flattenQuery((SpanOrQuery) query, pathBoost, sourceOverride, searcher, callback);
             return true;
         }
         return false;
     }
 
     protected boolean flattenUnknown(Query query, float pathBoost, Object sourceOverride,
-            IndexReader reader, Callback callback) {
+            IndexSearcher searcher, Callback callback) {
         return false;
     }
 
     protected void flattenQuery(TermQuery query, float pathBoost, Object sourceOverride,
-            IndexReader reader, Callback callback) {
+            IndexSearcher searcher, Callback callback) {
         callback.flattened(query.getTerm().bytes(), pathBoost, sourceOverride);
     }
 
     protected void flattenQuery(BoostQuery query, float pathBoost, Object sourceOverride,
-            IndexReader reader, Callback callback) {
-        flatten(query.getQuery(), query.getBoost() * pathBoost, sourceOverride, reader, callback);
+            IndexSearcher searcher, Callback callback) {
+        flatten(query.getQuery(), query.getBoost() * pathBoost, sourceOverride, searcher, callback);
     }
 
     protected void flattenQuery(PhraseQuery query, float pathBoost, Object sourceOverride,
-            IndexReader reader, Callback callback) {
+            IndexSearcher searcher, Callback callback) {
         Term[] terms = query.getTerms();
         if (terms.length == 0) {
             return;
@@ -226,7 +226,7 @@ public class QueryFlattener {
             value = "OCP_OVERLY_CONCRETE_PARAMETER",
             justification = "Using a specific type is required as different behaviour are expected")
     protected void flattenQuery(BooleanQuery query, float pathBoost, Object sourceOverride,
-            IndexReader reader, Callback callback) {
+            IndexSearcher searcher, Callback callback) {
         for (BooleanClause clause : query) {
             // Exclude FILTER clauses with isScoring(), before lucene 5 most of
             // these queries were wrapped inside a FitleredQuery
@@ -235,7 +235,7 @@ public class QueryFlattener {
             // e.g. the _type filter with opensearch now uses this type of
             // construct.
             if (!clause.isProhibited() && clause.isScoring()) {
-                flatten(clause.getQuery(), pathBoost, sourceOverride, reader,
+                flatten(clause.getQuery(), pathBoost, sourceOverride, searcher,
                         callback);
             }
         }
@@ -245,23 +245,23 @@ public class QueryFlattener {
             value = "OCP_OVERLY_CONCRETE_PARAMETER",
             justification = "Using a specific type is required as different behaviour are expected")
     protected void flattenQuery(DisjunctionMaxQuery query, float pathBoost, Object sourceOverride,
-            IndexReader reader, Callback callback) {
+            IndexSearcher searcher, Callback callback) {
         for (Query clause : query) {
-            flatten(clause, pathBoost, sourceOverride, reader, callback);
+            flatten(clause, pathBoost, sourceOverride, searcher, callback);
         }
     }
 
     protected void flattenQuery(ConstantScoreQuery query, float pathBoost, Object sourceOverride,
-            IndexReader reader, Callback callback) {
+            IndexSearcher searcher, Callback callback) {
         if (query.getQuery() != null) {
-            flatten(query.getQuery(), pathBoost, sourceOverride, reader,
+            flatten(query.getQuery(), pathBoost, sourceOverride, searcher,
                     callback);
         }
         // TODO maybe flatten filter like Elasticsearch does
     }
 
     protected void flattenQuery(MultiPhraseQuery query, float pathBoost, Object sourceOverride,
-            IndexReader reader, Callback callback) {
+            IndexSearcher searcher, Callback callback) {
         // Elasticsearch uses a more complicated method to preserve the phrase
         // queries.
         Term[][] termArrays = query.getTermArrays();
@@ -292,38 +292,38 @@ public class QueryFlattener {
     }
 
     protected void flattenQuery(SpanTermQuery query, float pathBoost, Object sourceOverride,
-            IndexReader reader, Callback callback) {
+            IndexSearcher searcher, Callback callback) {
         callback.flattened(query.getTerm().bytes(), pathBoost, sourceOverride);
     }
 
     protected void flattenQuery(SpanPositionCheckQuery query, float pathBoost,
-            Object sourceOverride, IndexReader reader, Callback callback) {
-        flattenSpan(query.getMatch(), pathBoost, sourceOverride, reader,
+            Object sourceOverride, IndexSearcher searcher, Callback callback) {
+        flattenSpan(query.getMatch(), pathBoost, sourceOverride, searcher,
                 callback);
     }
 
     protected void flattenQuery(SpanNearQuery query, float pathBoost, Object sourceOverride,
-            IndexReader reader, Callback callback) {
+            IndexSearcher searcher, Callback callback) {
         for (SpanQuery clause : query.getClauses()) {
-            flattenSpan(clause, pathBoost, sourceOverride, reader, callback);
+            flattenSpan(clause, pathBoost, sourceOverride, searcher, callback);
         }
     }
 
     protected void flattenQuery(SpanNotQuery query, float pathBoost, Object sourceOverride,
-            IndexReader reader, Callback callback) {
-        flattenSpan(query.getInclude(), pathBoost, sourceOverride, reader,
+            IndexSearcher searcher, Callback callback) {
+        flattenSpan(query.getInclude(), pathBoost, sourceOverride, searcher,
                 callback);
     }
 
     protected void flattenQuery(SpanOrQuery query, float pathBoost, Object sourceOverride,
-            IndexReader reader, Callback callback) {
+            IndexSearcher searcher, Callback callback) {
         for (SpanQuery clause : query.getClauses()) {
-            flattenSpan(clause, pathBoost, sourceOverride, reader, callback);
+            flattenSpan(clause, pathBoost, sourceOverride, searcher, callback);
         }
     }
 
     protected void flattenQuery(RegexpQuery query, float pathBoost, Object sourceOverride,
-            IndexReader reader, Callback callback) {
+            IndexSearcher searcher, Callback callback) {
         // This isn't a great "source" because it contains the term's field but
         // its the best we can do here
         if (!sentAutomata.add(query)) {
@@ -334,7 +334,7 @@ public class QueryFlattener {
     }
 
     protected void flattenQuery(WildcardQuery query, float pathBoost, Object sourceOverride,
-            IndexReader reader, Callback callback) {
+            IndexSearcher searcher, Callback callback) {
         // Should be safe not to copy this because it is fixed...
         if (!sentAutomata.add(query.getTerm().bytes())) {
             return;
@@ -344,14 +344,14 @@ public class QueryFlattener {
     }
 
     protected void flattenQuery(SynonymQuery query, float pathBoost, Object sourceOverride,
-                                IndexReader reader, Callback callback) {
+                                IndexSearcher searcher, Callback callback) {
         for (Term t : query.getTerms()) {
             callback.flattened(t.bytes(), pathBoost, sourceOverride);
         }
     }
 
     protected void flattenQuery(PrefixQuery query, float pathBoost, Object sourceOverride,
-            IndexReader reader, Callback callback) {
+            IndexSearcher searcher, Callback callback) {
         flattenPrefixQuery(query.getPrefix().bytes(), pathBoost, sourceOverride,
                 callback);
     }
@@ -369,7 +369,7 @@ public class QueryFlattener {
     }
 
     protected void flattenQuery(FuzzyQuery query, float pathBoost, Object sourceOverride,
-            IndexReader reader, Callback callback) {
+            IndexSearcher searcher, Callback callback) {
         float boost = pathBoost;
         if (query.getMaxEdits() == 0) {
             callback.flattened(query.getTerm().bytes(), boost, sourceOverride);
@@ -415,10 +415,10 @@ public class QueryFlattener {
 
     @SuppressWarnings({"checkstyle:CyclomaticComplexity", "checkstyle:NPathComplexity"})
     protected void flattenQuery(CommonTermsQuery query, float pathBoost, Object sourceOverride,
-            IndexReader reader, Callback callback) {
-        Query rewritten = rewriteQuery(query, pathBoost, sourceOverride, reader);
+            IndexSearcher searcher, Callback callback) {
+        Query rewritten = rewriteQuery(query, pathBoost, sourceOverride, searcher);
         if (!removeHighFrequencyTermsFromCommonTerms) {
-            flatten(rewritten, pathBoost, sourceOverride, reader, callback);
+            flatten(rewritten, pathBoost, sourceOverride, searcher, callback);
             return;
         }
         /*
@@ -431,14 +431,14 @@ public class QueryFlattener {
          */
         if (!(rewritten instanceof BooleanQuery)) {
             // Nope - its a term query or something more exotic
-            flatten(rewritten, pathBoost, sourceOverride, reader, callback);
+            flatten(rewritten, pathBoost, sourceOverride, searcher, callback);
             return;
         }
         BooleanQuery bq = (BooleanQuery) rewritten;
         List<BooleanClause> clauses = bq.clauses();
         if (clauses.size() != 2) {
             // Nope - its just a list of terms.
-            flattenQuery(bq, pathBoost, sourceOverride, reader, callback);
+            flattenQuery(bq, pathBoost, sourceOverride, searcher, callback);
             return;
         }
         BooleanClause first = clauses.get(0);
@@ -446,7 +446,7 @@ public class QueryFlattener {
         if ((first.getOccur() != Occur.SHOULD || second.getOccur() != Occur.MUST)
                 && (first.getOccur() != Occur.MUST || second.getOccur() != Occur.SHOULD)) {
             // Nope - just a two term query
-            flattenQuery(bq, pathBoost, sourceOverride, reader, callback);
+            flattenQuery(bq, pathBoost, sourceOverride, searcher, callback);
             return;
         }
 
@@ -461,7 +461,7 @@ public class QueryFlattener {
 
         if (!(firstQ instanceof BooleanQuery && secondQ instanceof BooleanQuery)) {
             // Nope - terms of the wrong type. not sure how that happened.
-            flattenQuery(bq, pathBoost, sourceOverride, reader, callback);
+            flattenQuery(bq, pathBoost, sourceOverride, searcher, callback);
             return;
         }
 
@@ -471,32 +471,32 @@ public class QueryFlattener {
         } else {
             lowFrequency = second.getQuery();
         }
-        flatten(lowFrequency, pathBoost, sourceOverride, reader, callback);
+        flatten(lowFrequency, pathBoost, sourceOverride, searcher, callback);
     }
 
-    protected Query rewriteQuery(MultiTermQuery query, float pathBoost, Object sourceOverride, IndexReader reader) {
+    protected Query rewriteQuery(MultiTermQuery query, float pathBoost, Object sourceOverride, IndexSearcher searcher) {
         TopTermsScoringBooleanQueryRewrite method = new MultiTermQuery.TopTermsScoringBooleanQueryRewrite(
                 maxMultiTermQueryTerms);
         try {
-            return method.rewrite(reader, query);
+            return method.rewrite(searcher.getIndexReader(), query);
         } catch (IOException ioe) {
             throw new WrappedExceptionFromLucene(ioe);
         }
     }
 
-    protected Query rewriteQuery(Query query, float pathBoost, Object sourceOverride, IndexReader reader) {
+    protected Query rewriteQuery(Query query, float pathBoost, Object sourceOverride, IndexSearcher searcher) {
         if (query instanceof MultiTermQuery) {
-            return rewriteQuery((MultiTermQuery) query, pathBoost, sourceOverride, reader);
+            return rewriteQuery((MultiTermQuery) query, pathBoost, sourceOverride, searcher);
         }
-        return rewritePreparedQuery(query, pathBoost, sourceOverride, reader);
+        return rewritePreparedQuery(query, pathBoost, sourceOverride, searcher);
     }
 
     /**
      * Rewrites a query that's already ready for rewriting.
      */
-    protected Query rewritePreparedQuery(Query query, float pathBoost, Object sourceOverride, IndexReader reader) {
+    protected Query rewritePreparedQuery(Query query, float pathBoost, Object sourceOverride, IndexSearcher searcher) {
         try {
-            return query.rewrite(reader);
+            return query.rewrite(searcher);
         } catch (IOException e) {
             throw new WrappedExceptionFromLucene(e);
         }

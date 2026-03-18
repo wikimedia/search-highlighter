@@ -84,10 +84,10 @@ public class SkipTest extends AbstractCirrusHighlighterIntegrationTestBase {
     }
 
     protected void indexTestData() {
-        client().prepareIndex("test", "_doc", "1")
+        client().prepareIndex("test").setId("1")
                 .setSource("a", "test a", "b", "test foo b", "c", "test c", "d", "test foo d")
                 .get();
-        client().prepareIndex("test", "_doc", "2")
+        client().prepareIndex("test").setId("2")
                 .setSource("a", "test a", "b", "test foo b", "c", "test c", "d", "test foo d")
                 .get();
         refresh();

@@ -16,10 +16,10 @@ import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.Field.Store;
 import org.apache.lucene.document.TextField;
 import org.apache.lucene.index.DirectoryReader;
-import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
 import org.apache.lucene.index.Term;
+import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.TermQuery;
 import org.apache.lucene.store.ByteBuffersDirectory;
@@ -64,7 +64,7 @@ public class OpenSearchQueryFlattenerTest {
     }
 
     private void phrasePrefixQueryTestCase(boolean phraseAsTerms) {
-        final IndexReader ir;
+        final IndexSearcher searcher;
         try {
             // Previously MultiPhraseQuery was flattened directly
             // This is not possible anymore, so we need to rewrite
@@ -75,7 +75,7 @@ public class OpenSearchQueryFlattenerTest {
             doc.add(new TextField("test", "foo qux bart foo quux another", Store.NO));
             iw.addDocument(doc);
             iw.close();
-            ir = DirectoryReader.open(dir);
+            searcher = new IndexSearcher(DirectoryReader.open(dir));
         } catch (IOException ioe) {
             throw new RuntimeException(ioe);
         }
@@ -94,15 +94,15 @@ public class OpenSearchQueryFlattenerTest {
         Term another = new Term("test", "another");
 
         Callback callback = mock(Callback.class);
-        new ElasticsearchQueryFlattener(1, phraseAsTerms, true).flatten(query, ir, callback);
+        new ElasticsearchQueryFlattener(1, phraseAsTerms, true).flatten(query, searcher, callback);
 
         verify(callback).flattened(foo.bytes(), boost(phraseAsTerms), query);
         verify(callback).flattened(qux.bytes(), boost(phraseAsTerms), query);
         verify(callback).flattened(quux.bytes(), boost(phraseAsTerms), query);
         verify(callback).flattened(bart.bytes(), boost(phraseAsTerms), query);
         verify(callback).flattened(another.bytes(), boost(phraseAsTerms), query);
-        verify(callback, never()).flattened(eq(bar.bytes()), anyFloat(), isNull(Query.class));
-        verify(callback, never()).flattened(eq(anoth.bytes()), anyFloat(), isNull(Query.class));
+        verify(callback, never()).flattened(eq(bar.bytes()), anyFloat(), isNull());
+        verify(callback, never()).flattened(eq(anoth.bytes()), anyFloat(), isNull());
 
         verify(callback).flattened(another.bytes(), boost(phraseAsTerms), query);
 

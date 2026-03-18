@@ -13,7 +13,7 @@ import java.util.Map;
 
 import org.opensearch.action.search.SearchRequestBuilder;
 import org.opensearch.action.search.SearchResponse;
-import org.opensearch.rest.RestStatus;
+import org.opensearch.core.rest.RestStatus;
 import org.junit.Test;
 import org.opensearch.search.fetch.subphase.highlight.HighlightField;
 import org.wikimedia.highlighter.cirrus.opensearch.AbstractCirrusHighlighterIntegrationTestBase;

@@ -33,11 +33,10 @@ import org.apache.lucene.analysis.miscellaneous.StemmerOverrideFilter;
 import org.apache.lucene.analysis.miscellaneous.WordDelimiterGraphFilter;
 import org.apache.lucene.analysis.pattern.PatternTokenizer;
 import org.opensearch.action.search.SearchRequestBuilder;
-import org.opensearch.common.ParseField;
-import org.opensearch.common.Strings;
+import org.opensearch.core.ParseField;
 import org.opensearch.common.regex.Regex;
 import org.opensearch.common.settings.Settings;
-import org.opensearch.common.xcontent.XContentBuilder;
+import org.opensearch.core.xcontent.XContentBuilder;
 import org.opensearch.env.Environment;
 import org.opensearch.index.IndexSettings;
 import org.opensearch.index.analysis.AbstractIndexAnalyzerProvider;
@@ -64,7 +63,7 @@ import com.google.common.collect.ImmutableList;
 //import org.opensearch.plugin.analysis.icu.AnalysisICUPlugin;
 
 @SuppressWarnings("checkstyle:classfanoutcomplexity") // do not care too much about complexity of test classes
-@ClusterScope(scope = OpenSearchIntegTestCase.Scope.SUITE, transportClientRatio = 0.0)
+@ClusterScope(scope = OpenSearchIntegTestCase.Scope.SUITE)
 public abstract class AbstractCirrusHighlighterIntegrationTestBase extends OpenSearchIntegTestCase {
     protected static final List<String> HIT_SOURCES = ImmutableList.of("postings", "vectors",
             "analyze");
@@ -273,7 +272,7 @@ public abstract class AbstractCirrusHighlighterIntegrationTestBase extends OpenS
         settings.endObject();
         settings.endObject();
         settings.endObject();
-        assertAcked(prepareCreate("test").setSettings(settings).addMapping("_doc", mapping));
+        assertAcked(prepareCreate("test").setSettings(settings).setMapping(mapping));
         ensureYellow();
     }
 
@@ -318,7 +317,7 @@ public abstract class AbstractCirrusHighlighterIntegrationTestBase extends OpenS
     }
 
     protected void indexTestData(Object contents) {
-        client().prepareIndex("test", "_doc", "1").setSource("test", contents).get();
+        client().prepareIndex("test").setId("1").setSource("test", contents).get();
         refresh();
     }
 
@@ -515,7 +514,7 @@ public abstract class AbstractCirrusHighlighterIntegrationTestBase extends OpenS
             for (String rule : rules) {
                 String key;
                 String override;
-                List<String> mapping = Strings.splitSmart(rule, mappingSep, false);
+                List<String> mapping = Arrays.asList(rule.split(Pattern.quote(mappingSep), 2));
                 if (mapping.size() == 2) {
                     key = mapping.get(0).trim();
                     override = mapping.get(1).trim();

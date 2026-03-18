@@ -6,7 +6,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.lucene.index.IndexReader;
+import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.util.BytesRef;
 import org.apache.lucene.util.CollectionUtil;
@@ -36,14 +36,14 @@ public class BasicQueryWeigher implements TermWeigher<BytesRef>, TermSourceFinde
     private Map<PhraseKey, PhraseInfo> allPhrases;
     private CompiledAutomaton acceptable;
 
-    public BasicQueryWeigher(IndexReader reader, Query query) {
-        this(new QueryFlattener(1000, false, true), new HashMapTermInfos(), reader, query);
+    public BasicQueryWeigher(IndexSearcher searcher, Query query) {
+        this(new QueryFlattener(1000, false, true), new HashMapTermInfos(), searcher, query);
     }
 
-    public BasicQueryWeigher(QueryFlattener flattener, final TermInfos termInfos, IndexReader reader, Query query) {
+    public BasicQueryWeigher(QueryFlattener flattener, final TermInfos termInfos, IndexSearcher searcher, Query query) {
         this.termInfos = termInfos;
         FlattenerCallback callback = new FlattenerCallback();
-        flattener.flatten(query, reader, callback);
+        flattener.flatten(query, searcher, callback);
         maxTermWeight = callback.maxTermWeight;
     }
 

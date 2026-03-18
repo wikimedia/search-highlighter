@@ -18,9 +18,9 @@ import java.util.List;
 import org.opensearch.action.index.IndexRequestBuilder;
 import org.opensearch.action.search.SearchRequestBuilder;
 import org.opensearch.action.search.SearchResponse;
-import org.opensearch.common.xcontent.XContentBuilder;
+import org.opensearch.core.xcontent.XContentBuilder;
 import org.opensearch.index.query.QueryBuilder;
-import org.opensearch.rest.RestStatus;
+import org.opensearch.core.rest.RestStatus;
 import org.opensearch.search.fetch.subphase.highlight.HighlightBuilder;
 import org.junit.Test;
 import org.wikimedia.highlighter.cirrus.opensearch.AbstractCirrusHighlighterIntegrationTestBase;
@@ -157,11 +157,11 @@ public class OptionsTest extends AbstractCirrusHighlighterIntegrationTestBase {
     @Test
     public void useDefaultSimilarity() throws IOException, InterruptedException {
         buildIndex(true, true, 1);
-        client().prepareIndex("test", "_doc").setSource("test", new String[] {"test", "foo foo"}).get();
+        client().prepareIndex("test").setSource("test", new String[] {"test", "foo foo"}).get();
         // We need enough "foo" so that a whole bunch end up on the shard with the above entry.
         List<IndexRequestBuilder> indexes = new ArrayList<>();
         for (int i = 0; i < 1000; i++) {
-            indexes.add(client().prepareIndex("test", "_doc").setSource("test", "foo"));
+            indexes.add(client().prepareIndex("test").setSource("test", "foo"));
         }
         indexRandom(true, indexes);
 
@@ -311,9 +311,9 @@ public class OptionsTest extends AbstractCirrusHighlighterIntegrationTestBase {
                 + "everything because that'd be too much don't you think?  Yes.";
 
         buildIndex();
-        client().prepareIndex("test", "_doc", "short")
+        client().prepareIndex("test").setId("short")
                 .setSource("test", shortString, "find_me", "shortstring").get();
-        client().prepareIndex("test", "_doc", "long")
+        client().prepareIndex("test").setId("long")
                 .setSource("test", longString, "find_me", "longstring").get();
         refresh();
 
@@ -411,11 +411,11 @@ public class OptionsTest extends AbstractCirrusHighlighterIntegrationTestBase {
         buildIndex();
         // This is the doc we're looking for and it doesn't have a match in the
         // column we're highlighting
-        client().prepareIndex("test", "_doc", "1")
+        client().prepareIndex("test").setId("1")
                 .setSource("test", new String[] {"no match here", "this one"}, "fetched", new Integer[] {0, 1}).get();
-        client().prepareIndex("test", "_doc", "2")
+        client().prepareIndex("test").setId("2")
                 .setSource("test", new String[] {"firstplace", "no match here"}, "fetched", new Integer[] {0, 1, 2}).get();
-        client().prepareIndex("test", "_doc", "3")
+        client().prepareIndex("test").setId("3")
                 .setSource("test", new String[] {"no match here", "nobuddy"}, "fetched", new Integer[] {0}).get();
         XContentBuilder nested = jsonBuilder().startObject().startArray("foo");
         for (int i = 0; i < 200; i++) {
@@ -427,7 +427,7 @@ public class OptionsTest extends AbstractCirrusHighlighterIntegrationTestBase {
             nested.endObject();
         }
         nested.endArray().endObject();
-        client().prepareIndex("test", "_doc", "4").setSource(nested).get();
+        client().prepareIndex("test").setId("4").setSource(nested).get();
         refresh();
         QueryBuilder qb = termQuery("test", "one");
         for (String hitSource : HIT_SOURCES) {
@@ -516,7 +516,7 @@ public class OptionsTest extends AbstractCirrusHighlighterIntegrationTestBase {
     @Test
     public void highlightQuery() throws IOException {
         buildIndex();
-        client().prepareIndex("test", "_doc").setSource("test", "foo", "test2", "bar").get();
+        client().prepareIndex("test").setSource("test", "foo", "test2", "bar").get();
         refresh();
 
         for (String hitSource : HIT_SOURCES) {
@@ -533,7 +533,7 @@ public class OptionsTest extends AbstractCirrusHighlighterIntegrationTestBase {
     @Test
     public void testDebugGraph() throws IOException {
         buildIndex();
-        client().prepareIndex("test", "_doc").setSource("test", "foo", "test2", "bar").get();
+        client().prepareIndex("test").setSource("test", "foo", "test2", "bar").get();
         refresh();
 
         for (String hitSource : HIT_SOURCES) {

@@ -108,8 +108,20 @@ public class FieldWrapper {
     public List<String> getFieldValues() throws IOException {
         if (values == null) {
             boolean forceSource = context.forceSource;
-            List<Object> objs = HighlightUtils.loadFieldValues(context.fieldType, context.hitContext, forceSource);
-            values = objs.stream().map(Object::toString).collect(toCollection(() -> new ArrayList<>(objs.size())));
+            List<Object> objs;
+            if (!forceSource && context.fieldType.isStored()) {
+                // For stored fields, use HighlightUtils which returns the original stored value
+                objs = HighlightUtils.loadFieldValues(context.fieldType, context.context.getQueryShardContext(), context.hitContext, false);
+            } else {
+                // Read raw from _source to avoid normalization applied by valueFetcher for keyword fields
+                objs = context.hitContext.sourceLookup().extractRawValues(context.fieldType.name());
+                if (objs.isEmpty()) {
+                    // Fall back to HighlightUtils if source doesn't have the value (e.g. runtime fields)
+                    objs = HighlightUtils.loadFieldValues(context.fieldType, context.context.getQueryShardContext(), context.hitContext, forceSource);
+                }
+            }
+            final List<Object> finalObjs = objs;
+            values = finalObjs.stream().map(Object::toString).collect(toCollection(() -> new ArrayList<>(finalObjs.size())));
         }
         return values;
     }
