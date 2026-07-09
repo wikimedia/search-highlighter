@@ -9,6 +9,8 @@ import org.wikimedia.search.highlighter.cirrus.Snippet;
 import org.wikimedia.search.highlighter.cirrus.Snippet.Hit;
 import org.wikimedia.search.highlighter.cirrus.Snippet.HitBuilder;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 /**
  * Starts the first snippet on the first hit, the second on the next hit after
  * the first snippet ends, etc.  HitEnum must be in startOffset and endOffset for this to work properly.
@@ -50,6 +52,9 @@ public class BasicSourceOrderSnippetChooser extends AbstractBasicSnippetChooser<
         return state.results.size() < state.max;
     }
 
+    @SuppressFBWarnings(
+            value = "FCBL_FIELD_COULD_BE_LOCAL",
+            justification = "Fields are read by the enclosing class; false positive since Java 11 nestmates removed synthetic accessors.")
     static class State {
         private int lastSnippetEnd;
         private int max;

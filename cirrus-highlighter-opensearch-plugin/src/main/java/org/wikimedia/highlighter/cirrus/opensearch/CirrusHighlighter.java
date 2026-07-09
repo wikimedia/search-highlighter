@@ -53,6 +53,8 @@ import org.wikimedia.search.highlighter.cirrus.tools.GraphvizHitEnum;
 import org.wikimedia.search.highlighter.cirrus.tools.GraphvizSnippetFormatter;
 import org.wikimedia.utils.regex.RegexRewriter;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 @SuppressWarnings("checkstyle:classfanoutcomplexity") // to improve if we ever touch that code again
 public class CirrusHighlighter implements Highlighter {
     public static final String BC_NAME = "experimental";
@@ -90,6 +92,11 @@ public class CirrusHighlighter implements Highlighter {
         return Loggers.getLogger(CirrusHighlighter.class, context.context.getIndexName());
     }
 
+    @SuppressFBWarnings(
+            value = {"FCBL_FIELD_COULD_BE_LOCAL", "DMC_DUBIOUS_MAP_COLLECTION"},
+            justification = "Mutable per-context cache read/written by the enclosing CirrusHighlighter;"
+                    + " maps are used as genuine maps. False positives introduced by JDK 21 nestmate/invokedynamic"
+                    + " bytecode that SpotBugs cannot fully analyze.")
     static class CacheEntry {
         private final Map<QueryCacheKey, BasicQueryWeigher> queryWeighers = new HashMap<>();
         private Map<String, AutomatonHitEnum.Factory> automatonHitEnumFactories;
@@ -479,6 +486,10 @@ public class CirrusHighlighter implements Highlighter {
             }
         }
 
+        @SuppressFBWarnings(
+                value = "FCBL_FIELD_COULD_BE_LOCAL",
+                justification = "Enum instance fields are read by the enclosing class; false positive since Java 11"
+                        + " nestmates removed synthetic accessors.")
         private enum RegexFlavor {
             JAVA("java", false, false, false),
             LUCENE("lucene", true, false, false),

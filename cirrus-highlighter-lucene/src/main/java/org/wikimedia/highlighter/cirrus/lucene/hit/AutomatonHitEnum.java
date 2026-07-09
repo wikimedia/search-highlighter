@@ -5,7 +5,6 @@ import org.apache.lucene.util.BitSet;
 import org.apache.lucene.util.automaton.Automaton;
 import org.apache.lucene.util.automaton.Operations;
 import org.apache.lucene.util.automaton.RegExp;
-import org.apache.lucene.util.automaton.Transition;
 import org.wikimedia.highlighter.cirrus.lucene.automaton.AcceptReturningReverseRunAutomaton;
 import org.wikimedia.highlighter.cirrus.lucene.automaton.OffsetReturningRunAutomaton;
 import org.wikimedia.search.highlighter.cirrus.hit.AbstractHitEnum;
@@ -27,11 +26,12 @@ public abstract class AutomatonHitEnum extends AbstractHitEnum {
         private BitSet startPositions;
 
         private Factory(String regexString, int maxDeterminizedStates) {
-            Automaton automaton = new RegExp(regexString).toAutomaton(maxDeterminizedStates);
+            RegExp regexp = new RegExp(regexString);
+            Automaton automaton = Operations.determinize(regexp.toAutomaton(), maxDeterminizedStates);
             forward = new OffsetReturningRunAutomaton(automaton, false);
-            if (hasLeadingWildcard(automaton)) {
+            if (hasLeadingWildcard(regexp)) {
                 Automaton reversed = Operations.determinize(Operations.reverse(
-                        new RegExp("(" + regexString + ").*").toAutomaton(maxDeterminizedStates)), maxDeterminizedStates);
+                        new RegExp("(" + regexString + ").*").toAutomaton()), maxDeterminizedStates);
                 reverse = new AcceptReturningReverseRunAutomaton(reversed);
             } else {
                 reverse = null;
@@ -195,45 +195,101 @@ public abstract class AutomatonHitEnum extends AbstractHitEnum {
         }
     }
 
-    static boolean hasLeadingWildcard(Automaton a) {
-        // catches [a-z]*
-        if (isStateUnconstrainedWildcard(a, 0)) {
-            return true;
+    /**
+     * Least number of code points a repeated expression must accept before we call it
+     * an unconstrained wildcard. Arbitrary, but it catches .* and similar constructs.
+     */
+    private static final int UNCONSTRAINED_WILDCARD_CODE_POINTS = 16;
+
+    /**
+     * True when a match can start with a run of unbounded arbitrary characters
+     * such as .*foo.
+     */
+    static boolean hasLeadingWildcard(RegExp regexp) {
+        switch (regexp.kind) {
+            case REGEXP_REPEAT:
+            case REGEXP_REPEAT_MIN:
+                // .* and .+, the constructs we look for. The repeated expression can
+                // also start with a wildcard of its own, as in (.*a)+.
+                return isUnconstrainedWildcard(regexp.exp1) || hasLeadingWildcard(regexp.exp1);
+            case REGEXP_ANYSTRING:
+                // @ is a different name for .*
+                return true;
+            case REGEXP_UNION:
+                return hasLeadingWildcard(regexp.exp1) || hasLeadingWildcard(regexp.exp2);
+            case REGEXP_INTERSECTION:
+                // Both sides must accept the run for the intersection to accept it.
+                return hasLeadingWildcard(regexp.exp1) && hasLeadingWildcard(regexp.exp2);
+            case REGEXP_CONCATENATION:
+                // The second expression starts the match only when the first one can
+                // match nothing, as in f?.*oo.
+                return hasLeadingWildcard(regexp.exp1)
+                        || (matchesEmptyString(regexp.exp1) && hasLeadingWildcard(regexp.exp2));
+            case REGEXP_OPTIONAL:
+            case REGEXP_REPEAT_MINMAX:
+                // These repeat their expression a limited number of times. Only the
+                // expression below them can make a run that has no bound.
+                return hasLeadingWildcard(regexp.exp1);
+            default:
+                // The other kinds match one character, a string, or nothing at all.
+                return false;
         }
-        // catches [a-z]+
-        Transition t = new Transition();
-        int max = a.initTransition(0, t);
-        boolean[] seen = new boolean[a.getNumStates()];
-        seen[0] = true; // 0 was checked above.
-        for (int i = 0; i < max; i++) {
-            a.getNextTransition(t);
-            if (!seen[t.dest]) {
-                if (isStateUnconstrainedWildcard(a, t.dest)) {
-                    return true;
-                }
-                seen[t.dest] = true;
-            }
-        }
-        return false;
     }
 
     /**
-     * @param a Automaton to check
-     * @param state State within the automaton to check
-     * @return True when the provided state loops back to itself
-     *  with at least 15 distinct code points. Complete hack,
-     *  but seems to catch .* and similar constructs.
+     * Tells if the expression matches one character out of a large set, as {@code .}
+     * and {@code [a-z]} do. A repeat of such an expression accepts a run of arbitrary
+     * characters.
      */
-    static boolean isStateUnconstrainedWildcard(Automaton a, int state) {
-        Transition t = new Transition();
-        int returnToState = 0;
-        int max = a.initTransition(state, t);
-        for (int i = 0; i < max; i++) {
-            a.getNextTransition(t);
-            if (t.dest == state) {
-                returnToState += t.max - t.min;
-            }
+    private static boolean isUnconstrainedWildcard(RegExp regexp) {
+        switch (regexp.kind) {
+            case REGEXP_ANYCHAR:
+            case REGEXP_ANYSTRING:
+                return true;
+            case REGEXP_CHAR_RANGE:
+            case REGEXP_CHAR_CLASS:
+                return codePointCount(regexp) >= UNCONSTRAINED_WILDCARD_CODE_POINTS;
+            case REGEXP_UNION:
+                return isUnconstrainedWildcard(regexp.exp1) || isUnconstrainedWildcard(regexp.exp2);
+            default:
+                return false;
         }
-        return returnToState > 15;
+    }
+
+    /** How many code points a character range or a character class accepts. */
+    private static int codePointCount(RegExp regexp) {
+        int count = 0;
+        // Both kinds keep their ranges in from and to.
+        for (int i = 0; i < regexp.from.length; i++) {
+            count += regexp.to[i] - regexp.from[i] + 1;
+        }
+        return count;
+    }
+
+    /**
+     * Tells if the expression can match no characters at all. The expression after it
+     * can then start the match.
+     */
+    private static boolean matchesEmptyString(RegExp regexp) {
+        switch (regexp.kind) {
+            case REGEXP_OPTIONAL:
+            case REGEXP_REPEAT:
+            case REGEXP_ANYSTRING:
+                return true;
+            case REGEXP_REPEAT_MIN:
+            case REGEXP_REPEAT_MINMAX:
+                return regexp.min == 0 || matchesEmptyString(regexp.exp1);
+            case REGEXP_UNION:
+                return matchesEmptyString(regexp.exp1) || matchesEmptyString(regexp.exp2);
+            case REGEXP_CONCATENATION:
+            case REGEXP_INTERSECTION:
+                return matchesEmptyString(regexp.exp1) && matchesEmptyString(regexp.exp2);
+            case REGEXP_STRING:
+                return regexp.s.isEmpty();
+            default:
+                // The remaining kinds need at least one character, match nothing at
+                // all, or, as with a complement, we cannot tell.
+                return false;
+        }
     }
 }

@@ -8,6 +8,8 @@ import java.util.Map;
 
 import org.wikimedia.search.highlighter.cirrus.HitEnum;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 /**
  * Tool that generates a graph by reading the HitEnum structure.
  */
@@ -103,6 +105,9 @@ public class GraphvizHitEnumGenerator {
         links.add(new Link(getHitEnumId(parent), getHitEnumId(child)));
     }
 
+    @SuppressFBWarnings(
+            value = "FCBL_FIELD_COULD_BE_LOCAL",
+            justification = "Fields are read by the enclosing class; false positive since Java 11 nestmates removed synthetic accessors.")
     private static final class Link {
         private final int from;
         private final int to;

@@ -4,7 +4,7 @@
     <parent>
         <groupId>org.wikimedia.search.highlighter</groupId>
         <artifactId>cirrus</artifactId>
-        <version>2.19.5-wmf2-SNAPSHOT</version>
+        <version>3.8.0-wmf1-SNAPSHOT</version>
     </parent>
     <artifactId>cirrus-highlighter-opensearch-plugin</artifactId>
     <packaging>jar</packaging>
@@ -16,6 +16,11 @@
     </properties>
 
     <dependencies>
+        <dependency>
+            <groupId>com.github.spotbugs</groupId>
+            <artifactId>spotbugs-annotations</artifactId>
+            <optional>true</optional>
+        </dependency>
         <dependency>
             <groupId>org.apache.lucene</groupId>
             <artifactId>lucene-core</artifactId>
@@ -72,6 +77,16 @@
         <dependency>
             <groupId>org.hamcrest</groupId>
             <artifactId>hamcrest-core</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.opensearch</groupId>
+            <artifactId>opensearch-agent</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.opensearch</groupId>
+            <artifactId>opensearch-agent-bootstrap</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>

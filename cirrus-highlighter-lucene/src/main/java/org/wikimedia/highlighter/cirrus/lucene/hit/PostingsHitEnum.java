@@ -39,7 +39,7 @@ public class PostingsHitEnum extends AbstractHitEnum {
             CompiledAutomaton acceptable, TermWeigher<BytesRef> queryWeigher,
             TermWeigher<BytesRef> corpusWeigher, TermSourceFinder<BytesRef> sourceFinder)
             throws IOException {
-        Fields vectors = reader.getTermVectors(docId);
+        Fields vectors = reader.termVectors().get(docId);
         if (vectors == null) {
             // No term vectors so no hits
             return EmptyHitEnum.INSTANCE;

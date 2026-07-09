@@ -2,12 +2,9 @@ package org.wikimedia.search.highlighter.cirrus.source;
 
 import org.wikimedia.search.highlighter.cirrus.SourceExtracter;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-
 /**
  * Extracts strings from a String source.
  */
-@SuppressFBWarnings(value = "STT_STRING_PARSING_A_FIELD", justification = "This class IS a parser.")
 public final class StringSourceExtracter implements SourceExtracter<String> {
     private final String source;
 

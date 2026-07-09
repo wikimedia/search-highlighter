@@ -7,6 +7,8 @@ import org.wikimedia.search.highlighter.cirrus.Segment;
 import org.wikimedia.search.highlighter.cirrus.Segmenter;
 import org.wikimedia.search.highlighter.cirrus.SimpleSegment;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 /**
  * Combines the results of multiple Segmenters in order. Adds hard stops between
  * each segmenter's segments. This segmenter isn't thread safe by a long shot.
@@ -93,6 +95,9 @@ public final class MultiSegmenter implements Segmenter {
     /**
      * Segmenters to which the MultiSegmenter delegates.
      */
+    @SuppressFBWarnings(
+            value = "FCBL_FIELD_COULD_BE_LOCAL",
+            justification = "Fields are read by the enclosing class; false positive since Java 11 nestmates removed synthetic accessors.")
     private static class ConstituentSegmenter {
         private final Segmenter segmenter;
         private final int length;

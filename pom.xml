@@ -5,12 +5,12 @@
     <parent>
         <groupId>org.wikimedia</groupId>
         <artifactId>wmf-jvm-parent-pom</artifactId>
-        <version>1.97</version>
+        <version>1.102</version>
     </parent>
 
     <groupId>org.wikimedia.search.highlighter</groupId>
     <artifactId>cirrus</artifactId>
-    <version>2.19.5-wmf2-SNAPSHOT</version>
+    <version>3.8.0-wmf1-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <name>OpenSearch highlighter plugin for CirrusSearch</name>
@@ -56,8 +56,12 @@
         <log4j.version>2.25.3</log4j.version>
         <!-- For the OpenSearch plugin to work this should match the version of Lucene that OpenSearch
       uses. -->
-        <lucene.version>9.12.3</lucene.version>
-        <opensearch.version>2.19.5</opensearch.version>
+        <lucene.version>10.5.0</lucene.version>
+        <maven.compiler.source>21</maven.compiler.source>
+        <maven.compiler.target>21</maven.compiler.target>
+        <opensearch.version>3.8.0</opensearch.version>
+        <!-- The 2.7.1 junit4-maven-plugin can't read java 21 class files. -->
+        <randomizedtesting.plugin.version>2.9.1</randomizedtesting.plugin.version>
         <randomizedtesting.version>2.7.1</randomizedtesting.version>
         <spotless.ratchetFrom>origin/master</spotless.ratchetFrom>
     </properties>
@@ -182,6 +186,18 @@
                 <scope>test</scope>
             </dependency>
             <dependency>
+                <groupId>org.opensearch</groupId>
+                <artifactId>opensearch-agent</artifactId>
+                <version>${opensearch.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.opensearch</groupId>
+                <artifactId>opensearch-agent-bootstrap</artifactId>
+                <version>${opensearch.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
                 <groupId>org.opensearch.test</groupId>
                 <artifactId>framework</artifactId>
                 <version>${opensearch.version}</version>
@@ -212,7 +228,7 @@
                 <plugin>
                     <groupId>com.carrotsearch.randomizedtesting</groupId>
                     <artifactId>junit4-maven-plugin</artifactId>
-                    <version>${randomizedtesting.version}</version>
+                    <version>${randomizedtesting.plugin.version}</version>
                     <executions>
                         <execution>
                             <id>tests</id>

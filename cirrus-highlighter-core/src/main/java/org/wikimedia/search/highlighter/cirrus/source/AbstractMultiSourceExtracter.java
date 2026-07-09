@@ -6,6 +6,8 @@ import java.util.List;
 
 import org.wikimedia.search.highlighter.cirrus.SourceExtracter;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 /**
  * Simple base class for extracters that combine extracters.
  */
@@ -43,6 +45,9 @@ abstract class AbstractMultiSourceExtracter<T> implements SourceExtracter<T> {
      */
     protected abstract T merge(List<T> extracts);
 
+    @SuppressFBWarnings(
+            value = "FCBL_FIELD_COULD_BE_LOCAL",
+            justification = "Fields are read by the enclosing class; false positive since Java 11 nestmates removed synthetic accessors.")
     static class ConstituentExtracter<T> {
         private final SourceExtracter<T> extracter;
         private final int length;

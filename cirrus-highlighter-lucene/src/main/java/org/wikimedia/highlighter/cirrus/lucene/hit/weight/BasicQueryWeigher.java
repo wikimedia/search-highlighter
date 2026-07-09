@@ -21,6 +21,8 @@ import org.wikimedia.search.highlighter.cirrus.hit.PhraseHitEnumWrapper;
 import org.wikimedia.search.highlighter.cirrus.hit.TermSourceFinder;
 import org.wikimedia.search.highlighter.cirrus.hit.TermWeigher;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 /**
  * "Simple" way to extract weights and sources from queries. Matches any terms
  * in queries, and, if any don't match, tries automata from queries. Term matches
@@ -33,6 +35,10 @@ public class BasicQueryWeigher implements TermWeigher<BytesRef>, TermSourceFinde
     private final TermInfos termInfos;
     private final float maxTermWeight;
     private Map<String, List<PhraseInfo>> phrases;
+    @SuppressFBWarnings(
+            value = {"DMC_DUBIOUS_MAP_COLLECTION", "WOC_WRITE_ONLY_COLLECTION_FIELD"},
+            justification = "allPhrases is a genuine dedup map (see endPhrase get/put); false positive"
+                    + " introduced by JDK 21 invokedynamic bytecode that SpotBugs cannot fully analyze.")
     private Map<PhraseKey, PhraseInfo> allPhrases;
     private CompiledAutomaton acceptable;
 
@@ -185,6 +191,9 @@ public class BasicQueryWeigher implements TermWeigher<BytesRef>, TermSourceFinde
         }
     }
 
+    @SuppressFBWarnings(
+            value = "FCBL_FIELD_COULD_BE_LOCAL",
+            justification = "Fields are read by the enclosing class; false positive since Java 11 nestmates removed synthetic accessors.")
     private static class PhraseInfo {
         private final int[][] phrase;
         private final int slop;

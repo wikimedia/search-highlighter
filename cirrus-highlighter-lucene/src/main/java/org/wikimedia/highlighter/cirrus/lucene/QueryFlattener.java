@@ -222,9 +222,6 @@ public class QueryFlattener {
         }
     }
 
-    @SuppressFBWarnings(
-            value = "OCP_OVERLY_CONCRETE_PARAMETER",
-            justification = "Using a specific type is required as different behaviour are expected")
     protected void flattenQuery(BooleanQuery query, float pathBoost, Object sourceOverride,
             IndexSearcher searcher, Callback callback) {
         for (BooleanClause clause : query) {
@@ -235,15 +232,12 @@ public class QueryFlattener {
             // e.g. the _type filter with opensearch now uses this type of
             // construct.
             if (!clause.isProhibited() && clause.isScoring()) {
-                flatten(clause.getQuery(), pathBoost, sourceOverride, searcher,
+                flatten(clause.query(), pathBoost, sourceOverride, searcher,
                         callback);
             }
         }
     }
 
-    @SuppressFBWarnings(
-            value = "OCP_OVERLY_CONCRETE_PARAMETER",
-            justification = "Using a specific type is required as different behaviour are expected")
     protected void flattenQuery(DisjunctionMaxQuery query, float pathBoost, Object sourceOverride,
             IndexSearcher searcher, Callback callback) {
         for (Query clause : query) {
@@ -443,15 +437,15 @@ public class QueryFlattener {
         }
         BooleanClause first = clauses.get(0);
         BooleanClause second = clauses.get(1);
-        if ((first.getOccur() != Occur.SHOULD || second.getOccur() != Occur.MUST)
-                && (first.getOccur() != Occur.MUST || second.getOccur() != Occur.SHOULD)) {
+        if ((first.occur() != Occur.SHOULD || second.occur() != Occur.MUST)
+                && (first.occur() != Occur.MUST || second.occur() != Occur.SHOULD)) {
             // Nope - just a two term query
             flattenQuery(bq, pathBoost, sourceOverride, searcher, callback);
             return;
         }
 
-        Query firstQ = first.getQuery();
-        Query secondQ = second.getQuery();
+        Query firstQ = first.query();
+        Query secondQ = second.query();
 
         // The query can be wrapped inside a BoostQuery
         if (firstQ instanceof BoostQuery && secondQ instanceof BoostQuery) {
@@ -466,10 +460,10 @@ public class QueryFlattener {
         }
 
         final Query lowFrequency;
-        if (first.getOccur() == Occur.MUST) {
-            lowFrequency = first.getQuery();
+        if (first.occur() == Occur.MUST) {
+            lowFrequency = first.query();
         } else {
-            lowFrequency = second.getQuery();
+            lowFrequency = second.query();
         }
         flatten(lowFrequency, pathBoost, sourceOverride, searcher, callback);
     }
@@ -478,7 +472,7 @@ public class QueryFlattener {
         TopTermsScoringBooleanQueryRewrite method = new MultiTermQuery.TopTermsScoringBooleanQueryRewrite(
                 maxMultiTermQueryTerms);
         try {
-            return method.rewrite(searcher.getIndexReader(), query);
+            return method.rewrite(searcher, query);
         } catch (IOException ioe) {
             throw new WrappedExceptionFromLucene(ioe);
         }

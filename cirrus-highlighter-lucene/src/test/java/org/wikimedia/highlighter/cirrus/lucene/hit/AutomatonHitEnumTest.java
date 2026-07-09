@@ -10,7 +10,6 @@ import static org.wikimedia.highlighter.cirrus.Matchers.isEmpty;
 
 import java.time.Duration;
 
-import org.apache.lucene.util.automaton.Automaton;
 import org.apache.lucene.util.automaton.Operations;
 import org.apache.lucene.util.automaton.RegExp;
 import org.junit.Test;
@@ -130,39 +129,30 @@ public class AutomatonHitEnumTest extends AbstractHitEnumTestBase {
 
     @Test
     public void detectWildcard() {
-        Automaton automaton = new RegExp(".foo").toAutomaton();
-        assertThat(AutomatonHitEnum.hasLeadingWildcard(automaton), equalTo(false));
+        assertThat(hasLeadingWildcard(".foo"), equalTo(false));
+        assertThat(hasLeadingWildcard("f.+oo"), equalTo(false));
+        assertThat(hasLeadingWildcard("f.*oo"), equalTo(false));
+        assertThat(hasLeadingWildcard("f?.+oo"), equalTo(true));
+        assertThat(hasLeadingWildcard("f?.*oo"), equalTo(true));
+        assertThat(hasLeadingWildcard("foo.*"), equalTo(false));
+        assertThat(hasLeadingWildcard("[a-z]?foo"), equalTo(false));
+        assertThat(hasLeadingWildcard("[a-z]+foo"), equalTo(true));
+        assertThat(hasLeadingWildcard("[a-z]*foo"), equalTo(true));
+        assertThat(hasLeadingWildcard(".*foo"), equalTo(true));
+        assertThat(hasLeadingWildcard("(foo|.*bar)"), equalTo(true));
+        // A class of a few characters keeps the number of start positions small.
+        assertThat(hasLeadingWildcard("[abc]*foo"), equalTo(false));
+        // A repeat with a bound cannot make a run without a bound.
+        assertThat(hasLeadingWildcard(".{1,3}foo"), equalTo(false));
+        assertThat(hasLeadingWildcard("(.*a){2}"), equalTo(true));
+        // @ is the same thing as .*
+        assertThat(hasLeadingWildcard("@foo"), equalTo(true));
+        // An empty string in front of the wildcard does not move it.
+        assertThat(hasLeadingWildcard("()[a-z]*foo"), equalTo(true));
+    }
 
-        automaton = new RegExp("f.+oo").toAutomaton();
-        assertThat(AutomatonHitEnum.hasLeadingWildcard(automaton), equalTo(false));
-
-        // The handling for .+ also ends up catching this. Probably ok.
-        automaton = new RegExp("f.*oo").toAutomaton();
-        assertThat(AutomatonHitEnum.hasLeadingWildcard(automaton), equalTo(true));
-
-        automaton = new RegExp("f?.+oo").toAutomaton();
-        assertThat(AutomatonHitEnum.hasLeadingWildcard(automaton), equalTo(true));
-
-        automaton = new RegExp("f?.*oo").toAutomaton();
-        assertThat(AutomatonHitEnum.hasLeadingWildcard(automaton), equalTo(true));
-
-        automaton = new RegExp("foo.*").toAutomaton();
-        assertThat(AutomatonHitEnum.hasLeadingWildcard(automaton), equalTo(false));
-
-        automaton = new RegExp("[a-z]?foo").toAutomaton();
-        assertThat(AutomatonHitEnum.hasLeadingWildcard(automaton), equalTo(false));
-
-        automaton = new RegExp("[a-z]+foo").toAutomaton();
-        assertThat(AutomatonHitEnum.hasLeadingWildcard(automaton), equalTo(true));
-
-        automaton = new RegExp("[a-z]*foo").toAutomaton();
-        assertThat(AutomatonHitEnum.hasLeadingWildcard(automaton), equalTo(true));
-
-        automaton = new RegExp(".*foo").toAutomaton();
-        assertThat(AutomatonHitEnum.hasLeadingWildcard(automaton), equalTo(true));
-
-        automaton = new RegExp("(foo|.*bar)").toAutomaton();
-        assertThat(AutomatonHitEnum.hasLeadingWildcard(automaton), equalTo(true));
+    private static boolean hasLeadingWildcard(String regex) {
+        return AutomatonHitEnum.hasLeadingWildcard(new RegExp(regex));
     }
 
     private String makeLongSource() {
