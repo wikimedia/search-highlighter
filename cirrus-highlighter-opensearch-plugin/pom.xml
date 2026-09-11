@@ -4,7 +4,7 @@
     <parent>
         <groupId>org.wikimedia.search.highlighter</groupId>
         <artifactId>cirrus</artifactId>
-        <version>3.8.0-wmf2</version>
+        <version>3.8.0-wmf3-SNAPSHOT</version>
     </parent>
     <artifactId>cirrus-highlighter-opensearch-plugin</artifactId>
     <packaging>jar</packaging>

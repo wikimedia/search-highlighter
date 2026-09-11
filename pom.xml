@@ -10,7 +10,7 @@
 
     <groupId>org.wikimedia.search.highlighter</groupId>
     <artifactId>cirrus</artifactId>
-    <version>3.8.0-wmf2</version>
+    <version>3.8.0-wmf3-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <name>OpenSearch highlighter plugin for CirrusSearch</name>
@@ -43,7 +43,7 @@
     <scm>
         <connection>scm:git:https://gerrit.wikimedia.org/r/search/highlighter</connection>
         <developerConnection>scm:git:ssh://gerrit.wikimedia.org:29418/search/highlighter</developerConnection>
-        <tag>cirrus-3.8.0-wmf2</tag>
+        <tag>cirrus-3.8.0-wmf1</tag>
         <url>https://gerrit.wikimedia.org/r/#/admin/projects/search/highlighter</url>
     </scm>
 
@@ -242,15 +242,15 @@
                                 </excludes>
                                 <skipTests>${skip.unit.tests}</skipTests>
                                 <listeners>
-                                    <report-text showNumFailures="30" showOutput="onerror" showStackTraces="true" showStatusError="true" showStatusFailure="true" showStatusIgnored="true" showStatusOk="false" showSuiteSummary="true" showThrowable="true" timestamps="false"/>
-                                    <report-ant-xml dir="${project.build.directory}/surefire-reports" mavenExtensions="true"/>
+                                    <report-text showNumFailures="30" showOutput="onerror" showStackTraces="true" showStatusError="true" showStatusFailure="true" showStatusIgnored="true" showStatusOk="false" showSuiteSummary="true" showThrowable="true" timestamps="false" />
+                                    <report-ant-xml dir="${project.build.directory}/surefire-reports" mavenExtensions="true" />
                                 </listeners>
                                 <heartbeat>20</heartbeat>
                                 <jvmOutputAction>warn</jvmOutputAction>
                                 <leaveTemporary>true</leaveTemporary>
                                 <sysouts>false</sysouts>
                                 <assertions>
-                                    <enable/>
+                                    <enable />
                                 </assertions>
                                 <jvmArgs>
                                     <param>-Xmx512m</param>
@@ -280,15 +280,15 @@
                                 </includes>
                                 <skipTests>${skip.unit.tests}</skipTests>
                                 <listeners>
-                                    <report-text showNumFailures="30" showOutput="onerror" showStackTraces="true" showStatusError="true" showStatusFailure="true" showStatusIgnored="true" showStatusOk="false" showSuiteSummary="true" showThrowable="true" timestamps="false"/>
-                                    <report-ant-xml dir="${project.build.directory}/surefire-reports" mavenExtensions="true"/>
+                                    <report-text showNumFailures="30" showOutput="onerror" showStackTraces="true" showStatusError="true" showStatusFailure="true" showStatusIgnored="true" showStatusOk="false" showSuiteSummary="true" showThrowable="true" timestamps="false" />
+                                    <report-ant-xml dir="${project.build.directory}/surefire-reports" mavenExtensions="true" />
                                 </listeners>
                                 <heartbeat>20</heartbeat>
                                 <jvmOutputAction>warn</jvmOutputAction>
                                 <leaveTemporary>true</leaveTemporary>
                                 <sysouts>false</sysouts>
                                 <assertions>
-                                    <enable/>
+                                    <enable />
                                 </assertions>
                                 <jvmArgs>
                                     <param>-Xmx512m</param>
@@ -337,7 +337,7 @@
                                         </goals>
                                     </pluginExecutionFilter>
                                     <action>
-                                        <ignore/>
+                                        <ignore />
                                     </action>
                                 </pluginExecution>
                                 <pluginExecution>
@@ -351,7 +351,7 @@
                                         </goals>
                                     </pluginExecutionFilter>
                                     <action>
-                                        <ignore/>
+                                        <ignore />
                                     </action>
                                 </pluginExecution>
                             </pluginExecutions>
